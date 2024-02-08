@@ -16,7 +16,7 @@ def possible_moves(state):
 def ucb(node, c):
     try:
         return node.value/node.visits + node.p * c * sqrt(node.parent.visits)/(1+node.visits)
-    except ZeroDivisionError:
+    except ZeroDivisionError: # if node.visits = 0 ignore the first half and simplify second half of the formula
         return node.p * c * sqrt(node.parent.visits)
 
 # class defining the contents of a singular node
@@ -89,8 +89,7 @@ class MCTS:
     def search(self):
         leaf_node = self.selection(self.root_node)
         leaf_node.expand()
-        print(self.root_node)
-        time.sleep(1)
+        #print(self.root_node)
 
     # method that performs the selection process
     # goes down the tree based off of UCB until it hits a leaf node.
@@ -111,8 +110,21 @@ class MCTS:
 
 
 def main():
-    tree = MCTS('none', 11)
+    #tree = MCTS('none', 11)
+    #tree.run()
+    performance()
+
+def performance():
+    iterations = 100000
+    start = time.time()
+    tree = MCTS('none', iterations)
     tree.run()
+    end = time.time()
+    print(f'runtime: {end-start} s | iterations per second: {iterations/(end-start)}')
+
+# performance metrics: 100000 iterations takes about 3.6s on my (liam's) pc
+# comparing that to my java implementation, which takes 0.272s on my pc
+# the java implementation is roughly 13 times faster than the python one
 
 if __name__ == "__main__":
     main()
