@@ -27,9 +27,12 @@ class Node:
         self.children = []
         self.value = 0
         self.visits = 0
+        self.v = 0
         self.p = p
         self.leaf = True
         # player is either 'self' or 'opponent', self == True, opponent == False
+        # TODO figure out how this will interact with the model when it comes to evaluations
+        # how the player that is currently trying to find the best move will interact with the model
         self.player = player
 
     # string method in order to represent the tree from the current node and down
@@ -46,6 +49,9 @@ class Node:
         # TODO implement possible_moves
         new_states, v = possible_moves(self.state)
 
+        # the initial value v from the model is stored separate from the value variable
+        # so that it can be used in backpropagation when training the actual model.
+        self.v = v
         # creating the new child nodes, making sure to swap around the player variable
         for (new_state, p) in new_states:
             self.children.append(Node(p, new_state, self, not self.player))
