@@ -7,9 +7,9 @@ import random
 # this function should return tuples in the form of ([(new_state, p)], v) for the expansion process
 def possible_moves(state):
     # TESTING VALUES
-    p1 = 0.5  #random.random()
+    p1 = random.random()
     p2 = (1-p1)
-    v = 0.5 # random.random()
+    v = random.random()
     return [('left', p1), ('right', p2)], v
 
 
