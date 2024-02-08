@@ -17,7 +17,7 @@ def ucb(node, c):
     try:
         return node.value/node.visits + node.p * c * sqrt(node.parent.visits)/(1+node.visits)
     except ZeroDivisionError:
-        return node.p * c * sqrt(node.parent.visits)/(1)
+        return node.p * c * sqrt(node.parent.visits)
 
 # class defining the contents of a singular node
 class Node:
