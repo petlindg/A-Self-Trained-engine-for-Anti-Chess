@@ -7,9 +7,9 @@ import random
 # this function should return tuples in the form of ([(new_state, p)], v) for the expansion process
 def possible_moves(state):
     # TESTING VALUES
-    p1 = random.random()
+    p1 = 0.5  #random.random()
     p2 = (1-p1)
-    v = random.random()
+    v = 0.5 # random.random()
     return [('left', p1), ('right', p2)], v
 
 
@@ -35,7 +35,7 @@ class Node:
     def __str__(self, level=0):
         s = "\t"*level + f'(s:{self.state} v:{round(self.value, 2)}, n:{self.visits}, p:{round(self.p, 2)})'+'\n'
         for child in self.children:
-            s += child.__str__(level+1)
+            s += child.__str__(level+2)
         return s
 
     def expand(self):
@@ -111,7 +111,7 @@ class MCTS:
 
 
 def main():
-    tree = MCTS('none', 10)
+    tree = MCTS('none', 11)
     tree.run()
 
 if __name__ == "__main__":
