@@ -32,12 +32,15 @@ class Node:
         # player is either 'self' or 'opponent', self == True, opponent == False
         self.player = player
 
+    # string method in order to represent the tree from the current node and down
     def __str__(self, level=0):
-        s = "\t"*level + f'(s:{self.state} v:{round(self.value, 2)}, n:{self.visits}, p:{round(self.p, 2)})'+'\n'
+        s = "\t"*level + f'(s:{self.state} v:{round(self.value, 2)}, ' \
+                         f'n:{self.visits}, p:{round(self.p, 2)}, Pl: {self.player})'+'\n'
         for child in self.children:
             s += child.__str__(level+2)
         return s
 
+    # expand method which does both the expansion and the backpropagation, using backpropagate
     def expand(self):
         self.leaf = False
         # TODO implement possible_moves
@@ -79,10 +82,6 @@ class MCTS:
         self.iterations_left = iterations
         self.exploration_constant = sqrt(2)
 
-
-
-
-
     # method to perform a single search 'iteration'
     # goes through the 3 steps of an AlphaZero MCTS loop
     # selection, expansion, backpropagation,
@@ -93,6 +92,8 @@ class MCTS:
         print(self.root_node)
         time.sleep(1)
 
+    # method that performs the selection process
+    # goes down the tree based off of UCB until it hits a leaf node.
     def selection(self, current_node):
         while not current_node.leaf:
             ucb_set = {}
@@ -101,9 +102,8 @@ class MCTS:
             current_node = max(ucb_set, key=ucb_set.get)
         return current_node
 
-    # UCB formula for returning the ucb score of a particular node
-
-    # performs searches until sufficiently sized tree
+    # run method that will continually perform tree searches
+    # until the iterations runs out
     def run(self):
         while self.iterations_left > 0:
             self.search()
