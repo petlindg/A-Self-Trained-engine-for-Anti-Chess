@@ -36,12 +36,30 @@ class Node:
         self.player = player
 
     # string method in order to represent the tree from the current node and down
+    # when you try to print a particular node
     def __str__(self, level=0):
-        s = "\t"*level + f'(s:{self.state} v:{round(self.value, 2)}, ' \
-                         f'n:{self.visits}, p:{round(self.p, 2)}, Pl: {self.player})'+'\n'
-        for child in self.children:
-            s += child.__str__(level+2)
-        return s
+        string_buffer = []
+        self.print_tree(string_buffer, "", "")
+        return "".join(string_buffer)
+
+    # function that will iteratively go through the tree and add on objects to the string_buffer
+    # this buffer will then be used to print the entire tree in the terminal
+    def print_tree(self, string_buffer, prefix, child_prefix):
+        string_buffer.append(prefix)
+        p = round(self.p, 2)
+        v = round(self.value, 2)
+        visits = self.visits
+
+        info_text = f'(p:{p}|v:{v}|n:{visits})'
+        string_buffer.append(info_text)
+        string_buffer.append('\n')
+        for i in range(0, len(self.children)):
+            if i == len(self.children)-1:
+                self.children[i].print_tree(string_buffer, child_prefix + "└── ", child_prefix + "    ")
+            else:
+                self.children[i].print_tree(string_buffer, child_prefix + "├── ", child_prefix + "│   ")
+
+
 
     # expand method which does both the expansion and the backpropagation, using backpropagate
     def expand(self):
@@ -121,10 +139,11 @@ def main():
     performance()
 
 def performance():
-    iterations = 100000
+    iterations = 10
     start = time.time()
     tree = MCTS('none', iterations)
     tree.run()
+    print(tree.root_node)
     end = time.time()
     print(f'runtime: {end-start} s | iterations per second: {iterations/(end-start)}')
 
