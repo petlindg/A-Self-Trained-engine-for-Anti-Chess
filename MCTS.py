@@ -46,26 +46,52 @@ class Node:
     # when you try to print a particular node
     def __str__(self, level=0):
         string_buffer = []
-        self.print_tree(string_buffer, "", "")
+        self.print_tree(string_buffer, "", "", None)
         return "".join(string_buffer)
 
-    # function that will iteratively go through the tree and add on objects to the string_buffer
-    # this buffer will then be used to print the entire tree in the terminal
-    def print_tree(self, string_buffer, prefix, child_prefix):
-        string_buffer.append(prefix)
-        p = round(self.p, 2)
-        v = round(self.value, 2)
-        V = round(self.v, 2)
-        visits = self.visits
+    # method that can be called on a node which will print it with a given depth
+    # any nodes that exist deeper than this depth will not be printed
+    def print_selectively(self, depth):
+        string_buffer = []
+        self.print_tree(string_buffer, "", "", depth)
+        print("".join(string_buffer))
 
-        info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V})'
-        string_buffer.append(info_text)
-        string_buffer.append('\n')
-        for i in range(0, len(self.children)):
-            if i == len(self.children)-1:
-                self.children[i].print_tree(string_buffer, child_prefix + "└── ", child_prefix + "    ")
-            else:
-                self.children[i].print_tree(string_buffer, child_prefix + "├── ", child_prefix + "│   ")
+    # method that will iteratively go through the tree and add on objects to the string_buffer
+    # this buffer will then be used to print the entire tree in the terminal
+    # depth parameter determines how deep the tree will print from the node, if depth=None then
+    # the all children will be printed
+    def print_tree(self, string_buffer, prefix, child_prefix, depth):
+        if depth is None:
+            string_buffer.append(prefix)
+            p = round(self.p, 2)
+            v = round(self.value, 2)
+            V = round(self.v, 2)
+            visits = self.visits
+
+            info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V})'
+            string_buffer.append(info_text)
+            string_buffer.append('\n')
+            for i in range(0, len(self.children)):
+                if i == len(self.children)-1:
+                    self.children[i].print_tree(string_buffer, child_prefix + "└── ", child_prefix + "    ", None)
+                else:
+                    self.children[i].print_tree(string_buffer, child_prefix + "├── ", child_prefix + "│   ", None)
+        elif depth > 0:
+            string_buffer.append(prefix)
+            p = round(self.p, 2)
+            v = round(self.value, 2)
+            V = round(self.v, 2)
+            visits = self.visits
+
+            info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V})'
+            string_buffer.append(info_text)
+            string_buffer.append('\n')
+            for i in range(0, len(self.children)):
+                if i == len(self.children) - 1:
+                    self.children[i].print_tree(string_buffer, child_prefix + "└── ", child_prefix + "    ", depth-1)
+                else:
+                    self.children[i].print_tree(string_buffer, child_prefix + "├── ", child_prefix + "│   ", depth-1)
+
 
 
 
@@ -89,7 +115,7 @@ class Node:
     # v is the result value from the model and player is the player that performed the move
     # that resulted in the v value.
     def backpropagate(self, node, v, player):
-        print(self.root_node)
+        #print(self.root_node)
         # if the actor performing the action with result v is the same as the current node
         # then we increase the value for the node by v
         if node.player == player:
@@ -148,11 +174,12 @@ def main():
     performance()
 
 def performance():
-    iterations = 10
+    iterations = 100
     start = time.time()
     tree = MCTS('none', iterations)
     tree.run()
     print(tree.root_node)
+
     end = time.time()
     print(f'runtime: {end-start} s | iterations per second: {iterations/(end-start)}')
 
