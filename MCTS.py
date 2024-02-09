@@ -21,7 +21,8 @@ def ucb(node, c):
 
 # class defining the contents of a singular node
 class Node:
-    def __init__(self, p, state, parent_node, player):
+    def __init__(self, p, state, parent_node, player, root_node):
+        self.root_node = root_node
         self.parent = parent_node
         self.state = state
         self.children = []
@@ -48,9 +49,10 @@ class Node:
         string_buffer.append(prefix)
         p = round(self.p, 2)
         v = round(self.value, 2)
+        V = round(self.v, 2)
         visits = self.visits
 
-        info_text = f'(p:{p}|v:{v}|n:{visits})'
+        info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V})'
         string_buffer.append(info_text)
         string_buffer.append('\n')
         for i in range(0, len(self.children)):
@@ -72,7 +74,7 @@ class Node:
         self.v = v
         # creating the new child nodes, making sure to swap around the player variable
         for (new_state, p) in new_states:
-            self.children.append(Node(p, new_state, self, not self.player))
+            self.children.append(Node(p, new_state, self, not self.player, self.root_node))
 
         # backpropagation process
         self.backpropagate(self, v, self.player)
@@ -81,7 +83,7 @@ class Node:
     # v is the result value from the model and player is the player that performed the move
     # that resulted in the v value.
     def backpropagate(self, node, v, player):
-
+        print(self.root_node)
         # if the actor performing the action with result v is the same as the current node
         # then we increase the value for the node by v
         if node.player == player:
@@ -101,7 +103,8 @@ class Node:
 class MCTS:
     def __init__(self, root_state, iterations):
         # defining the root node of the tree
-        self.root_node = Node(1, root_state, None, True)
+        self.root_node = Node(1, root_state, None, True, None)
+        self.root_node.root_node = self.root_node
         # number of MCTS iterations left, each iteration is one search
         self.iterations_left = iterations
         self.exploration_constant = sqrt(2)
