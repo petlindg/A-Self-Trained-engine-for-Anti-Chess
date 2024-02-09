@@ -8,9 +8,15 @@ import random
 def possible_moves(state):
     # TESTING VALUES
     p1 = random.random()
-    p2 = (1-p1)
+    p2 = random.random()
+    p3 = random.random()
+    sum = p1+p2+p3
+    p1 = p1/sum
+    p2 = p2/sum
+    p3 = p3/sum
+
     v = random.random()
-    return [('left', p1), ('right', p2)], v
+    return [('left', p1),('middle', p2) , ('right', p3)], v
 
 
 def ucb(node, c):
