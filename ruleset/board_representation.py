@@ -112,3 +112,34 @@ class Chessboard:
                            [0,0,0,0,0,0,0,0],
                            [0,0,0,0,0,0,0,0],
                            [0,0,0,0,0,0,0,0]]
+        
+        self.white_to_move = True
+
+    def get_player_to_move(self):
+        '''This method '''
+        if self.white_to_move:
+            return 'White'
+        else:
+            return 'Black'
+    
+    def update_player_to_move(self):
+        if self.white_to_move:
+            self.white_to_move = False       
+        else:
+            self.white_to_move = True
+    
+    def make_move(self, move):
+
+        pass
+
+b = Chessboard()
+
+b.get_player_to_move()
+b.update_player_to_move()
+b.get_player_to_move()
+b.update_player_to_move()
+b.get_player_to_move()
+b.update_player_to_move()
+b.get_player_to_move()
+
+
