@@ -22,6 +22,28 @@ RANK_F_BB = 0b0000010000000100000001000000010000000100000001000000010000000100
 RANK_G_BB = 0b0000001000000010000000100000001000000010000000100000001000000010
 RANK_H_BB = 0b0000000100000001000000010000000100000001000000010000000100000001
 
+class Color(enum):
+    WHITE = 0
+    BLACK = 1
+
+class Piece(enum):
+    PAWN   = 0
+    KNIGHT = 1
+    BISHOP = 2
+    ROOK   = 3
+    QUEEN  = 4
+    KING   = 5
+
+class Move():
+    src_index      : np.uint8
+    dst_index      : np.uint8
+    promotion_type : np.Piece
+
+    def __init__(self, src_index:np.uint8, dst_index:np.uint8, promotion_type):
+        self.src_index = src_index
+        self.dst_index = dst_index
+        self.promotion_type = promotion_type
+
 class Chessboard():
     # white pieces
     white_pawns    : np.uint64
@@ -39,6 +61,8 @@ class Chessboard():
     black_queens   : np.uint64
     black_kings    : np.uint64
     black_combined : np.uint64
+    # other logic
+    player_to_move : Color
 
     # init empty board
     def __init__(self):
@@ -62,8 +86,23 @@ class Chessboard():
         self.bitboards = np.zeros((2, 6), dtype=np.uint64)
         
         self.white_to_move = True
+
+    def get_moves_king(self, bb:np.uint64, bb_color_combined):
+        north_west = (bb << 9) & ~RANK_H_BB
+        north      = bb << 8
+        north_east = (bb << 7) & ~RANK_A_BB
+        west       = (bb << 1) & ~RANK_H_BB
+        east       = (bb >> 1) & ~RANK_A_BB
+        south_west = (bb >> 7) & ~RANK_H_BB
+        south      = bb >> 8
+        south_east = (bb >> 9) & ~RANK_A_BB
+
+        move_bb = north_west | north | north_east | west | east | south_west | south | south_east
+        move_bb &= ~bb_color_combined
+        return move_bb
+
     # init standard chess board
-    def initStandardBoard(self):
+    def init_board_standard(self):
 
         # white pieces
         self.white_pawns    = 0b1111111100000000
@@ -92,8 +131,7 @@ class Chessboard():
         self.bitboards[1, 3] = self.black_rooks
         self.bitboards[1, 4] = self.black_queens
         self.bitboards[1, 5] = self.black_kings
-
-    def initTestBoard1(self):
+    def init_board_test_1(self):
         # white pieces
         self.white_rooks    = 0b10000000
         self.white_kings    = 0b1100000001000000
@@ -113,8 +151,7 @@ class Chessboard():
         self.bitboards[1, 3] = self.black_rooks
         self.bitboards[1, 4] = self.black_queens
         self.bitboards[1, 5] = self.black_kings
-
-    def initTestBoard2(self):
+    def init_board_test_2(self):
         # white pieces
         self.white_rooks    = 0b0001000000000000
         self.white_kings    = 0b001110000000000000000000
@@ -134,8 +171,7 @@ class Chessboard():
         self.bitboards[1, 3] = self.black_rooks
         self.bitboards[1, 4] = self.black_queens
         self.bitboards[1, 5] = self.black_kings
-
-    def initTestBoard3(self):
+    def init_board_test_3(self):
         # white pieces
         self.white_rooks    = 0b000100000000000000000000
         self.white_kings    = 0b00111000000000000000000000000000
@@ -155,8 +191,7 @@ class Chessboard():
         self.bitboards[1, 3] = self.black_rooks
         self.bitboards[1, 4] = self.black_queens
         self.bitboards[1, 5] = self.black_kings
-
-    def initTestBoard4(self):
+    def init_board_test_4(self):
         # white pieces
         self.white_rooks    = 0b1
         # black pieces
@@ -174,61 +209,3 @@ class Chessboard():
         self.bitboards[1, 3] = self.black_rooks
         self.bitboards[1, 4] = self.black_queens
         self.bitboards[1, 5] = self.black_kings
-
-    def get_moves_king(self, bb:np.uint64, bb_color_combined):
-        north_west = (bb << 9) & ~RANK_H_BB
-        north      = bb << 8
-        north_east = (bb << 7) & ~RANK_A_BB
-        west       = (bb << 1) & ~RANK_H_BB
-        east       = (bb >> 1) & ~RANK_A_BB
-        south_west = (bb >> 7) & ~RANK_H_BB
-        south      = bb >> 8
-        south_east = (bb >> 9) & ~RANK_A_BB
-
-        move_bb = north_west | north | north_east | west | east | south_west | south | south_east
-        move_bb &= ~bb_color_combined
-        return move_bb
-
-
-    def get_player_to_move(self):
-        '''This method '''
-        if self.white_to_move:
-            return 'White'
-        else:
-            return 'Black'
-        
-    def update_player_to_move(self):
-        if self.white_to_move:
-            self.white_to_move = False       
-        else:
-            self.white_to_move = True
-    
-    def make_move(self, move):
-
-        pass
-
-
-class Move():
-    src_index:np.uint8
-    dst_index:np.uint8
-
-    def __init__(self, src_index:np.uint8, dst_index:np.uint8, promotion_type):
-        self.src_index = src_index
-        self.dst_index = dst_index
-        self.promotion_type = promotion_type
-
-
-class Chesspiece:
-    '''
-        Superclass for chesspieces in general, containing attributes that every chess piece has.
-        It also contains getter methods that help accessing data about a given piece.
-    '''
-    def __init__(self, color, position):
-        self.color = color
-        self.position = position
-
-    def get_color(self):
-        return self.color
-    
-    def get_position(self):
-        return self.position
