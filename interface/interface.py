@@ -18,16 +18,16 @@ from tkinter import *
 from typing import List
 import numpy as np
 import sys
-sys.path.insert(0, 'D:\gits\A-Self-Trained-engine-for-Anti-Chess')      # need to define path locally until we merge modules properly
-from ruleset.board_representation import Chessboard as cb
+sys.path.insert(0, '/home/monk/gits/A-Self-Trained-engine-for-Anti-Chess')      # need to define path locally until we merge modules properly
+from ruleset.chess import Chessboard as cb
 
 # macro definitions
-WINDOW_SIZE     = 560     
-ASSET_PATH:str  = "interface/assets/"
-WHITE           = "#FFFFFF"     # white
-WHITE_SELECTED  = "#C0C0C0"     # darker white
-BLACK           = "#808080"     # gray
-BLACK_SELECTED  = "#505050"     # darker gray
+WINDOW_SIZE    = 560     
+ASSET_PATH     = "interface/assets/"
+WHITE          = "#FFFFFF"     # white
+WHITE_SELECTED = "#C0C0C0"     # darker white
+BLACK          = "#808080"     # gray
+BLACK_SELECTED = "#505050"     # darker gray
 
 class SquareGUI(Canvas):
     # visual properties
@@ -79,35 +79,32 @@ class SquareGUI(Canvas):
         self.config(bg=self.bg)
     # gets the rendered file as a PhotoImage object
     def _getAsset(self):
-        match self.pieceColor:
-            case "white":
-                match self.pieceType:
-                    case "pawn":
-                        return PhotoImage(file=ASSET_PATH+"w_pawn.png")
-                    case "knight":
-                        return PhotoImage(file=ASSET_PATH+"w_knight.png")
-                    case "bishop":
-                        return PhotoImage(file=ASSET_PATH+"w_bishop.png")
-                    case "rook":
-                        return PhotoImage(file=ASSET_PATH+"w_rook.png")
-                    case "queen":
-                        return PhotoImage(file=ASSET_PATH+"w_queen.png")
-                    case "king":
-                        return PhotoImage(file=ASSET_PATH+"w_king.png")
-            case "black":
-                match self.pieceType:
-                    case "pawn":
-                        return PhotoImage(file=ASSET_PATH+"b_pawn.png")
-                    case "knight":
-                        return PhotoImage(file=ASSET_PATH+"b_knight.png")
-                    case "bishop":
-                        return PhotoImage(file=ASSET_PATH+"b_bishop.png")
-                    case "rook":
-                        return PhotoImage(file=ASSET_PATH+"b_rook.png")
-                    case "queen":
-                        return PhotoImage(file=ASSET_PATH+"b_queen.png")
-                    case "king":
-                        return PhotoImage(file=ASSET_PATH+"b_king.png")
+        if self.pieceColor == "white":
+            if self.pieceType == "pawn":
+                return PhotoImage(file=ASSET_PATH+"w_pawn.png")
+            if self.pieceType == "knight":
+                return PhotoImage(file=ASSET_PATH+"w_knight.png")
+            if self.pieceType == "bishop":
+                return PhotoImage(file=ASSET_PATH+"w_bishop.png")
+            if self.pieceType == "rook":
+                return PhotoImage(file=ASSET_PATH+"w_rook.png")
+            if self.pieceType == "queen":
+                return PhotoImage(file=ASSET_PATH+"w_queen.png")
+            if self.pieceType == "king":
+                return PhotoImage(file=ASSET_PATH+"w_king.png")
+        elif self.pieceColor == "black":
+            if self.pieceType == "pawn":
+                return PhotoImage(file=ASSET_PATH+"b_pawn.png")
+            if self.pieceType == "knight":
+                return PhotoImage(file=ASSET_PATH+"b_knight.png")
+            if self.pieceType == "bishop":
+                return PhotoImage(file=ASSET_PATH+"b_bishop.png")
+            if self.pieceType == "rook":
+                return PhotoImage(file=ASSET_PATH+"b_rook.png")
+            if self.pieceType == "queen":
+                return PhotoImage(file=ASSET_PATH+"b_queen.png")
+            if self.pieceType == "king":
+                return PhotoImage(file=ASSET_PATH+"b_king.png")
 
 
 class ChessboardGUI(Tk):
@@ -179,7 +176,7 @@ class ChessboardGUI(Tk):
             if j<0:
                 j=7
                 i-=1
-            bitboard = np.right_shift(bitboard, np.uint64(1))
+            bitboard >>= np.uint8(1)
     # initializes default chess starting state, temporary until ruleset and translation from ruleset is complete
     def fillBoard(self):
         #init back-rank black

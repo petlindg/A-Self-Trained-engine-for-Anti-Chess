@@ -177,12 +177,12 @@ class Chessboard():
 
     def get_moves_king(self, bb:np.uint64, bb_color_combined):
         north_west = (bb << 9) & ~RANK_H_BB
-        north = bb << 8
+        north      = bb << 8
         north_east = (bb << 7) & ~RANK_A_BB
-        west = (bb << 1) & ~RANK_H_BB
-        east = (bb >> 1) & ~RANK_A_BB
+        west       = (bb << 1) & ~RANK_H_BB
+        east       = (bb >> 1) & ~RANK_A_BB
         south_west = (bb >> 7) & ~RANK_H_BB
-        south = bb >> 8
+        south      = bb >> 8
         south_east = (bb >> 9) & ~RANK_A_BB
 
         move_bb = north_west | north | north_east | west | east | south_west | south | south_east
@@ -216,3 +216,19 @@ class Move():
         self.src_index = src_index
         self.dst_index = dst_index
         self.promotion_type = promotion_type
+
+
+class Chesspiece:
+    '''
+        Superclass for chesspieces in general, containing attributes that every chess piece has.
+        It also contains getter methods that help accessing data about a given piece.
+    '''
+    def __init__(self, color, position):
+        self.color = color
+        self.position = position
+
+    def get_color(self):
+        return self.color
+    
+    def get_position(self):
+        return self.position
