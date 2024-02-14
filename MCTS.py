@@ -18,12 +18,8 @@ def possible_moves(state):
     v = random.random()
     return [('left', p1),('middle', p2) , ('right', p3)], v
 
-
 def ucb(node, c):
-    try:
-        return node.value/node.visits + node.p * c * sqrt(node.parent.visits)/(1+node.visits)
-    except ZeroDivisionError: # if node.visits = 0 ignore the first half and simplify second half of the formula
-        return node.p * c * sqrt(node.parent.visits)
+    return (node.p * c * sqrt(node.parent.visits)/(1+node.visits) + (node.value/node.visits if node.visits > 0 else 0))
 
 # class defining the contents of a singular node
 class Node:
@@ -46,7 +42,7 @@ class Node:
     # when you try to print a particular node
     def __str__(self, level=0):
         string_buffer = []
-        self.print_tree(string_buffer, "", "", None)
+        self.print_tree(string_buffer, "", "")
         return "".join(string_buffer)
 
     # method that can be called on a node which will print it with a given depth
@@ -60,8 +56,8 @@ class Node:
     # this buffer will then be used to print the entire tree in the terminal
     # depth parameter determines how deep the tree will print from the node, if depth=None then
     # the all children will be printed
-    def print_tree(self, string_buffer, prefix, child_prefix, depth):
-        if depth is None:
+    def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
+        if depth is None or depth > 0:
             string_buffer.append(prefix)
             p = round(self.p, 2)
             v = round(self.value, 2)
@@ -71,28 +67,12 @@ class Node:
             info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V})'
             string_buffer.append(info_text)
             string_buffer.append('\n')
+
             for i in range(0, len(self.children)):
                 if i == len(self.children)-1:
-                    self.children[i].print_tree(string_buffer, child_prefix + "└── ", child_prefix + "    ", None)
+                    self.children[i].print_tree(string_buffer, child_prefix + "└── ", child_prefix + "    ", (depth - 1 if depth else None))
                 else:
-                    self.children[i].print_tree(string_buffer, child_prefix + "├── ", child_prefix + "│   ", None)
-        elif depth > 0:
-            string_buffer.append(prefix)
-            p = round(self.p, 2)
-            v = round(self.value, 2)
-            V = round(self.v, 2)
-            visits = self.visits
-
-            info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V})'
-            string_buffer.append(info_text)
-            string_buffer.append('\n')
-            for i in range(0, len(self.children)):
-                if i == len(self.children) - 1:
-                    self.children[i].print_tree(string_buffer, child_prefix + "└── ", child_prefix + "    ", depth-1)
-                else:
-                    self.children[i].print_tree(string_buffer, child_prefix + "├── ", child_prefix + "│   ", depth-1)
-
-
+                    self.children[i].print_tree(string_buffer, child_prefix + "├── ", child_prefix + "│   ", (depth - 1 if depth else None))
 
 
     # expand method which does both the expansion and the backpropagation, using backpropagate
@@ -115,7 +95,6 @@ class Node:
     # v is the result value from the model and player is the player that performed the move
     # that resulted in the v value.
     def backpropagate(self, node, v, player):
-        #print(self.root_node)
         # if the actor performing the action with result v is the same as the current node
         # then we increase the value for the node by v
         if node.player == player:
@@ -138,7 +117,7 @@ class MCTS:
         self.root_node = Node(1, root_state, None, True, None)
         self.root_node.root_node = self.root_node
         # number of MCTS iterations left, each iteration is one search
-        self.iterations_left = iterations
+        self.iterations = iterations
         self.exploration_constant = sqrt(2)
 
     # method to perform a single search 'iteration'
@@ -148,25 +127,20 @@ class MCTS:
     def search(self):
         leaf_node = self.selection(self.root_node)
         leaf_node.expand()
-        #print(self.root_node)
 
     # method that performs the selection process
     # goes down the tree based off of UCB until it hits a leaf node.
     def selection(self, current_node):
         while not current_node.leaf:
-            ucb_set = {}
-            for child in current_node.children:
-                ucb_set[child] = ucb(child, self.exploration_constant)
-            current_node = max(ucb_set, key=ucb_set.get)
+            current_node = max(current_node.children, key=lambda node: ucb(node, self.exploration_constant))
+
         return current_node
 
     # run method that will continually perform tree searches
     # until the iterations runs out
     def run(self):
-        while self.iterations_left > 0:
+        for i in range(0, self.iterations):
             self.search()
-            self.iterations_left -= 1
-
 
 def main():
     #tree = MCTS('none', 11)
