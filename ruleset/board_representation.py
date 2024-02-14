@@ -1,7 +1,46 @@
 import numpy as np
+import enum
 
-class Chessboard:
+# ranks used for masking
+# ranks by number
+RANK_8_BB = 0b1111111100000000000000000000000000000000000000000000000000000000
+RANK_7_BB = 0b11111111000000000000000000000000000000000000000000000000
+RANK_6_BB = 0b111111110000000000000000000000000000000000000000
+RANK_5_BB = 0b1111111100000000000000000000000000000000
+RANK_4_BB = 0b11111111000000000000000000000000
+RANK_3_BB = 0b111111110000000000000000
+RANK_2_BB = 0b1111111100000000
+RANK_1_BB = 0b11111111
 
+# ranks by letter
+RANK_A_BB = 0b1000000010000000100000001000000010000000100000001000000010000000
+RANK_B_BB = 0b0100000001000000010000000100000001000000010000000100000001000000
+RANK_C_BB = 0b0010000000100000001000000010000000100000001000000010000000100000
+RANK_D_BB = 0b0001000000010000000100000001000000010000000100000001000000010000
+RANK_E_BB = 0b0000100000001000000010000000100000001000000010000000100000001000
+RANK_F_BB = 0b0000010000000100000001000000010000000100000001000000010000000100
+RANK_G_BB = 0b0000001000000010000000100000001000000010000000100000001000000010
+RANK_H_BB = 0b0000000100000001000000010000000100000001000000010000000100000001
+
+class Chessboard():
+    # white pieces
+    white_pawns    : np.uint64
+    white_knights  : np.uint64
+    white_bishops  : np.uint64
+    white_rooks    : np.uint64
+    white_queens   : np.uint64
+    white_kings    : np.uint64
+    white_combined : np.uint64
+    # black pieces
+    black_pawns    : np.uint64
+    black_knights  : np.uint64
+    black_bishops  : np.uint64
+    black_rooks    : np.uint64
+    black_queens   : np.uint64
+    black_kings    : np.uint64
+    black_combined : np.uint64
+
+    # init empty board
     def __init__(self):
         # white pieces
         self.white_pawns = np.uint64(0)
@@ -10,6 +49,7 @@ class Chessboard:
         self.white_rooks = np.uint64(0)
         self.white_queens = np.uint64(0)
         self.white_kings = np.uint64(0)
+        self.white_combined = np.uint64(0)
         # black pieces
         self.black_pawns = np.uint64(0)
         self.black_knights = np.uint64(0)
@@ -17,10 +57,12 @@ class Chessboard:
         self.black_rooks = np.uint64(0)
         self.black_queens = np.uint64(0)
         self.black_kings = np.uint64(0)
-        
+        self.black_combined = np.uint64(0)
+
         self.bitboards = np.zeros((2, 6), dtype=np.uint64)
         
         self.white_to_move = True
+    # init standard chess board
     def initStandardBoard(self):
 
         # white pieces
@@ -133,13 +175,28 @@ class Chessboard:
         self.bitboards[1, 4] = self.black_queens
         self.bitboards[1, 5] = self.black_kings
 
+    def get_moves_king(self, bb:np.uint64, bb_color_combined):
+        north_west = (bb << 9) & ~RANK_H_BB
+        north = bb << 8
+        north_east = (bb << 7) & ~RANK_A_BB
+        west = (bb << 1) & ~RANK_H_BB
+        east = (bb >> 1) & ~RANK_A_BB
+        south_west = (bb >> 7) & ~RANK_H_BB
+        south = bb >> 8
+        south_east = (bb >> 9) & ~RANK_A_BB
+
+        move_bb = north_west | north | north_east | west | east | south_west | south | south_east
+        move_bb &= ~bb_color_combined
+        return move_bb
+
+
     def get_player_to_move(self):
         '''This method '''
         if self.white_to_move:
             return 'White'
         else:
             return 'Black'
-    
+        
     def update_player_to_move(self):
         if self.white_to_move:
             self.white_to_move = False       
@@ -149,3 +206,13 @@ class Chessboard:
     def make_move(self, move):
 
         pass
+
+
+class Move():
+    src_index:np.uint8
+    dst_index:np.uint8
+
+    def __init__(self, src_index:np.uint8, dst_index:np.uint8, promotion_type):
+        self.src_index = src_index
+        self.dst_index = dst_index
+        self.promotion_type = promotion_type

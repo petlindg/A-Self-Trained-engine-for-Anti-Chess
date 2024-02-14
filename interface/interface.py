@@ -12,13 +12,14 @@
 # add special case castling
 # add special case en-passante
 # add special case promotion
+# fix when selecting same colored piece that it doesn't take and instead reselects
 
 from tkinter import *
 from typing import List
 import numpy as np
 import sys
-sys.path.insert(0, 'PATH')      # need to define path locally until we merge modules properly
-import ruleset.board_representation as b
+sys.path.insert(0, 'D:\gits\A-Self-Trained-engine-for-Anti-Chess')      # need to define path locally until we merge modules properly
+from ruleset.board_representation import Chessboard as cb
 
 # macro definitions
 WINDOW_SIZE     = 560     
@@ -172,7 +173,7 @@ class ChessboardGUI(Tk):
         i = 7
         j = 7
         while bitboard:
-            if np.bitwise_and(bitboard, np.uint64(1)):
+            if bitboard & np.uint64(1):
                 self.board[i][j].setPiece(color, pieceType)
             j-=1
             if j<0:
@@ -205,8 +206,8 @@ class ChessboardGUI(Tk):
         self.board[7][7].setPiece("white", "rook")
 
 
-a = b.Chessboard()
-a.initTestBoard4()
+a = cb()
+a.initStandardBoard()
 
 board = ChessboardGUI(WINDOW_SIZE)
 board.initBoard(a.bitboards)
