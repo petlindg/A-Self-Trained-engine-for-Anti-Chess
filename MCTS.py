@@ -55,16 +55,20 @@ class Node:
     # method that will iteratively go through the tree and add on objects to the string_buffer
     # this buffer will then be used to print the entire tree in the terminal
     # depth parameter determines how deep the tree will print from the node, if depth=None then
-    # the all children will be printed
+    # all children will be printed
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
         if depth is None or depth > 0:
             string_buffer.append(prefix)
             p = round(self.p, 2)
             v = round(self.value, 2)
             V = round(self.v, 2)
+            try:
+                U = round(ucb(self, sqrt(2)), 2)
+            except AttributeError:
+                U = "-"
             visits = self.visits
 
-            info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V})'
+            info_text = f'(U:{U}|p:{p}|v:{v}|n:{visits}|V:{V})'
             string_buffer.append(info_text)
             string_buffer.append('\n')
 
@@ -148,7 +152,7 @@ def main():
     performance()
 
 def performance():
-    iterations = 100
+    iterations = 10
     start = time.time()
     tree = MCTS('none', iterations)
     tree.run()
