@@ -98,7 +98,7 @@ class NeuralNetwork:
         policy_head.add(BatchNormalization(axis=1))
         policy_head.add(Activation('relu'))
         policy_head.add(Flatten())
-        policy_head.add(Dense(self.output_shape[0], activation='sigmoid', name='policy_output'))
+        policy_head.add(Dense(self.output_shape[0], activation='softmax', name='policy_output'))
         
         return policy_head
     
@@ -145,18 +145,18 @@ class NeuralNetwork:
                 'policy_head': 'categorical_crossentropy', #measures the disparity between the actual distribution of the labels and the predicted probabilities. 
                 'value_head': 'mean_squared_error'         #uses the gradients of the loss function to update the model's weights in a way that minimizes the loss
             },
-            optimizer=Adam(learning_rate=LEARNING_RATE),
-            loss_weights={
-                'policy_head': 0.5,  # Equal weighting for policy and value losses
-                'value_head': 0.5
-            }
+            #optimizer=Adam(learning_rate=LEARNING_RATE),
+            #loss_weights={
+            #    'policy_head': 0.5,  # Equal weighting for policy and value losses
+            #    'value_head': 0.5
+            #}
         )
 
         return model
 
 if __name__ == "__main__":
 
-     # create the model
+    # create the model
     model_config = NeuralNetwork(input_shape = INPUT_SHAPE, output_shape = OUTPUT_SHAPE)
     model = model_config.build_nn()
 
