@@ -15,6 +15,10 @@
 
 from tkinter import *
 from typing import List
+import numpy as np
+import sys
+sys.path.insert(0, 'PATH')      # need to define path locally until we merge modules properly
+import ruleset.board_representation as b
 
 # macro definitions
 WINDOW_SIZE     = 560     
@@ -149,6 +153,32 @@ class ChessboardGUI(Tk):
     def deselectAll(self):
         self.pieceSelected = False
         [[self.board[i][j].deselect() for i in range(8)] for j in range(8)]
+    def initBoard(self, bitboards):
+        # init white pieces
+        self._initBoard_byType(bitboards[0, 0], "white", "pawn")
+        self._initBoard_byType(bitboards[0, 1], "white", "knight")
+        self._initBoard_byType(bitboards[0, 2], "white", "bishop")
+        self._initBoard_byType(bitboards[0, 3], "white", "rook")
+        self._initBoard_byType(bitboards[0, 4], "white", "queen")
+        self._initBoard_byType(bitboards[0, 5], "white", "king")
+        # init black pieces
+        self._initBoard_byType(bitboards[1, 0], "black", "pawn")
+        self._initBoard_byType(bitboards[1, 1], "black", "knight")
+        self._initBoard_byType(bitboards[1, 2], "black", "bishop")
+        self._initBoard_byType(bitboards[1, 3], "black", "rook")
+        self._initBoard_byType(bitboards[1, 4], "black", "queen")
+        self._initBoard_byType(bitboards[1, 5], "black", "king")
+    def _initBoard_byType(self, bitboard:np.uint64, color:str, pieceType:str):
+        i = 7
+        j = 7
+        while bitboard:
+            if np.bitwise_and(bitboard, np.uint64(1)):
+                self.board[i][j].setPiece(color, pieceType)
+            j-=1
+            if j<0:
+                j=7
+                i-=1
+            bitboard = np.right_shift(bitboard, np.uint64(1))
     # initializes default chess starting state, temporary until ruleset and translation from ruleset is complete
     def fillBoard(self):
         #init back-rank black
@@ -175,7 +205,10 @@ class ChessboardGUI(Tk):
         self.board[7][7].setPiece("white", "rook")
 
 
+a = b.Chessboard()
+a.initTestBoard4()
+
 board = ChessboardGUI(WINDOW_SIZE)
-board.fillBoard()
+board.initBoard(a.bitboards)
 
 board.mainloop()
