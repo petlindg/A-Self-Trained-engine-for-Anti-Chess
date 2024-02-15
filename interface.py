@@ -17,8 +17,6 @@
 from tkinter import *
 from typing import List
 import numpy as np
-import sys
-sys.path.insert(0, 'D:/gits/A-Self-Trained-engine-for-Anti-Chess')      # need to define path locally until we merge modules properly
 from chess import Chessboard as cb
 
 # macro definitions
@@ -178,35 +176,20 @@ class ChessboardGUI(Tk):
                 i-=1
             bitboard >>= np.uint8(1)
     # initializes default chess starting state, temporary until ruleset and translation from ruleset is complete
-    def fill_board(self):
-        #init back-rank black
-        self.board[0][0].set_piece("black", "rook")
-        self.board[0][1].set_piece("black", "knight")
-        self.board[0][2].set_piece("black", "bishop")
-        self.board[0][3].set_piece("black", "queen")
-        self.board[0][4].set_piece("black", "king")
-        self.board[0][5].set_piece("black", "bishop")
-        self.board[0][6].set_piece("black", "knight")
-        self.board[0][7].set_piece("black", "rook")
-        #init black pawns
-        [self.board[1][i].set_piece("black", "pawn") for i in range(8)]
-        #init white pawns
-        [self.board[6][i].set_piece("white", "pawn") for i in range(8)]
-        #init back-rank white
-        self.board[7][0].set_piece("white", "rook")
-        self.board[7][1].set_piece("white", "knight")
-        self.board[7][2].set_piece("white", "bishop")
-        self.board[7][3].set_piece("white", "queen")
-        self.board[7][4].set_piece("white", "king")
-        self.board[7][5].set_piece("white", "bishop")
-        self.board[7][6].set_piece("white", "knight")
-        self.board[7][7].set_piece("white", "rook")
 
 
-a = cb()
-a.init_board_standard()
+class Game():
+    def __init__(self):
+        self.state = cb()
+        self.GUI   = ChessboardGUI(WINDOW_SIZE)
 
-board = ChessboardGUI(WINDOW_SIZE)
-board.init_board(a.bitboards)
+def main():
+    game = Game()
+    game.state.init_board_test_5()
 
-board.mainloop()
+    game.GUI.init_board(game.state.bitboards)
+
+    for move in game.state.get_moves():
+        print("src: " + str(move.src_index) + ", dst: " + str(move.dst_index))
+
+    game.GUI.mainloop()
