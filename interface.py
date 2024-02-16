@@ -175,8 +175,6 @@ class ChessboardGUI(Tk):
                 j=7
                 i-=1
             bitboard >>= np.uint8(1)
-    # initializes default chess starting state, temporary until ruleset and translation from ruleset is complete
-
 
 class Game():
     def __init__(self):
