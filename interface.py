@@ -193,3 +193,5 @@ def main():
         print("src: " + str(move.src_index) + ", dst: " + str(move.dst_index))
 
     game.GUI.mainloop()
+
+main()

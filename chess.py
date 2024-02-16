@@ -1,5 +1,5 @@
 import numpy as np
-from enum import Enum
+from enum import IntEnum
 from typing import List
 
 # ranks used for masking
@@ -27,11 +27,11 @@ RANK_H_BB = np.uint64(0b00000001000000010000000100000001000000010000000100000001
 
 rank_l_list: list[np.uint64] = [RANK_A_BB, RANK_B_BB, RANK_C_BB, RANK_D_BB, RANK_E_BB, RANK_F_BB, RANK_G_BB, RANK_H_BB]
 
-class Color(Enum):
+class Color(IntEnum):
     WHITE = 0
     BLACK = 1
 
-class Piece(Enum):
+class Piece(IntEnum):
     PAWN   = 0
     KNIGHT = 1
     BISHOP = 2
@@ -56,21 +56,22 @@ class Chessboard():
     # The second index represents piece-type.
     # 0 = pawns, 1 = knights, 2 = bishops, 3 = rooks, 4 = queens, 5 = kings
     bitboards : np.ndarray
-    combined_white : np.uint64
-    combined_black : np.uint64
+    # index 0 = bitboard of combined white pieces, index 1 = bitboard of combined black pieces
+    combined  : np.ndarray
     # other logic
     player_to_move : Color
 
     # init empty board
     def __init__(self):
         self.bitboards = np.zeros((2, 6), dtype=np.uint64)
-        self.combined_white = np.uint64(0)
-        self.combined_black = np.uint64(0)
-        self.white_to_move = True
+        self.combined  = np.zeros(2, dtype=np.uint64)
+        self.player_to_move = Color.WHITE
 
     def get_moves(self):
+
+        self.combine_bb()
+
         moves:List[Move] = []
-        tmp = self.get_moves_pawns()
         moves += self.get_moves_pawns()
         #moves.append(self.get_moves_knights())
         #moves.append(self.get_moves_bishops())
@@ -90,103 +91,118 @@ class Chessboard():
             dst_bb >>= bit
         return moves
 
+    def combine_bb(self):
+        index = 0
+        for player in self.bitboards:
+            combined = np.uint64(0)
+            for bb in player:
+                combined = np.bitwise_or(combined, bb)
+            self.combined[index] = combined
+            index += 1
+
     def get_moves_pawns(self):
-        if self.white_to_move:
-            return self.get_moves_pawns_white()
-        else:
+        if self.player_to_move:
             return self.get_moves_pawns_black()
+        else:
+            return self.get_moves_pawns_white()
 
     def get_moves_pawns_white(self):
-        bit = np.uint8(1)
         moves:List[Move] = []
+        bit = np.uint8(1)
         index = np.uint8(0)
-        bb:np.uint64 = self.bitboards[0, 0]
+        bb = self.bitboards[0, 0]
         while bb:
-            if bb & bit:
+            if np.bitwise_and(bb, bit):
                 moves += self.get_moves_pawns_white_by_square(index)
             index += bit
-            bb >>= bit
+            bb = np.right_shift(bb, bit)
         return moves
-    
+
     def get_moves_pawns_white_by_square(self, src_index:np.uint8):
         bb_moves = np.uint64(0)
         bb_takes = np.uint64(0)
 
-        bb_moves |= src_index << np.uint8(8)
+        src_bb = np.left_shift(np.uint64(1), src_index)
+
+        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.left_shift(src_bb, np.uint8(9)), np.bitwise_not(RANK_H_BB)))
+        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.left_shift(src_bb, np.uint8(7)), np.bitwise_not(RANK_A_BB)))
+        bb_takes = np.bitwise_and(bb_takes, self.combined[1])
+
+        # only need to return take moves
+        if bb_takes:
+            return self.get_moves_by_bb(src_index, bb_takes)
+        
+        bb_moves = np.bitwise_or(bb_moves, np.left_shift(src_bb, np.uint8(8)))
         if (8 <= src_index < 16):
-            bb_moves |= src_index << np.uint8(16)
-        bb_moves &= ~self.combined_white
+            bb_moves = np.bitwise_or(bb_moves, np.left_shift(src_bb, np.uint8(16)))
+        bb_moves = np.bitwise_and(bb_moves, np.bitwise_not(self.combined[0]))
 
-        bb_takes |= (src_index << np.uint8(9)) & ~RANK_H_BB
-        bb_takes |= (src_index << np.uint8(7)) & ~RANK_A_BB
-        bb_takes &= self.combined_black
-
-        bb = bb_moves | bb_takes
+        bb = np.bitwise_or(bb_moves, bb_takes)
 
         return self.get_moves_by_bb(src_index, bb)
 
     def get_moves_pawns_black(self):
         moves:List[Move] = []
-        index:np.uint8 = 0
-        bb:np.uint64 = self.black_pawns
+        bit = np.uint8(1)
+        index = np.uint8(0)
+        bb = self.bitboards[1,0]
         while bb:
-            if bb & 1:
+            if np.bitwise_and(bb, bit):
                 moves += self.get_moves_pawns_black_by_square(index)
-            index+=1
-            bb >>=1
+            index += 1
+            bb = np.right_shift(bb, bit)
         return moves
 
     def get_moves_pawns_black_by_square(self, src_index:np.uint8):
-        bb_moves:np.uint64 = 0
-        bb_takes:np.uint64 = 0
+        bb_moves = np.uint64(0)
+        bb_takes = np.uint64(0)
 
-        bb_moves |= src_index >> 8
+        src_bb = np.left_shift(np.uint64(1), src_index)
+
+        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.right_shift(src_bb, np.uint8(7)), np.bitwise_not(RANK_H_BB)))
+        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.right_shift(src_bb, np.uint8(9)), np.bitwise_not(RANK_A_BB)))
+        bb_takes = np.bitwise_and(bb_takes, self.combined[0])
+
+        # only need to return take moves
+        if bb_takes:
+            return self.get_moves_by_bb(src_index, bb_takes)
+
+        bb_moves = np.bitwise_or(bb_moves, np.right_shift(src_bb, np.uint8(8)))
         if (48 <= src_index < 56):
-            bb_moves |= src_index >> 16
-        bb_moves &= ~self.black_combined
+            bb_moves = np.bitwise_or(bb_moves, np.right_shift(src_bb, np.uint8(16)))
+        bb_moves = np.bitwise_and(bb_moves, np.bitwise_not(self.combined[1]))
 
-        bb_takes |= (src_index >> 7) & ~RANK_H_BB
-        bb_takes |= (src_index >> 9) & ~RANK_A_BB
-        bb_takes &= self.black_combined
-
-        bb = bb_moves | bb_takes
+        bb = np.bitwise_or(bb_moves, bb_takes)
 
         return self.get_moves_by_bb(src_index, bb)
 
     def get_moves_kings(self):
         moves:List[Move] = []
         index = np.uint8(0)
-        bb:np.uint64
         bit = np.uint8(1)
 
-        if self.white_to_move:
-            bb = self.bitboards[0,5]
-        else:
-            bb = self.bitboards[1,5]
+        bb = self.bitboards[self.player_to_move,5]
         
         while bb:
-            if bb & bit:
+            if np.bitwise_and(bb, bit):
                 moves += self.get_moves_kings_by_square(index)
             index += bit
-            bb >>= bit
+            bb = np.right_shift(bb, bit)
         return moves
 
     def get_moves_kings_by_square(self, src_index:np.uint8):
-        src_bb = np.uint64(1 << src_index)
+        src_bb = np.left_shift(np.uint64(1), src_index)
         dst_bb = np.uint64(0)
-        dst_bb |= (src_bb << np.uint8(9)) & ~RANK_H_BB
-        dst_bb |=  src_bb << np.uint8(8)
-        dst_bb |= (src_bb << np.uint8(7)) & ~RANK_A_BB
-        dst_bb |= (src_bb << np.uint8(1)) & ~RANK_H_BB
-        dst_bb |= (src_bb >> np.uint8(1)) & ~RANK_A_BB
-        dst_bb |= (src_bb >> np.uint8(7)) & ~RANK_H_BB
-        dst_bb |=  src_bb >> np.uint8(8)
-        dst_bb |= (src_bb >> np.uint8(9)) & ~RANK_A_BB
+        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and((np.left_shift( src_bb, np.uint8(9))), np.bitwise_not(RANK_H_BB)))
+        dst_bb = np.bitwise_or(dst_bb,                 np.left_shift( src_bb, np.uint8(8)))
+        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and((np.left_shift( src_bb, np.uint8(7))), np.bitwise_not(RANK_A_BB)))
+        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and((np.left_shift( src_bb, np.uint8(1))), np.bitwise_not(RANK_H_BB)))
+        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and((np.right_shift(src_bb, np.uint8(1))), np.bitwise_not(RANK_A_BB)))
+        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and((np.right_shift(src_bb, np.uint8(7))), np.bitwise_not(RANK_H_BB)))
+        dst_bb = np.bitwise_or(dst_bb,                 np.right_shift(src_bb, np.uint8(8)))
+        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and((np.right_shift(src_bb, np.uint8(9))), np.bitwise_not(RANK_A_BB)))
 
-        if self.white_to_move:
-            dst_bb &= ~self.combined_white
-        else:
-            dst_bb &= ~self.combined_black
+        dst_bb &= ~self.combined[self.player_to_move]
 
         return self.get_moves_by_bb(src_index, dst_bb)
 
@@ -300,7 +316,21 @@ class Chessboard():
         self.bitboards[1, 0] = np.uint64(0b11100000000000000000000000000000000000000000000000000000)
         self.bitboards[1, 5] = np.uint64(0b1110000000000000000000000000000000000000000000000000000000000000)
         for pt in self.bitboards[0, :]:
-            self.combined_white |= pt
+            self.combined[0] |= pt
+
+def print_bb(bb:np.uint64):
+    m = np.zeros((8,8), dtype=np.uint8)
+    index = np.uint8(0)
+    for i in range(8):
+        for j in range(8):
+            m[7-i, 7-j] = np.bitwise_and(bb, np.uint8(1))
+            index += 1
+    
+    for i in range(8):
+        for j in range(8):
+            print(str(m[i, j]) + " ", end="")
+        print()
+
 
 def main():
     chessboard = Chessboard()
