@@ -27,6 +27,39 @@ RANK_H_BB = np.uint64(0b00000001000000010000000100000001000000010000000100000001
 
 rank_l_list: list[np.uint64] = [RANK_A_BB, RANK_B_BB, RANK_C_BB, RANK_D_BB, RANK_E_BB, RANK_F_BB, RANK_G_BB, RANK_H_BB]
 
+KNIGHT_BB = np.zeros(64, dtype=np.uint64)
+KING_BB = np.zeros(64, dtype=np.uint64)
+
+def knight_bb_init(bbs):
+    src_bb = np.uint64(1)
+    for index in range(np.uint64(64)):
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.right_shift(src_bb, np.uint8(17)), np.bitwise_not(RANK_A_BB)))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.right_shift(src_bb, np.uint8(15)), np.bitwise_not(RANK_H_BB)))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.right_shift(src_bb, np.uint8(10)), np.bitwise_not(np.bitwise_or(RANK_A_BB, RANK_B_BB))))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.right_shift(src_bb, np.uint8(6)), np.bitwise_not(np.bitwise_or(RANK_G_BB, RANK_H_BB))))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.left_shift(src_bb, np.uint8(6)), np.bitwise_not(np.bitwise_or(RANK_A_BB, RANK_B_BB))))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.left_shift(src_bb, np.uint8(10)), np.bitwise_not(np.bitwise_or(RANK_G_BB, RANK_H_BB))))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.left_shift(src_bb, np.uint8(15)), np.bitwise_not(RANK_A_BB)))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.left_shift(src_bb, np.uint8(17)), np.bitwise_not(RANK_H_BB)))
+        src_bb = np.left_shift(src_bb, np.uint8(1))
+
+
+def king_bb_init(bbs):
+    src_bb = np.uint64(1)
+    for index in range(np.uint64(64)):
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.right_shift(src_bb, np.uint8(9)), np.bitwise_not(RANK_A_BB)))
+        bbs[index] = np.bitwise_or(bbs[index],                np.right_shift(src_bb, np.uint8(8)))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.right_shift(src_bb, np.uint8(7)), np.bitwise_not(RANK_H_BB)))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.right_shift(src_bb, np.uint8(1)), np.bitwise_not(RANK_A_BB)))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.left_shift(src_bb, np.uint8(1)), np.bitwise_not(RANK_H_BB)))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.left_shift(src_bb, np.uint8(7)), np.bitwise_not(RANK_A_BB)))
+        bbs[index] = np.bitwise_or(bbs[index],                np.left_shift(src_bb, np.uint8(8)))
+        bbs[index] = np.bitwise_or(bbs[index], np.bitwise_and(np.left_shift(src_bb, np.uint8(9)), np.bitwise_not(RANK_H_BB)))
+        src_bb = np.left_shift(src_bb, np.uint8(1))
+
+knight_bb_init(KNIGHT_BB)
+king_bb_init(KING_BB)
+
 class Color(IntEnum):
     WHITE = 0
     BLACK = 1
@@ -79,15 +112,10 @@ class Chessboard():
     def try_move(self, src_index, dst_index):
         move = Move(np.uint8(src_index), np.uint8(dst_index))
         moves = self.get_moves()
-        print("Attempted move:")
-        move.print()
-        print("Legal moves:")
         for m in moves:
-            m.print()
             if move.src_index == m.src_index and move.dst_index == m.dst_index:
                 self.move(move)
                 return True
-        print()
         return False
 
     def move(self, move:Move):
@@ -233,7 +261,7 @@ class Chessboard():
         index = np.uint8(0)
         bit = np.uint8(1)
 
-        bb = self.bitboards[self.player_to_move,5]
+        bb = self.bitboards[self.player_to_move, 5]
         
         while bb:
             if np.bitwise_and(bb, bit):
@@ -371,18 +399,20 @@ class Chessboard():
             self.combined[0] |= pt
 
 def print_bb(bb:np.uint64):
-    m = np.zeros((8,8), dtype=np.uint8)
-    index = np.uint8(0)
-    for i in range(8):
-        for j in range(8):
-            m[7-i, 7-j] = np.bitwise_and(bb, np.uint8(1))
-            index += 1
-    
-    for i in range(8):
-        for j in range(8):
-            print(str(m[i, j]) + " ", end="")
-        print()
+    mask_bb = np.uint64(pow(2, 63))
+    for i in range(64):
+        if not(i%8):
+            print()
+        if np.bitwise_and(bb, mask_bb):
+            print("1 ", end="")
+        else:
+            print(". ", end="")
+        mask_bb = np.right_shift(mask_bb, np.uint8(1))
+    print()
 
+for i in range(64):
+    print("i: " + str(i))
+    print_bb(KING_BB[i])
 
 def main():
     chessboard = Chessboard()
