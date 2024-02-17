@@ -9,10 +9,7 @@
 # make pieces dragable
 # implement translation function from logical board to ChessboardGUI
 # implement translation function from logical move to (x1, y1, x2, y2) as a tkinter grid
-# add special case castling
-# add special case en-passante
 # add special case promotion
-# fix when selecting same colored piece that it doesn't take and instead reselects
 
 from tkinter import *
 from typing import List
