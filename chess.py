@@ -201,7 +201,7 @@ class Chessboard():
         while bb:
             if np.bitwise_and(bb, bit):
                 moves += self.get_moves_pawns_black_by_square(index)
-            index += 1
+            index += bit
             bb = np.right_shift(bb, bit)
         return moves
 
