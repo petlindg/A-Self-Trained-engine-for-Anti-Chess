@@ -494,6 +494,429 @@ class Chessboard():
         self.bitboards[Color.BLACK, Piece.PAWN]   = np.uint64(0b11100000000000000000000000000000000000000000000000000000)
         self.bitboards[Color.BLACK, Piece.KNIGHT] = np.uint64(0b0001000000010000000000000000000000000000000000000000000000000000)
         self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b1110000000000000000000000000000000000000000000000000000000000000)
+    def init_board_test_pawn_white_takes(self):
+        # used for unit testing
+        # move cardinality should be 21
+
+        # initializes a board with the following configuration:
+        # bK bK .. .. .. .. bK bK
+        # wP wP .. wP .. .. wP wP
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. bK .. .. ..
+        # .. .. .. wP .. .. wP ..
+        # .. .. .. .. .. .. .. .. 
+
+        self.bitboards[Color.WHITE, Piece.PAWN] = np.uint64(0b11010011000000000000000000000000000000000001001000000000)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b1100001100000000000000000000000000000000000010000000000000000000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_pawn_white_moves(self):
+        # used for unit testing
+        # move cardinality should be 9
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. wP ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # bK .. .. .. .. .. .. ..
+        # wP bK wP .. .. .. .. wP
+        # .. .. .. .. .. .. .. .. 
+
+        self.bitboards[Color.WHITE, Piece.PAWN] = np.uint64(0b00000010000000000000000000000000000000001010000100000000)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b100000000100000000000000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_knight_white_takes(self):
+        # used for unit testing
+        # move cardinality should be 9
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. wk .. bK
+        # wk wk wk .. wk .. .. ..
+        # .. .. .. wk .. .. bK ..
+        # .. bK .. .. wk .. .. ..
+        # .. .. .. wk .. wk .. wk 
+
+        self.bitboards[Color.WHITE, Piece.KNIGHT] = np.uint64(0b0000010011101000000100000000100000010101)
+        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b0000000100000000000000100100000000000000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_knight_white_moves(self):
+        # used for unit testing
+        # move cardinality should be 12
+
+        # initializes a board with the following configuration:
+        # wk .. .. .. .. .. .. ..
+        # .. wk .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # bK .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. wk ..
+        # .. .. .. .. .. .. .. wk 
+
+        self.bitboards[Color.WHITE, Piece.KNIGHT] = np.uint64(0b1000000001000000000000000000000000000000000000000000001000000001)
+        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b100000000000000000000000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_bishop_white_takes(self):
+        # used for unit testing
+        # move cardinality should be 3
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. bK .. .. bK
+        # .. .. .. bK .. .. wB ..
+        # .. .. .. .. .. wK .. ..
+        # .. wB .. .. .. .. .. ..
+        # .. .. bK bK .. .. .. wB 
+        self.bitboards[Color.WHITE, Piece.BISHOP] = np.uint64(0b0100000000000001)
+        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b000001000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b0000100100010000000000000000000000110000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_bishop_white_moves(self):
+        # used for unit testing
+        # move cardinality should be 12
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. bK .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. wB .. ..
+        # .. .. .. .. .. wP .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. wB 
+
+        self.bitboards[Color.WHITE, Piece.PAWN]   = np.uint64(0b000001000000000000000000)
+        self.bitboards[Color.WHITE, Piece.BISHOP] = np.uint64(0b00000100000000000000000000000001)
+        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b001000000000000000000000000000000000000000000000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_rook_white_takes(self):
+        # used for unit testing
+        # move cardinality should be 3
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. bK
+        # .. .. wR .. .. .. .. bK
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. bK .. wK .. .. wR 
+
+        self.bitboards[Color.WHITE, Piece.ROOK] = np.uint64(0b0010000000000000000000000000000000000001)
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b00001000)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b000000010000000100000000000000000000000000100000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_rook_white_moves(self):
+        # used for unit testing
+        # move cardinality should be 29
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. wR
+        # .. .. .. .. wR .. .. ..
+        # .. .. bK .. wP .. .. wR 
+        
+        self.bitboards[Color.WHITE, Piece.PAWN] = np.uint64(0b00001000)
+        self.bitboards[Color.WHITE, Piece.ROOK] = np.uint64(0b000000010000100000000001)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b00100000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_queen_white_takes(self):
+        # used for unit testing
+        # move cardinality should be 4
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. wQ .. .. .. .. .. ..
+        # .. wK .. .. bK .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. bK bK .. wQ .. bK ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. bK .. .. ..
+        # .. .. .. .. .. .. .. .. 
+
+        self.bitboards[Color.WHITE, Piece.QUEEN] = np.uint64(0b01000000000000000000000000001000000000000000000000000000)
+        self.bitboards[Color.WHITE, Piece.KING]  = np.uint64(0b010000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING]  = np.uint64(0b000010000000000001100010000000000000100000000000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_queen_white_moves(self):
+        # used for unit testing
+        # move cardinality should be 31
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. bK .. .. .. ..
+        # .. .. .. .. .. wQ .. ..
+        # .. .. .. .. .. wP .. ..
+        # .. .. .. .. .. wP .. ..
+        # .. .. .. bK .. wP .. wQ 
+
+        self.bitboards[Color.WHITE, Piece.PAWN]  = np.uint64(0b000001000000010000000100)
+        self.bitboards[Color.WHITE, Piece.QUEEN] = np.uint64(0b00000100000000000000000000000001)
+        self.bitboards[Color.BLACK, Piece.KING]  = np.uint64(0b00010000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_king_white_takes(self):
+        # used for unit testing
+        # move cardinality should be 8
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # bK .. .. .. .. .. .. ..
+        # wK .. .. .. .. bK .. bK
+        # .. .. .. .. .. bK wK bK
+        # wK .. .. .. .. bK bK bK
+
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b100000000000001010000000)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b10000000000001010000010100000111)
+        self.player_to_move = Color.WHITE
+    def init_board_test_king_white_moves(self):
+        # used for unit testing
+        # move cardinality should be 14
+
+        # initializes a board with the following configuration:
+        # wK .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. wK .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # bK .. .. .. .. .. .. wK 
+
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b1000000000000000000000000000000000010000000000000000000000000001)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b10000000)
+        self.player_to_move = Color.WHITE
+    def init_board_test_pawn_black_takes(self):
+        # used for unit testing
+        # move cardinality should be 21
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. bP .. .. bP ..
+        # .. .. .. .. wK .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # bP bP .. bP .. .. bP bP
+        # wK wK .. .. .. .. wK wK 
+
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b000010000000000000000000000000000000000011000011)
+        self.bitboards[Color.BLACK, Piece.PAWN] = np.uint64(0b00010010000000000000000000000000000000001101001100000000)
+        self.player_to_move = Color.BLACK
+    def init_board_test_pawn_black_moves(self):
+        # used for unit testing
+        # move cardinality should be 9
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # bP wK bP .. .. .. .. bP
+        # wK .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. bP ..
+        # .. .. .. .. .. .. .. .. 
+
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b01000000100000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = np.uint64(0b10100001000000000000000000000000000000000000001000000000)
+        self.player_to_move = Color.BLACK
+    def init_board_test_knight_black_takes(self):
+        # used for unit testing
+        # move cardinality should be 9
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. bk .. wK
+        # bk bk bk .. bk .. .. ..
+        # .. .. .. bk .. .. wK ..
+        # .. wK .. .. bk .. .. ..
+        # .. .. .. bk .. bk .. bk 
+
+        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b0000000100000000000000100100000000000000)
+        self.bitboards[Color.BLACK, Piece.KNIGHT] = np.uint64(0b0000010011101000000100000000100000010101)
+        self.player_to_move = Color.BLACK
+    def init_board_test_knight_black_moves(self):
+        # used for unit testing
+        # move cardinality should be 12
+
+        # initializes a board with the following configuration:
+        # bk .. .. .. .. .. .. ..
+        # .. bk .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # wK .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. bk ..
+        # .. .. .. .. .. .. .. bk 
+
+        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b100000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KNIGHT] = np.uint64(0b1000000001000000000000000000000000000000000000000000001000000001)
+        self.player_to_move = Color.BLACK
+    def init_board_test_bishop_black_takes(self):
+        # used for unit testing
+        # move cardinality should be 3
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. wK .. .. wK
+        # .. .. .. wK .. .. bB ..
+        # .. .. .. .. .. bK .. ..
+        # .. bB .. .. .. .. .. ..
+        # .. .. wK wK .. .. .. bB 
+
+        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b0000100100010000000000000000000000110000)
+        self.bitboards[Color.BLACK, Piece.BISHOP] = np.uint64(0b0100000000000001)
+        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b000001000000000000000000)
+        self.player_to_move = Color.BLACK
+    def init_board_test_bishop_black_moves(self):
+        # used for unit testing
+        # move cardinality should be 10
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. wK .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. bP .. ..
+        # .. .. .. .. .. bB .. ..
+        # .. .. .. .. .. .. .. bB 
+
+        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b001000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.PAWN]   = np.uint64(0b000001000000000000000000)
+        self.bitboards[Color.BLACK, Piece.BISHOP] = np.uint64(0b0000010000000001)
+        self.player_to_move = Color.BLACK
+    def init_board_test_rook_black_takes(self):
+        # used for unit testing
+        # move cardinality should be 3
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. wK
+        # .. .. bR .. .. .. .. wK
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. wK .. bK .. .. bR 
+
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b000000010000000100000000000000000000000000100000)
+        self.bitboards[Color.BLACK, Piece.ROOK] = np.uint64(0b0010000000000000000000000000000000000001)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b00001000)
+        self.player_to_move = Color.BLACK
+    def init_board_test_rook_black_moves(self):
+        # used for unit testing
+        # move cardinality should be 29
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. bR
+        # .. .. .. .. bR .. .. ..
+        # .. .. wK .. bP .. .. bR 
+        
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b00100000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = np.uint64(0b00001000)
+        self.bitboards[Color.BLACK, Piece.ROOK] = np.uint64(0b000000010000100000000001)
+        self.player_to_move = Color.BLACK
+    def init_board_test_queen_black_takes(self):
+        # used for unit testing
+        # move cardinality should be 4
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. bQ .. .. .. .. .. ..
+        # .. bK .. .. wK .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. wK wK .. bQ .. wK ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. wK .. .. ..
+        # .. .. .. .. .. .. .. .. 
+
+        self.bitboards[Color.WHITE, Piece.KING]  = np.uint64(0b000010000000000001100010000000000000100000000000)
+        self.bitboards[Color.BLACK, Piece.QUEEN] = np.uint64(0b01000000000000000000000000001000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING]  = np.uint64(0b010000000000000000000000000000000000000000000000)
+        self.player_to_move = Color.BLACK
+    def init_board_test_queen_black_moves(self):
+        # used for unit testing
+        # move cardinality should be 31
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. wK .. .. .. ..
+        # .. .. .. .. .. bQ .. ..
+        # .. .. .. .. .. bP .. ..
+        # .. .. .. .. .. bP .. ..
+        # .. .. .. wK .. bP .. bQ 
+
+        self.bitboards[Color.WHITE, Piece.KING]  = np.uint64(0b00010000)
+        self.bitboards[Color.BLACK, Piece.PAWN]  = np.uint64(0b000001000000010000000100)
+        self.bitboards[Color.BLACK, Piece.QUEEN] = np.uint64(0b00000100000000000000000000000001)
+        self.player_to_move = Color.BLACK
+    def init_board_test_king_black_takes(self):
+        # used for unit testing
+        # move cardinality should be 8
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # wK .. .. .. .. .. .. ..
+        # bK .. .. .. .. wK .. wK
+        # .. .. .. .. .. wK bK wK
+        # bK .. .. .. .. wK wK wK
+
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b10000000000001010000010100000111)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b100000000000001010000000)
+        self.player_to_move = Color.BLACK
+    def init_board_test_king_black_moves(self):
+        # used for unit testing
+        # move cardinality should be 14
+
+        # initializes a board with the following configuration:
+        # bK .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. bK .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # wK .. .. .. .. .. .. bK 
+        
+        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b10000000)
+        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b1000000000000000000000000000000000010000000000000000000000000001)
+        self.player_to_move = Color.BLACK
+    def init_board_test_enpassante_white(self):
+        pass
+    def init_board_test_enpassante_black(self):
+        pass
 
 def print_bb(bb:np.uint64):
     mask_bb = np.uint64(pow(2, 63))
