@@ -128,7 +128,7 @@ class TestMoveGen(unittest.TestCase):
         pass
 
     def test_en_passante_black(self):
-
+        pass
 
 
 if __name__ == "__main__":
