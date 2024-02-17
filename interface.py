@@ -67,8 +67,9 @@ class SquareGUI(Canvas):
             self.piece_type="none"
             self.delete(self.piece_img_id)
     def select(self):
-        self.selected=True
-        self.config(bg=self.bg_selected)
+        if self.piece_type != "none":
+            self.selected=True
+            self.config(bg=self.bg_selected)
     def deselect(self):
         self.selected=False
         self.config(bg=self.bg)
@@ -109,7 +110,7 @@ class ChessboardGUI(Tk):
     board_size : int                 # size of one side of the square board
     square_size : int                # size of a square
 
-    def __init__(self, size):
+    def __init__(self, size, send_move, get_bitboards):
         super().__init__()                          # init root window
         self.title("Chessboard")                    # sets window title
         self.geometry(str(size) + "x" + str(size))  # sets window to square of size {size}
@@ -119,13 +120,16 @@ class ChessboardGUI(Tk):
         self.piece_selected = False
         # initializes the squares in self.board
         self.board = [[SquareGUI(self, size=self.square_size, pos_x=col, pos_y=row) for row in range(8)] for col in range(8)]
+        # function to send moves to the logical board
+        self.send_move = send_move
+        # function to get the logical board
+        self.get_bitboards = get_bitboards
         # bind root window to right-click
         self.bind("<Button-3>", self.on_m2)
     def on_m1(self, event):
         if self.piece_selected:
             if event.widget.selected == False:
-                if(self.selected_piece.piece_type!="none"):
-                    self.move(self.selected_piece.pos_x, self.selected_piece.pos_y, event.widget.pos_x, event.widget.pos_y)
+                self.try_move(self.selected_piece, event.widget)
                 self.deselect_all()
             else:
                 event.widget.deselect()
@@ -137,6 +141,14 @@ class ChessboardGUI(Tk):
                 self.piece_selected=True
     def on_m2(self, event):
         self.deselect_all()
+    def try_move(self, src_sq:SquareGUI, dst_sq:SquareGUI):
+        src_index = 7-src_sq.pos_y+8*(7-src_sq.pos_x)
+        dst_index = 7-dst_sq.pos_y+8*(7-dst_sq.pos_x)
+
+        if self.send_move(src_index, dst_index):
+            print("true")
+            self.init_board(self.get_bitboards())
+            
     def move(self, posx1:int, posy1:int, posx2:int, posy2:int, promoteTo=None):
         self.board[posx2][posy2].set_piece(self.board[posx1][posy1].piece_color, self.board[posx1][posy1].piece_type)
         self.board[posx1][posy1].delete_piece()
@@ -146,7 +158,13 @@ class ChessboardGUI(Tk):
     def deselect_all(self):
         self.piece_selected = False
         [[self.board[i][j].deselect() for i in range(8)] for j in range(8)]
+    def clear_board(self):
+        for i in range(8):
+            for j in range(8):
+                if self.board[i][j].piece_type != "none":
+                    self.board[i][j].delete_piece()
     def init_board(self, bitboards):
+        self.clear_board()
         # init white pieces
         self._initBoard_byType(bitboards[0, 0], "white", "pawn")
         self._initBoard_byType(bitboards[0, 1], "white", "knight")
@@ -176,16 +194,13 @@ class ChessboardGUI(Tk):
 class Game():
     def __init__(self):
         self.state = cb()
-        self.GUI   = ChessboardGUI(WINDOW_SIZE)
+        self.GUI   = ChessboardGUI(WINDOW_SIZE, self.state.try_move, self.state.get)
 
 def main():
     game = Game()
     game.state.init_board_test_5()
 
     game.GUI.init_board(game.state.bitboards)
-
-    for move in game.state.get_moves():
-        print("src: " + str(move.src_index) + ", dst: " + str(move.dst_index))
 
     game.GUI.mainloop()
 

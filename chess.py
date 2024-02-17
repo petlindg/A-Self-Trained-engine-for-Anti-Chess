@@ -49,6 +49,12 @@ class Move():
         self.dst_index = dst_index
         self.promotion_type = promotion_type
 
+    def print(self):
+        if self.promotion_type:
+            print("src: " + str(self.src_index) + ", dst: " + str(self.dst_index) + ", pro: " + str(self.promotion_type))
+        else:
+            print("src: " + str(self.src_index) + ", dst: " + str(self.dst_index))
+
 class Chessboard():
 
     # main bitboard variable for representing the 12 bitboards.
@@ -66,6 +72,52 @@ class Chessboard():
         self.bitboards = np.zeros((2, 6), dtype=np.uint64)
         self.combined  = np.zeros(2, dtype=np.uint64)
         self.player_to_move = Color.WHITE
+
+    def get(self):
+        return self.bitboards
+
+    def try_move(self, src_index, dst_index):
+        move = Move(np.uint8(src_index), np.uint8(dst_index))
+        moves = self.get_moves()
+        print("Attempted move:")
+        move.print()
+        print("Legal moves:")
+        for m in moves:
+            m.print()
+            if move.src_index == m.src_index and move.dst_index == m.dst_index:
+                self.move(move)
+                return True
+        print()
+        return False
+
+    def move(self, move:Move):
+
+        bit = np.uint64(1)
+        src_bb = np.left_shift(bit, move.src_index)
+        dst_bb = np.left_shift(bit, move.dst_index)
+
+        print(src_bb)
+        print(dst_bb)
+
+        print(self.bitboards[0,0])
+
+        player = self.player_to_move
+        other_player = (self.player_to_move+1)%2
+
+        for i in range(6):
+            self.bitboards[other_player, i] = np.bitwise_and(self.bitboards[other_player, i], np.bitwise_not(dst_bb))
+            if np.bitwise_and(self.bitboards[player, i], src_bb):
+                self.bitboards[player, i] = np.bitwise_xor(self.bitboards[player, i], src_bb)
+                self.bitboards[player, i] = np.bitwise_or(self.bitboards[player, i], dst_bb)
+
+        print(self.bitboards[0,0])
+        print("Player to move: " + str(self.player_to_move))
+        if self.player_to_move:
+            self.player_to_move = Color.WHITE
+        else:
+            self.player_to_move = Color.BLACK
+        print("Player to move: " + str(self.player_to_move))
+
 
     def get_moves(self):
 
