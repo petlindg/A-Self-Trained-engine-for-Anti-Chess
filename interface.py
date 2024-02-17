@@ -146,7 +146,6 @@ class ChessboardGUI(Tk):
         dst_index = 7-dst_sq.pos_y+8*(7-dst_sq.pos_x)
 
         if self.send_move(src_index, dst_index):
-            print("true")
             self.init_board(self.get_bitboards())
             
     def move(self, posx1:int, posy1:int, posx2:int, posy2:int, promoteTo=None):
@@ -198,7 +197,7 @@ class Game():
 
 def main():
     game = Game()
-    game.state.init_board_test_5()
+    game.state.init_board_test_6()
 
     game.GUI.init_board(game.state.bitboards)
 
