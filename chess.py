@@ -145,11 +145,11 @@ def calc_move(source: int, destination: int, promotion_piece: Piece):
         (-2, 1), (-1, 2)]
                         ]))
 
-    # testing for the 9 kinds of under promotions
+    # testing for the 12 kinds of under promotions
     # in the following order:
-    # go left + knight, go left + bishop, go left + rook //
-    # go up + knight, go up + bishop, go up + rook //
-    # go right + knight, go right + bishop, go right + rook
+    # go left + knight, go left + bishop, go left + rook, go left + king //
+    # go up + knight, go up + bishop, go up + rook, go up + king //
+    # go right + knight, go right + bishop, go right + rook, go right + king
 
     if promotion_piece is not None:
 
@@ -160,21 +160,26 @@ def calc_move(source: int, destination: int, promotion_piece: Piece):
                 return 65
             if promotion_piece == 3: # rook
                 return 66
+            if promotion_piece == 5: # king
+                return 67
         elif diff_col == 0:
             if promotion_piece == 1: # knight
-                return 67
-            if promotion_piece == 2: # bishop
                 return 68
-            if promotion_piece == 3: # rook
+            if promotion_piece == 2: # bishop
                 return 69
+            if promotion_piece == 3: # rook
+                return 70
+            if promotion_piece == 5: # king
+                return 71
         elif diff_col == -1:
             if promotion_piece == 1: # knight
-                return 70
-            if promotion_piece == 2: # bishop
-                return 71
-            if promotion_piece == 3: # rook
                 return 72
-
+            if promotion_piece == 2: # bishop
+                return 73
+            if promotion_piece == 3: # rook
+                return 74
+            if promotion_piece == 5: # king
+                return 75
 
     # for the first 64 available move types that aren't underpromotions
     for i in range(0,64):
@@ -204,6 +209,60 @@ class Chessboard():
         self.combined  = np.zeros(3, dtype=np.uint64)
         self.player_to_move = Color.WHITE
         self.not_player_to_move = Color.BLACK
+
+    def __str__(self):
+        str_builder = []
+        mask_bb = np.uint64(pow(2, 63))
+        for i in range(64):
+            if not i % 8:
+                str_builder.append('\n')
+            # if white pawn
+            if np.bitwise_and(self.bitboards[0][0], mask_bb):
+                str_builder.append('P ')
+            # if black pawn
+            elif np.bitwise_and(self.bitboards[1][0], mask_bb):
+                str_builder.append('p ')
+
+            # if white knight
+            elif np.bitwise_and(self.bitboards[0][1], mask_bb):
+                str_builder.append('K ')
+            # if black knight
+            elif np.bitwise_and(self.bitboards[1][1], mask_bb):
+                str_builder.append('k ')
+
+            # if white bishop
+            elif np.bitwise_and(self.bitboards[0][2], mask_bb):
+                str_builder.append('B ')
+            # if black bishop
+            elif np.bitwise_and(self.bitboards[1][2], mask_bb):
+                str_builder.append('b ')
+
+            # if white rook
+            elif np.bitwise_and(self.bitboards[0][3], mask_bb):
+                str_builder.append('R ')
+            # if black rook
+            elif np.bitwise_and(self.bitboards[1][3], mask_bb):
+                str_builder.append('r ')
+
+            # if white queen
+            elif np.bitwise_and(self.bitboards[0][4], mask_bb):
+                str_builder.append('Q ')
+            # if black queen
+            elif np.bitwise_and(self.bitboards[1][4], mask_bb):
+                str_builder.append('q ')
+
+            # if white king
+            elif np.bitwise_and(self.bitboards[0][5], mask_bb):
+                str_builder.append('K ')
+            # if black king
+            elif np.bitwise_and(self.bitboards[1][5], mask_bb):
+                str_builder.append('k ')
+            else:
+                str_builder.append('. ')
+            mask_bb = np.right_shift(mask_bb, np.uint8(1))
+
+        return ''.join(str_builder)
+
 
     def get(self):
         # used for interface to display
@@ -266,15 +325,15 @@ class Chessboard():
         moves += self._get_moves()
 
         for m in moves:
-            print(str(m))
+            #print(str(m))
             if m.is_take:
                 takes.append(m)
 
         #for piece_type in self.bitboards[self.player_to_move, :]:
             #print_bb(piece_type)
 
-        print(len(takes))
-        print(len(moves))
+        #print(len(takes))
+        #print(len(moves))
 
         if len(takes):
             return takes
@@ -482,9 +541,9 @@ class Chessboard():
                 else:
                     representation[0][i][l].append(0)
 
-        for row in range(0,8):
-            print(representation[0][row])
-        print(np.array(representation).shape)
+        #for row in range(0,8):
+            #print(representation[0][row])
+        return np.array(representation)
 
     # init standard chess board
     def init_board_standard(self):
