@@ -46,14 +46,14 @@ class Game:
         visit_total = 0
         for node in potential_nodes:
             visit_total += node.visits
-            mcts_dist.append(node.visits)
+            mcts_dist.append((node.visits, node.move))
             if node.visits > max_visit:
                 max_visit = node.visits
                 best_state = node.state
         # prepare the float distribution of all actions
         # TODO this should match up with the output from the model
         # so that the model can use it for backpropagation
-        mcts_dist = [n/visit_total for n in mcts_dist]
+        mcts_dist = [(n/visit_total, move) for (n, move) in mcts_dist]
 
         # add values to the game history recording all moves
         self.game_history.append((self.current_state, mcts_dist, tree.root_node.v, self.current_player))

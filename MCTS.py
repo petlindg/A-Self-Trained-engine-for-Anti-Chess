@@ -4,7 +4,7 @@ import random
 
 # TODO add a function that returns possible states based on valid moves from this current state
 # make this function also interact with the model by fetching the p values for these new states
-# this function should return tuples in the form of ([(new_state, p)], v) for the expansion process
+# this function should return tuples in the form of ([(new_state, move, p)], v) for the expansion process
 def possible_moves(state):
     # TESTING VALUES
     p1 = random.random()
@@ -16,17 +16,18 @@ def possible_moves(state):
     p3 = p3/sumv
 
     v = random.random()
-    return [('left', p1),('middle', p2) , ('right', p3)], v
+    return [('left', 'left', p1),('middle', 'middle', p2) , ('right', 'right', p3)], v
 
 def ucb(node, c):
     return (node.p * c * sqrt(node.parent.visits)/(1+node.visits) + (node.value/node.visits if node.visits > 0 else 0))
 
 # class defining the contents of a singular node
 class Node:
-    def __init__(self, p, state, parent_node, player, root_node):
+    def __init__(self, p, state, parent_node, player, root_node, move):
         self.root_node = root_node
         self.parent = parent_node
         self.state = state
+        self.move = move # move that was made to get to this node
         self.children = []
         self.value = 0
         self.visits = 0
@@ -89,8 +90,8 @@ class Node:
         # so that it can be used in backpropagation when training the actual model.
         self.v = v
         # creating the new child nodes, making sure to swap around the player variable
-        for (new_state, p) in new_states:
-            self.children.append(Node(p, new_state, self, not self.player, self.root_node))
+        for (new_state, move, p) in new_states:
+            self.children.append(Node(p, new_state, self, not self.player, self.root_node, move))
 
         # backpropagation process
         self.backpropagate(self, v, self.player)
@@ -118,7 +119,7 @@ class Node:
 class MCTS:
     def __init__(self, root_state, iterations):
         # defining the root node of the tree
-        self.root_node = Node(1, root_state, None, True, None)
+        self.root_node = Node(1, root_state, None, True, None, None)
         self.root_node.root_node = self.root_node
         # number of MCTS iterations left, each iteration is one search
         self.iterations = iterations
