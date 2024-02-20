@@ -2,21 +2,43 @@ import time
 from math import sqrt
 import random
 
-# TODO add a function that returns possible states based on valid moves from this current state
-# make this function also interact with the model by fetching the p values for these new states
-# this function should return tuples in the form of ([(new_state, move, p)], v) for the expansion process
-def possible_moves(state):
-    # TESTING VALUES
-    p1 = random.random()
-    p2 = random.random()
-    p3 = random.random()
-    sumv = p1+p2+p3
-    p1 = p1/sumv
-    p2 = p2/sumv
-    p3 = p3/sumv
+import chess
+from chess import Chessboard
+from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
+import copy
 
-    v = random.random()
-    return [('left', 'left', p1),('middle', 'middle', p2) , ('right', 'right', p3)], v
+# Function that takes a chessboard as a current state, a reference to the model
+# and then calculates the new possible moves for the current state, gets the model results for
+# the current state and then puts them together as a tuple and returns it.
+def possible_moves(state: Chessboard, model):
+    # translate the board to the input representation
+    input_repr = state.translate_board()
+    # get the valid moves for the current chessboard
+    moves = state.get_moves()
+    # get the model predictions for the current state
+    p, v = model.predict(input_repr, verbose = None)
+    v = v[0][0]
+    p_array = p.reshape(1,1,8,8,76)
+
+    # for every possible move, create a new chessboard based on that state
+    # and append this state, the value p from the model and the move to the return list
+    return_list = []
+    for move in moves:
+        new_state = copy.deepcopy(state)
+        new_state.move(move)
+        p_val = fetch_p_from_move(move, p_array)
+        return_list.append((new_state, move, p_val))
+
+    return (return_list, v)
+
+# Function that returns the singular p value for a given move
+# from the model output.
+def fetch_p_from_move(move: chess.Move, model_output):
+    src_col = move.src_index % 8
+    src_row = move.src_index // 8
+
+    move_type = chess.calc_move(move.src_index, move.dst_index, move.promotion_type)
+    return model_output[0][0][src_row][src_col][move_type]
 
 def ucb(node, c):
     return (node.p * c * sqrt(node.parent.visits)/(1+node.visits) + (node.value/node.visits if node.visits > 0 else 0))
@@ -60,16 +82,16 @@ class Node:
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
         if depth is None or depth > 0:
             string_buffer.append(prefix)
-            p = round(self.p, 2)
-            v = round(self.value, 2)
-            V = round(self.v, 2)
+            p = round(self.p, 10)
+            v = round(self.value, 10)
+            V = round(self.v, 10)
             try:
                 U = round(ucb(self, sqrt(2)), 2)
             except AttributeError:
                 U = "-"
             visits = self.visits
 
-            info_text = f'(U:{U}|p:{p}|v:{v}|n:{visits}|V:{V})'
+            info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V}|U:{U})'
             string_buffer.append(info_text)
             string_buffer.append('\n')
 
@@ -81,10 +103,10 @@ class Node:
 
 
     # expand method which does both the expansion and the backpropagation, using backpropagate
-    def expand(self):
+    def expand(self, model):
         self.leaf = False
         # TODO implement possible_moves
-        new_states, v = possible_moves(self.state)
+        new_states, v = possible_moves(self.state, model)
 
         # the initial value v from the model is stored separate from the value variable
         # so that it can be used in backpropagation when training the actual model.
@@ -117,29 +139,33 @@ class Node:
 
 # class defining a singular MCTS search
 class MCTS:
-    def __init__(self, root_state, iterations):
+    def __init__(self, root_state, iterations, model):
         # defining the root node of the tree
         self.root_node = Node(1, root_state, None, True, None, None)
         self.root_node.root_node = self.root_node
         # number of MCTS iterations left, each iteration is one search
         self.iterations = iterations
         self.exploration_constant = sqrt(2)
+        self.model = model
 
     # method to perform a single search 'iteration'
     # goes through the 3 steps of an AlphaZero MCTS loop
     # selection, expansion, backpropagation,
     # backpropagation occurs inside the expand() function
     def search(self):
-        leaf_node = self.selection(self.root_node)
-        leaf_node.expand()
-
+        leaf_node, w = self.selection(self.root_node)
+        if w == 0:
+            leaf_node.expand(self.model)
+    # TODO look into how end of game states are handled with alphazero MCTS
     # method that performs the selection process
     # goes down the tree based off of UCB until it hits a leaf node.
     def selection(self, current_node):
         while not current_node.leaf:
-            current_node = max(current_node.children, key=lambda node: ucb(node, self.exploration_constant))
-
-        return current_node
+            if len(current_node.children) != 0:
+                current_node = max(current_node.children, key=lambda node: ucb(node, self.exploration_constant))
+            else:
+                return (current_node, 1)
+        return (current_node, 0)
 
     # run method that will continually perform tree searches
     # until the iterations runs out
@@ -148,9 +174,20 @@ class MCTS:
             self.search()
 
 def main():
-    #tree = MCTS('none', 11)
-    #tree.run()
-    performance()
+    model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
+    model = model_config.build_nn()
+    root_state = Chessboard()
+    root_state.init_board_standard()
+    tree = MCTS(root_state, 800, model)
+    start = time.time()
+    tree.run()
+    end = time.time()
+    print(end-start)
+    # tested it with 800 iterations and it took 50 seconds
+    # 16 iterations per second
+    tree.root_node.print_selectively(3)
+
+    #performance()
 
 def performance():
     iterations = 10
