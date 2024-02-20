@@ -1,6 +1,7 @@
 import numpy as np
 from enum import IntEnum
 from typing import List
+from typing import Tuple
 
 # ranks used for masking
 # ranks by number
@@ -88,36 +89,38 @@ class Move():
     src_index      : np.uint8
     dst_index      : np.uint8
     promotion_type : Piece
+    is_take        : bool
 
-    def __init__(self, src_index:np.uint8, dst_index:np.uint8, promotion_type=None):
-        self.src_index = src_index
-        self.dst_index = dst_index
+    def __init__(self, src_index:np.uint8, dst_index:np.uint8, promotion_type=None, is_take=False):
+        self.src_index      = src_index
+        self.dst_index      = dst_index
         self.promotion_type = promotion_type
+        self.is_take        = is_take
 
-    def print(self):
-        # print function for moves
-        if self.promotion_type:
-            print("src: " + str(self.src_index) + ", dst: " + str(self.dst_index) + ", pro: " + str(self.promotion_type))
-        else:
-            print("src: " + str(self.src_index) + ", dst: " + str(self.dst_index))
+    def __str__(self):
+        # str function for moves
+        return "src: " + str(self.src_index) + ", dst: " + str(self.dst_index) + ", pro: " + str(self.promotion_type) + ", take: " + str(self.is_take)
 
 class Chessboard():
-
     # main bitboard variable for representing the 12 bitboards.
     # The first index represents color, 0 = white, 1 = black
     # The second index represents piece-type.
     # 0 = pawns, 1 = knights, 2 = bishops, 3 = rooks, 4 = queens, 5 = kings
     bitboards : np.ndarray
-    # index 0 = bitboard of combined white pieces, index 1 = bitboard of combined black pieces
+    # index 0 = bitboard of combined white pieces
+    # index 1 = bitboard of combined black pieces
+    # index 2 = bitboard of combined black and white pieces
     combined  : np.ndarray
     # other logic
     player_to_move : Color
+    not_player_to_move : Color
 
     # init empty board
     def __init__(self):
         self.bitboards = np.zeros((2, 6), dtype=np.uint64)
-        self.combined  = np.zeros(2, dtype=np.uint64)
+        self.combined  = np.zeros(3, dtype=np.uint64)
         self.player_to_move = Color.WHITE
+        self.not_player_to_move = Color.BLACK
 
     def get(self):
         # used for interface to display
@@ -153,42 +156,12 @@ class Chessboard():
                 self.bitboards[player, i] = np.bitwise_or(self.bitboards[player, i], dst_bb)
 
         # update player to move
-        self.player_to_move = (self.player_to_move+1)%2
-
-    def get_moves(self):
-        # get legal moves given current state
-
-        # combines the piece_type bitboards of both colors seperately, used in later calculations
-        self.combine_bb()
-
-        # var to hold legal moves
-        moves:List[Move] = []
-
-        # get moves by different piece_types
-        moves += self.get_moves_pawns()
-        moves += self.get_moves_knights()
-        #moves += self.get_moves_bishops()
-        #moves += self.get_moves_rooks()
-        #moves += self.get_moves_queens()
-        moves += self.get_moves_kings()
-
-        return moves
-
-    def get_moves_by_bb(self, src_index:np.uint8, dst_bb:np.uint64):
-        # converts moves represented by a source index and a destination bb to
-        # moves represented by the Move() class and returns them.
-        moves:List[Move] = []
-        dst_index = np.uint8(0)
-        bit = np.uint8(1)
-        while dst_bb:
-            if np.bitwise_and(dst_bb, bit):
-                moves.append(Move(src_index, dst_index))
-            dst_index += bit
-            dst_bb = np.right_shift(dst_bb, bit)
-        return moves
+        tmp = self.player_to_move
+        self.player_to_move = self.not_player_to_move
+        self.not_player_to_move = tmp
 
     def combine_bb(self):
-        # combines bb of both playercolors seperately
+        # combines bb of both player colors seperately and together
         index = 0
         for player in self.bitboards:
             combined = np.uint64(0)
@@ -197,124 +170,163 @@ class Chessboard():
             self.combined[index] = combined
             index += 1
 
-    def get_moves_pawns(self):
-        if self.player_to_move:
-            return self.get_moves_pawns_black()
-        else:
-            return self.get_moves_pawns_white()
+        self.combined[2] = np.bitwise_or(self.combined[Color.WHITE], self.combined[Color.BLACK])
+    def get_moves(self):
+        # get legal moves given current state
 
-    def get_moves_pawns_white(self):
-        # get moves by the white pawn bb and returns them as [Move]
+        # combines the piece_type bitboards of both colors seperately, used in later calculations
+        self.combine_bb()
+        # vars to hold legal moves and takes
         moves:List[Move] = []
-        bit = np.uint8(1)
-        src_index = np.uint8(0)
-        bb = self.bitboards[Color.WHITE, Piece.PAWN]
-        # iterate over board, if white pawn on src_index, get pawn moves from that source index
-        while bb:
-            if np.bitwise_and(bb, bit):
-                moves += self.get_moves_pawns_white_by_square(src_index)
-            src_index += bit
-            bb = np.right_shift(bb, bit)
+        takes:List[Move] = []
+        # get takes by different piece types
+        moves += self._get_moves()
+
+        for m in moves:
+            print(str(m))
+            if m.is_take:
+                takes.append(m)
+
+        #for piece_type in self.bitboards[self.player_to_move, :]:
+            #print_bb(piece_type)
+
+        print(len(takes))
+        print(len(moves))
+
+        if len(takes):
+            return takes
+
         return moves
 
-    def get_moves_pawns_white_by_square(self, src_index:np.uint8):
-        # given a src_index, generate moves and returns them as [Move]
-        bb_moves = np.uint64(0)
-        bb_takes = np.uint64(0)
-
-        src_bb = np.left_shift(np.uint64(1), src_index)
-
-        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.left_shift(src_bb, np.uint8(9)), np.bitwise_not(RANK_H_BB)))
-        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.left_shift(src_bb, np.uint8(7)), np.bitwise_not(RANK_A_BB)))
-        bb_takes = np.bitwise_and(bb_takes, self.combined[1])
-
-        if bb_takes:
-            return self.get_moves_by_bb(src_index, bb_takes)
-        
-        bb_moves = np.bitwise_or(bb_moves, np.left_shift(src_bb, np.uint8(8)))
-        if (8 <= src_index < 16):
-            bb_moves = np.bitwise_or(bb_moves, np.left_shift(src_bb, np.uint8(16)))
-        bb_moves = np.bitwise_and(bb_moves, np.bitwise_not(self.combined[0]))
-
-        bb = np.bitwise_or(bb_moves, bb_takes)
-
-        return self.get_moves_by_bb(src_index, bb)
-
-    def get_moves_pawns_black(self):
-        # get moves by the white pawn bb and returns them as [Move]
+    def get_moves_by_bb(self, src_index:np.uint8, dst_bb:np.uint64, takes:bool=False):
+        # converts moves represented by a source index and a destination bb to
+        # moves represented by the Move() class and returns them.
         moves:List[Move] = []
+        dst_index = np.uint8(0)
         bit = np.uint8(1)
-        index = np.uint8(0)
-        bb = self.bitboards[Color.BLACK, Piece.PAWN]
-        while bb:
-            if np.bitwise_and(bb, bit):
-                moves += self.get_moves_pawns_black_by_square(index)
-            index += bit
-            bb = np.right_shift(bb, bit)
-        return moves
-
-    def get_moves_pawns_black_by_square(self, src_index:np.uint8):
-        # given a src_index, generate moves and returns them as [Move]
-        bb_moves = np.uint64(0)
-        bb_takes = np.uint64(0)
-
-        src_bb = np.left_shift(np.uint64(1), src_index)
-
-        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.right_shift(src_bb, np.uint8(7)), np.bitwise_not(RANK_H_BB)))
-        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.right_shift(src_bb, np.uint8(9)), np.bitwise_not(RANK_A_BB)))
-        bb_takes = np.bitwise_and(bb_takes, self.combined[0])
-
-        if bb_takes:
-            return self.get_moves_by_bb(src_index, bb_takes)
-
-        bb_moves = np.bitwise_or(bb_moves, np.right_shift(src_bb, np.uint8(8)))
-        if (48 <= src_index < 56):
-            bb_moves = np.bitwise_or(bb_moves, np.right_shift(src_bb, np.uint8(16)))
-        bb_moves = np.bitwise_and(bb_moves, np.bitwise_not(self.combined[1]))
-
-        bb = np.bitwise_or(bb_moves, bb_takes)
-
-        return self.get_moves_by_bb(src_index, bb)
-
-    def get_moves_knights(self):
-        # get moves by the self.player_to_move knights bb and returns them as [Move]
-        moves:List[Move] = []
-        index = np.uint8(0)
-        bit = np.uint8(1)
-
-        bb = self.bitboards[self.player_to_move, Piece.KNIGHT]
-        
-        while bb:
-            if np.bitwise_and(bb, bit):
-                moves += self.get_moves_knights_by_square(index)
-            index += bit
-            bb = np.right_shift(bb, bit)
-        return moves
-
-    def get_moves_knights_by_square(self, src_index:np.uint8):
-        # given a src_index, generate moves and returns them as [Move]
-        bb = np.bitwise_and(KNIGHT_BB[src_index], np.bitwise_not(self.combined[self.player_to_move]))
-        return self.get_moves_by_bb(src_index, bb)
-
-    def get_moves_kings(self):
-        # get moves by the self.player_to_move kings bb and returns them as [Move]
-        moves:List[Move] = []
-        index = np.uint8(0)
-        bit = np.uint8(1)
-
-        bb = self.bitboards[self.player_to_move, Piece.KING]
-        
-        while bb:
-            if np.bitwise_and(bb, bit):
-                moves += self.get_moves_kings_by_square(index)
-            index += bit
-            bb = np.right_shift(bb, bit)
+        while dst_bb:
+            if np.bitwise_and(dst_bb, bit):
+                moves.append(Move(src_index, dst_index, is_take=takes))
+            dst_index += bit
+            dst_bb = np.right_shift(dst_bb, bit)
         return moves
     
-    def get_moves_kings_by_square(self, src_index:np.uint8):
+    def get_moves_by_bb_pawn(self, src_index:np.uint8, dst_bb:np.uint64, takes:bool=False):
+        # converts moves represented by a source index and a destination bb to
+        # moves represented by the Move() class and returns them.
+        moves:List[Move] = []
+        dst_index = np.uint8(0)
+        bit = np.uint8(1)
+        while dst_bb:
+            if np.bitwise_and(dst_bb, bit):
+                if 8 > dst_index >= 56:
+                    for piece_type in Piece:
+                        moves.append(Move(src_index, dst_index, piece_type, takes))
+                else:
+                    moves.append(Move(src_index, dst_index, is_take=takes))
+            dst_index += bit
+            dst_bb = np.right_shift(dst_bb, bit)
+        return moves
+    
+    def _get_moves(self):
+        # get moves by the self.player_to_move kings bb and returns them as [Move]
+        moves:List[Move] = []
+        bit = np.uint8(1)
+        for piece_type in Piece:
+            src_index = np.uint(0)
+            src_bb = self.bitboards[self.player_to_move, piece_type]
+            while src_bb:
+                if np.bitwise_and(src_bb, bit):
+                    moves += self._get_moves_by_piece_type(piece_type, src_index)
+                src_index += bit
+                src_bb = np.right_shift(src_bb, bit)
+        return moves
+    
+    def _get_moves_by_piece_type(self, piece_type:Piece, src_index:np.uint8):
+        if piece_type == Piece.PAWN:
+            if self.player_to_move == Color.WHITE:
+                return self._get_moves_pawn_white(src_index)
+            elif self.player_to_move == Color.BLACK:
+                return self._get_moves_pawn_black(src_index)
+            else:
+                raise RuntimeError("Invalid player_to_move: %s" % str(self.player_to_move))
+        elif piece_type == Piece.KNIGHT:
+            return self._get_moves_knight(src_index)
+        elif piece_type == Piece.BISHOP:
+            return []
+            #return self._get_moves_bishop(src_index)
+        elif piece_type == Piece.ROOK:
+            return []
+            #return self._get_moves_rook(src_index)
+        elif piece_type == Piece.QUEEN:
+            return []
+            #return self._get_moves_queen(src_index)
+        elif piece_type == Piece.KING:
+            return self._get_moves_king(src_index)
+        else:
+            raise RuntimeError("Invalid piece_type: %s" % str(piece_type))
+        
+    def _get_moves_pawn_white(self, src_index:np.uint8):
         # given a src_index, generate moves and returns them as [Move]
-        bb = np.bitwise_and(KING_BB[src_index], np.bitwise_not(self.combined[self.player_to_move]))
-        return self.get_moves_by_bb(src_index, bb)
+        src_bb = np.left_shift(np.uint64(1), src_index)
+
+        bb_takes = np.bitwise_and(np.left_shift(src_bb, np.uint8(9)), np.bitwise_not(RANK_H_BB))
+        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.left_shift(src_bb, np.uint8(7)), np.bitwise_not(RANK_A_BB)))
+        bb_takes = np.bitwise_and(bb_takes, self.combined[Color.BLACK])
+
+        if bb_takes: # if takes avaiable, no need to find non-takes
+            return self.get_moves_by_bb_pawn(src_index, bb_takes, takes=True)
+
+        bb_moves = np.left_shift(src_bb, np.uint8(8))
+        if (8 <= src_index < 16):
+            bb_moves = np.bitwise_or(bb_moves, np.left_shift(src_bb, np.uint8(16)))
+        bb_moves = np.bitwise_and(bb_moves, np.bitwise_not(np.bitwise_or(self.combined[2], np.left_shift(np.bitwise_and(np.bitwise_not(src_bb), self.combined[2]), np.uint8(8)))))
+
+        bb = np.bitwise_or(bb_moves, bb_takes)
+
+        return self.get_moves_by_bb_pawn(src_index, bb)
+
+    def _get_moves_pawn_black(self, src_index:np.uint8):
+        # given a src_index, generate moves and returns them as [Move]
+        src_bb = np.left_shift(np.uint64(1), src_index)
+
+        bb_takes = np.bitwise_and(np.right_shift(src_bb, np.uint8(7)), np.bitwise_not(RANK_H_BB))
+        bb_takes = np.bitwise_or(bb_takes, np.bitwise_and(np.right_shift(src_bb, np.uint8(9)), np.bitwise_not(RANK_A_BB)))
+        bb_takes = np.bitwise_and(bb_takes, self.combined[Color.WHITE])
+
+        if bb_takes: # if takes avaiable, no need to find non-takes
+            return self.get_moves_by_bb_pawn(src_index, bb_takes, takes=True)
+
+        bb_moves = np.right_shift(src_bb, np.uint8(8))
+        if (48 <= src_index < 56):
+            bb_moves = np.bitwise_or(bb_moves, np.right_shift(src_bb, np.uint8(16)))
+        bb_moves = np.bitwise_and(bb_moves, np.bitwise_not(np.bitwise_or(self.combined[2], np.right_shift(np.bitwise_and(np.bitwise_not(src_bb), self.combined[2]), np.uint8(8)))))
+
+        bb = np.bitwise_or(bb_moves, bb_takes)
+
+        return self.get_moves_by_bb_pawn(src_index, bb)
+    
+    def _get_moves_knight(self, src_index:np.uint8):
+        # given a src_index, generate moves and returns them as [Move]
+        moves:List[Move] = []
+        dst_bb = KNIGHT_BB[src_index]
+        takes_bb = np.bitwise_and(dst_bb, self.combined[self.not_player_to_move])
+        moves_bb = np.bitwise_and(dst_bb, np.bitwise_not(self.combined[2]))
+        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self.get_moves_by_bb(src_index, moves_bb)
+        return moves
+
+    def _get_moves_king(self, src_index:np.uint8):
+        # given a src_index, generate moves and returns them as [Move]
+        moves:List[Move] = []
+        dst_bb = KING_BB[src_index]
+        takes_bb = np.bitwise_and(dst_bb, self.combined[self.not_player_to_move])
+        moves_bb = np.bitwise_and(dst_bb, np.bitwise_not(self.combined[2]))
+        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self.get_moves_by_bb(src_index, moves_bb)
+        return moves
+
+
 
     def translate_board(self):
         # The outer structure is an 8 by 8 grid representing 'squares' of the board
@@ -934,3 +946,6 @@ def main():
     chessboard = Chessboard()
     chessboard.init_board_standard()
     chessboard.translate_board()
+
+if __name__ == "__main__":
+    main()

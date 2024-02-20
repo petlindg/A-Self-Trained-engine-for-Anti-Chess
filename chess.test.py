@@ -130,6 +130,8 @@ class TestMoveGen(unittest.TestCase):
     def test_en_passante_black(self):
         pass
 
+def main():
+    unittest.main()
 
 if __name__ == "__main__":
-    unittest.main()
+    main()

@@ -15,6 +15,7 @@ from tkinter import *
 from typing import List
 import numpy as np
 from chess import Chessboard as cb
+from chess import Piece as p
 
 # macro definitions
 WINDOW_SIZE    = 560     
@@ -203,4 +204,5 @@ def main():
 
     game.GUI.mainloop()
 
-main()
+if __name__ == "__main__":
+    main()
