@@ -27,7 +27,7 @@ class TestMoveGen(unittest.TestCase):
     def test_bishop_white_takes(self):
         board = cb.Chessboard()
         board.init_board_test_bishop_white_takes()
-        self.assertEqual(3, len(board.get_moves()))
+        self.assertEqual(2, len(board.get_moves()))
 
     def test_bishop_white_moves(self):
         board = cb.Chessboard()
@@ -87,7 +87,7 @@ class TestMoveGen(unittest.TestCase):
     def test_bishop_black_takes(self):
         board = cb.Chessboard()
         board.init_board_test_bishop_black_takes()
-        self.assertEqual(3, len(board.get_moves()))
+        self.assertEqual(2, len(board.get_moves()))
 
     def test_bishop_black_moves(self):
         board = cb.Chessboard()

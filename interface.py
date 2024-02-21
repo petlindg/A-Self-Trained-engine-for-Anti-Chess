@@ -7,9 +7,8 @@
 # ----------- TO DO -----------
 # -----------------------------
 # make pieces dragable
-# implement translation function from logical board to ChessboardGUI
 # implement translation function from logical move to (x1, y1, x2, y2) as a tkinter grid
-# add special case promotion
+# make interface for promotion
 
 from tkinter import *
 from typing import List
