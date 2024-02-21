@@ -337,6 +337,7 @@ class Chessboard():
     # other logic
     player_to_move : Color
     not_player_to_move : Color
+    fifty_move_counter : List[np.uint8]
 
     # init empty board
     def __init__(self):
@@ -344,6 +345,8 @@ class Chessboard():
         self.combined  = np.zeros(3, dtype=np.uint64)
         self.player_to_move = Color.WHITE
         self.not_player_to_move = Color.BLACK
+        self.fifty_move_counter = []
+        self.fifty_move_counter.append(np.uint8(0))
 
     def __str__(self):
         str_builder = []
@@ -416,6 +419,11 @@ class Chessboard():
 
     def move(self, move:Move):
         # main function to move a piece and updates all nessecary properties of class
+
+        # temporary variables to update parameters in the chessboard
+        pawns_old = np.bitwise_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
+        count_old = self._get_piece_count()
+
         bit = np.uint64(1)
         # create move indexes into bbs
         src_bb = np.left_shift(bit, move.src_index)
@@ -432,11 +440,32 @@ class Chessboard():
                 self.bitboards[player, i] = np.bitwise_xor(self.bitboards[player, i], src_bb)
                 self.bitboards[player, i] = np.bitwise_or(self.bitboards[player, i], dst_bb)
 
+        # check for changes in pawn locations or number of pieces on board for 50 move rule
+        pawns_new = np.bitwise_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
+        count_new = self._get_piece_count()
+
+        if (pawns_new != pawns_old) or (count_new != count_old):
+            self.fifty_move_counter.append(np.uint8(0))
+        else:
+            self.fifty_move_counter.append(self.fifty_move_counter[-1] + np.uint8(1))
+        print(str(self.fifty_move_counter))
+
         # update player to move
         tmp = self.player_to_move
         self.player_to_move = self.not_player_to_move
         self.not_player_to_move = tmp
 
+    def _get_piece_count(self):
+        bit = np.uint8(1)
+        count = 0
+        for player in self.bitboards:
+            for piece_bb in player:
+                while piece_bb:
+                    if np.bitwise_and(piece_bb, bit):
+                        count += 1
+                    piece_bb = np.right_shift(piece_bb, bit)
+        return count
+    
     def combine_bb(self):
         # combines bb of both player colors seperately and together
         index = 0
