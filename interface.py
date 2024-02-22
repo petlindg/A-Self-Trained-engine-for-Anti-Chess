@@ -58,9 +58,13 @@ class SquareGUI(Canvas):
     def set_piece(self, piece_color:str, piece_type:str):
         self.piece_color=piece_color
         self.piece_type=piece_type
+        print(f"{self.piece_color}, {self.piece_type}")
         self.piece_img=self._getAsset()
+        print(self.piece_img)
         if(self.piece_img):
-            self.piece_img_id = self.create_image(self.size/2, self.size/2, image=self.piece_img, anchor=CENTER)
+            pass
+            #self.piece_img_id = self.create_image(self.size/2, self.size/2, image=self.piece_img, anchor=CENTER)
+        print("c")
     # deconstructor for piece
     def delete_piece(self):
             self.piece_color="none"
@@ -102,6 +106,27 @@ class SquareGUI(Canvas):
             if self.piece_type == "king":
                 return PhotoImage(file=ASSET_PATH+"b_king.png")
 
+class PromotionWindowGUI(Tk):
+    def __init__(self, parent, color, x, y):
+        super().__init__()
+        self.geometry(f"{int(WINDOW_SIZE*5/8)}x{int(WINDOW_SIZE/8)}+{x}+{y}")
+        print("2")
+        promotion_squares = [SquareGUI(self, WINDOW_SIZE/8, 0, pos_y) for pos_y in range(5)]
+        print(type(promotion_squares))
+        promotion_squares[0].set_piece(color, "knight")
+        print("4")
+        promotion_squares[1].set_piece(color, "bishop")
+        promotion_squares[2].set_piece(color, "rook")
+        promotion_squares[3].set_piece(color, "queen")
+        promotion_squares[4].set_piece(color, "king")
+        self.overrideredirect(True)
+        self.parent = parent
+
+    def on_m1(self, event):
+        print("Hello")
+        clicked_piece:SquareGUI = event.widget
+        self.parent.promotion_type = clicked_piece.piece_type
+        self.quit()
 
 class ChessboardGUI(Tk):
     piece_selected : bool            # true if any square is selected
@@ -127,16 +152,27 @@ class ChessboardGUI(Tk):
         # bind root window to right-click
         self.bind("<Button-3>", self.on_m2)
     def on_m1(self, event):
+        dst:SquareGUI = event.widget
         if self.piece_selected:
-            if event.widget.selected == False:
-                self.try_move(self.selected_piece, event.widget)
+            src = self.selected_piece
+            if dst.selected == False:
+                if (src.piece_type == "pawn"):
+                    print(f"x:{dst.pos_x}, y:{dst.pos_y}")
+                    if (src.piece_color == "white") and (dst.pos_x==0):
+                        self._open_choose_promo(event, self.selected_piece.piece_color)
+                    elif (src.piece_color == "black") and (dst.pos_x==7):
+                        self._open_choose_promo(event, self.selected_piece.piece_color)
+                    else:
+                        self.try_move(src, dst)
+                else:
+                    self.try_move(src, dst)  
                 self.deselect_all()
             else:
-                event.widget.deselect()
+                dst.deselect()
             self.piece_selected = False
         else:
-            if(event.widget.piece_type!="none"):
-                event.widget.select()
+            if(dst.piece_type!="none"):
+                dst.select()
                 self.selected_piece = event.widget
                 self.piece_selected=True
     def on_m2(self, event):
@@ -189,6 +225,13 @@ class ChessboardGUI(Tk):
                 j=7
                 i-=1
             bitboard >>= np.uint8(1)
+    def _open_choose_promo(self, event, color):
+        self.grab_set()
+        promotion_window = PromotionWindowGUI(self, color, event.x_root, event.y_root)
+        print("1")
+        promotion_window.mainloop()
+        self.grab_release()
+
 
 class Game():
     def __init__(self):
@@ -197,7 +240,7 @@ class Game():
 
 def main():
     game = Game()
-    game.state.init_board_test_6()
+    game.state.init_board_test_pawn_black_moves()
 
     game.GUI.init_board(game.state.bitboards)
 
