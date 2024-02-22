@@ -406,13 +406,13 @@ class Chessboard():
         # used for interface to display
         return self.bitboards
 
-    def try_move(self, src_index, dst_index):
+    def try_move(self, src_index, dst_index, promotion_type:Piece=None):
         # used for interface to attempt a move, returns True if successful, False if not successful
-        move = Move(np.uint8(src_index), np.uint8(dst_index)) # create function parameters into a Move()
+        move = Move(np.uint8(src_index), np.uint8(dst_index), promotion_type) # create function parameters into a Move()
         moves = self.get_moves() # get legal moves
         for m in moves:
             # checks if input move is in legal moves
-            if move.src_index == m.src_index and move.dst_index == m.dst_index:
+            if move.src_index == m.src_index and move.dst_index == m.dst_index and move.promotion_type != Piece.PAWN:
                 self.move(move)
                 return True
         return False
@@ -428,6 +428,7 @@ class Chessboard():
         # create move indexes into bbs
         src_bb = np.left_shift(bit, move.src_index)
         dst_bb = np.left_shift(bit, move.dst_index)
+        promotion_type = move.promotion_type
 
         player = self.player_to_move
         opponent = (self.player_to_move+1)%2
@@ -438,8 +439,10 @@ class Chessboard():
             self.bitboards[opponent, i] = np.bitwise_and(self.bitboards[opponent, i], np.bitwise_not(dst_bb))
             if np.bitwise_and(self.bitboards[player, i], src_bb):
                 self.bitboards[player, i] = np.bitwise_xor(self.bitboards[player, i], src_bb)
-                self.bitboards[player, i] = np.bitwise_or(self.bitboards[player, i], dst_bb)
-
+                if promotion_type:
+                    self.bitboards[player, promotion_type] = np.bitwise_or(self.bitboards[player, promotion_type], dst_bb)
+                else:
+                    self.bitboards[player, i] = np.bitwise_or(self.bitboards[player, i], dst_bb)
         # check for changes in pawn locations or number of pieces on board for 50 move rule
         pawns_new = np.bitwise_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
         count_new = self._get_piece_count()
@@ -448,7 +451,6 @@ class Chessboard():
             self.fifty_move_counter.append(np.uint8(0))
         else:
             self.fifty_move_counter.append(self.fifty_move_counter[-1] + np.uint8(1))
-        print(str(self.fifty_move_counter))
 
         # update player to move
         tmp = self.player_to_move

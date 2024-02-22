@@ -58,13 +58,9 @@ class SquareGUI(Canvas):
     def set_piece(self, piece_color:str, piece_type:str):
         self.piece_color=piece_color
         self.piece_type=piece_type
-        print(f"{self.piece_color}, {self.piece_type}")
         self.piece_img=self._getAsset()
-        print(self.piece_img)
         if(self.piece_img):
-            pass
-            #self.piece_img_id = self.create_image(self.size/2, self.size/2, image=self.piece_img, anchor=CENTER)
-        print("c")
+            self.piece_img_id = self.create_image(self.size/2, self.size/2, image=self.piece_img, anchor=CENTER)
     # deconstructor for piece
     def delete_piece(self):
             self.piece_color="none"
@@ -106,15 +102,12 @@ class SquareGUI(Canvas):
             if self.piece_type == "king":
                 return PhotoImage(file=ASSET_PATH+"b_king.png")
 
-class PromotionWindowGUI(Tk):
+class PromotionWindowGUI(Toplevel):
     def __init__(self, parent, color, x, y):
         super().__init__()
         self.geometry(f"{int(WINDOW_SIZE*5/8)}x{int(WINDOW_SIZE/8)}+{x}+{y}")
-        print("2")
         promotion_squares = [SquareGUI(self, WINDOW_SIZE/8, 0, pos_y) for pos_y in range(5)]
-        print(type(promotion_squares))
         promotion_squares[0].set_piece(color, "knight")
-        print("4")
         promotion_squares[1].set_piece(color, "bishop")
         promotion_squares[2].set_piece(color, "rook")
         promotion_squares[3].set_piece(color, "queen")
@@ -123,10 +116,7 @@ class PromotionWindowGUI(Tk):
         self.parent = parent
 
     def on_m1(self, event):
-        print("Hello")
-        clicked_piece:SquareGUI = event.widget
-        self.parent.promotion_type = clicked_piece.piece_type
-        self.quit()
+        self.parent.on_m1(event)
 
 class ChessboardGUI(Tk):
     piece_selected : bool            # true if any square is selected
@@ -134,6 +124,10 @@ class ChessboardGUI(Tk):
     board : List[List[SquareGUI]]   # main grid used for the board
     board_size : int                 # size of one side of the square board
     square_size : int                # size of a square
+
+    dst_piece : SquareGUI
+    awaiting_promo : bool
+    promotion_window : PromotionWindowGUI
 
     def __init__(self, size, send_move, get_bitboards):
         super().__init__()                          # init root window
@@ -143,6 +137,7 @@ class ChessboardGUI(Tk):
         self.board_size=size
         self.square_size=size/8
         self.piece_selected = False
+        self.awaiting_promo = False
         # initializes the squares in self.board
         self.board = [[SquareGUI(self, size=self.square_size, pos_x=col, pos_y=row) for row in range(8)] for col in range(8)]
         # function to send moves to the logical board
@@ -152,15 +147,21 @@ class ChessboardGUI(Tk):
         # bind root window to right-click
         self.bind("<Button-3>", self.on_m2)
     def on_m1(self, event):
+        if self.awaiting_promo:
+            self.try_promo(self.selected_piece, self.dst_piece, event.widget.piece_type)
+            self._close_choose_promo()
+            return
+
         dst:SquareGUI = event.widget
         if self.piece_selected:
             src = self.selected_piece
             if dst.selected == False:
                 if (src.piece_type == "pawn"):
-                    print(f"x:{dst.pos_x}, y:{dst.pos_y}")
                     if (src.piece_color == "white") and (dst.pos_x==0):
+                        self.dst_piece = dst
                         self._open_choose_promo(event, self.selected_piece.piece_color)
                     elif (src.piece_color == "black") and (dst.pos_x==7):
+                        self.dst_piece = dst
                         self._open_choose_promo(event, self.selected_piece.piece_color)
                     else:
                         self.try_move(src, dst)
@@ -183,7 +184,25 @@ class ChessboardGUI(Tk):
 
         if self.send_move(src_index, dst_index):
             self.init_board(self.get_bitboards())
-            
+    def try_promo(self, src_sq:SquareGUI, dst_sq:SquareGUI, promotion_type:str):
+        src_index = 7-src_sq.pos_y+8*(7-src_sq.pos_x)
+        dst_index = 7-dst_sq.pos_y+8*(7-dst_sq.pos_x)
+
+        p = 0
+        if promotion_type == "knight":
+            p = 1
+        elif promotion_type == "bishop":
+            p = 2
+        elif promotion_type == "rook":
+            p = 3
+        elif promotion_type == "queen":
+            p = 4
+        elif promotion_type == "king":
+            p = 5
+        
+        if self.send_move(src_index, dst_index, p):
+            self.init_board(self.get_bitboards())
+
     def move(self, posx1:int, posy1:int, posx2:int, posy2:int, promoteTo=None):
         self.board[posx2][posy2].set_piece(self.board[posx1][posy1].piece_color, self.board[posx1][posy1].piece_type)
         self.board[posx1][posy1].delete_piece()
@@ -227,10 +246,12 @@ class ChessboardGUI(Tk):
             bitboard >>= np.uint8(1)
     def _open_choose_promo(self, event, color):
         self.grab_set()
-        promotion_window = PromotionWindowGUI(self, color, event.x_root, event.y_root)
-        print("1")
-        promotion_window.mainloop()
+        self.promotion_window = PromotionWindowGUI(self, color, event.x_root, event.y_root)
+        self.awaiting_promo = True
+    def _close_choose_promo(self):
         self.grab_release()
+        self.awaiting_promo = False
+        self.promotion_window.destroy()
 
 
 class Game():
