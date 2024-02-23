@@ -1,4 +1,13 @@
-import numpy as np
+from numpy import uint64 as u64
+from numpy import uint8 as u8
+from numpy import left_shift as ls
+from numpy import right_shift as rs
+from numpy import bitwise_or as b_or
+from numpy import bitwise_and as b_and
+from numpy import bitwise_not as b_not
+from numpy import bitwise_xor as b_xor
+from numpy import zeros, ndarray, uint, array
+
 from enum import IntEnum
 from typing import List
 from typing import Tuple
@@ -17,187 +26,187 @@ from itertools import chain
 
 # ranks used for masking
 # ranks by number
-RANK_8_BB = np.uint64(0b1111111100000000000000000000000000000000000000000000000000000000)
-RANK_7_BB = np.uint64(0b11111111000000000000000000000000000000000000000000000000)
-RANK_6_BB = np.uint64(0b111111110000000000000000000000000000000000000000)
-RANK_5_BB = np.uint64(0b1111111100000000000000000000000000000000)
-RANK_4_BB = np.uint64(0b11111111000000000000000000000000)
-RANK_3_BB = np.uint64(0b111111110000000000000000)
-RANK_2_BB = np.uint64(0b1111111100000000)
-RANK_1_BB = np.uint64(0b11111111)
+RANK_8_BB = u64(0b1111111100000000000000000000000000000000000000000000000000000000)
+RANK_7_BB = u64(0b11111111000000000000000000000000000000000000000000000000)
+RANK_6_BB = u64(0b111111110000000000000000000000000000000000000000)
+RANK_5_BB = u64(0b1111111100000000000000000000000000000000)
+RANK_4_BB = u64(0b11111111000000000000000000000000)
+RANK_3_BB = u64(0b111111110000000000000000)
+RANK_2_BB = u64(0b1111111100000000)
+RANK_1_BB = u64(0b11111111)
 
-rank_nr_list: list[np.uint64] = [RANK_8_BB, RANK_7_BB, RANK_6_BB, RANK_5_BB, RANK_4_BB, RANK_3_BB, RANK_2_BB, RANK_1_BB]
+rank_nr_list: list[u64] = [RANK_8_BB, RANK_7_BB, RANK_6_BB, RANK_5_BB, RANK_4_BB, RANK_3_BB, RANK_2_BB, RANK_1_BB]
 
 # ranks by letter
-FILE_A_BB = np.uint64(0b1000000010000000100000001000000010000000100000001000000010000000)
-FILE_B_BB = np.uint64(0b0100000001000000010000000100000001000000010000000100000001000000)
-FILE_C_BB = np.uint64(0b0010000000100000001000000010000000100000001000000010000000100000)
-FILE_D_BB = np.uint64(0b0001000000010000000100000001000000010000000100000001000000010000)
-FILE_E_BB = np.uint64(0b0000100000001000000010000000100000001000000010000000100000001000)
-FILE_F_BB = np.uint64(0b0000010000000100000001000000010000000100000001000000010000000100)
-FILE_G_BB = np.uint64(0b0000001000000010000000100000001000000010000000100000001000000010)
-FILE_H_BB = np.uint64(0b0000000100000001000000010000000100000001000000010000000100000001)
+FILE_A_BB = u64(0b1000000010000000100000001000000010000000100000001000000010000000)
+FILE_B_BB = u64(0b0100000001000000010000000100000001000000010000000100000001000000)
+FILE_C_BB = u64(0b0010000000100000001000000010000000100000001000000010000000100000)
+FILE_D_BB = u64(0b0001000000010000000100000001000000010000000100000001000000010000)
+FILE_E_BB = u64(0b0000100000001000000010000000100000001000000010000000100000001000)
+FILE_F_BB = u64(0b0000010000000100000001000000010000000100000001000000010000000100)
+FILE_G_BB = u64(0b0000001000000010000000100000001000000010000000100000001000000010)
+FILE_H_BB = u64(0b0000000100000001000000010000000100000001000000010000000100000001)
 
-rank_l_list: list[np.uint64] = [FILE_A_BB, FILE_B_BB, FILE_C_BB, FILE_D_BB, FILE_E_BB, FILE_F_BB, FILE_G_BB, FILE_H_BB]
+rank_l_list: list[u64] = [FILE_A_BB, FILE_B_BB, FILE_C_BB, FILE_D_BB, FILE_E_BB, FILE_F_BB, FILE_G_BB, FILE_H_BB]
 
-KNIGHT_BB = np.zeros(64, dtype=np.uint64)
-KING_BB = np.zeros(64, dtype=np.uint64)
+KNIGHT_BB = zeros(64, dtype=u64)
+KING_BB = zeros(64, dtype=u64)
 
-FIRST_RANK_ATTACKS = np.zeros((8, 256), dtype=np.uint8)
-FILE_H_ATTACKS = np.zeros((8, 256), dtype=np.uint64)
+FIRST_RANK_ATTACKS = zeros((8, 256), dtype=u8)
+FILE_H_ATTACKS = zeros((8, 256), dtype=u64)
 
-RANK_MASKS     = np.zeros(64, dtype=np.uint64)
-FILE_MASKS     = np.zeros(64, dtype=np.uint64)
-DIAG_MASKS     = np.zeros(64, dtype=np.uint64)
-ANTIDIAG_MASKS = np.zeros(64, dtype=np.uint64)
+RANK_MASKS     = zeros(64, dtype=u64)
+FILE_MASKS     = zeros(64, dtype=u64)
+DIAG_MASKS     = zeros(64, dtype=u64)
+ANTIDIAG_MASKS = zeros(64, dtype=u64)
 
-def print_byte(byte:np.uint8):
-    i = np.uint8(0b10000000)
+def print_byte(byte:u8):
+    i = u8(0b10000000)
     while i:
         if byte & i:
             print("1", end="")
         else:
             print("0", end="")
-        i >>= np.uint8(1)
+        i >>= u8(1)
     print()
 
-def rank_masks_init(arr:np.ndarray):
+def rank_masks_init(arr:ndarray):
     for index in range(64):
         if not index%8:
-            rank = np.left_shift(RANK_1_BB, np.uint8(index))
+            rank = ls(RANK_1_BB, u8(index))
         arr[index] = rank
 
-def file_masks_init(arr:np.ndarray):
+def file_masks_init(arr:ndarray):
     for index in range(64):
         if not index%8:
             file = FILE_H_BB
         else:
-            file = np.left_shift(file, np.uint8(1))
+            file = ls(file, u8(1))
         arr[index] = file
 
-def diag_masks_init(arr:np.ndarray):
-    bit = np.uint64(1)
+def diag_masks_init(arr:ndarray):
+    bit = u64(1)
     for index in range(64):
-        bb = np.uint64(0)
-        sq = np.left_shift(bit, np.uint64(index))
+        bb = u64(0)
+        sq = ls(bit, u64(index))
         while(sq):
-            bb = np.bitwise_or(bb, sq)
-            sq = np.bitwise_and(np.left_shift(sq, np.uint(7)), np.bitwise_not(FILE_A_BB))
-        sq = np.left_shift(bit, np.uint64(index))
+            bb = b_or(bb, sq)
+            sq = b_and(ls(sq, uint(7)), b_not(FILE_A_BB))
+        sq = ls(bit, u64(index))
         while(sq):
-            bb = np.bitwise_or(bb, sq)
-            sq = np.bitwise_and(np.right_shift(sq, np.uint(7)), np.bitwise_not(FILE_H_BB))
+            bb = b_or(bb, sq)
+            sq = b_and(rs(sq, uint(7)), b_not(FILE_H_BB))
         arr[index] = bb
 
-def antidiag_masks_init(arr:np.ndarray):
-    bit = np.uint64(1)
+def antidiag_masks_init(arr:ndarray):
+    bit = u64(1)
     for index in range(64):
-        bb = np.uint64(0)
-        sq = np.left_shift(bit, np.uint64(index))
+        bb = u64(0)
+        sq = ls(bit, u64(index))
         while(sq):
-            bb = np.bitwise_or(bb, sq)
-            sq = np.bitwise_and(np.left_shift(sq, np.uint(9)), np.bitwise_not(FILE_H_BB))
-        sq = np.left_shift(bit, np.uint64(index))
+            bb = b_or(bb, sq)
+            sq = b_and(ls(sq, uint(9)), b_not(FILE_H_BB))
+        sq = ls(bit, u64(index))
         while(sq):
-            bb = np.bitwise_or(bb, sq)
-            sq = np.bitwise_and(np.right_shift(sq, np.uint(9)), np.bitwise_not(FILE_A_BB))
+            bb = b_or(bb, sq)
+            sq = b_and(rs(sq, uint(9)), b_not(FILE_A_BB))
         arr[index] = bb
 
-def calc_first_rank_attacks(index:np.uint8, occ:np.uint8):
-    attacks = np.uint8(0)
-    bit = np.uint8(1)
-    i = np.left_shift(bit, index+bit)
+def calc_first_rank_attacks(index:u8, occ:u8):
+    attacks = u8(0)
+    bit = u8(1)
+    i = ls(bit, index+bit)
     while i:
-        current_bit = np.bitwise_and(i, occ)
-        attacks = np.bitwise_or(attacks, i)
+        current_bit = b_and(i, occ)
+        attacks = b_or(attacks, i)
         if current_bit:
             break
-        i = np.left_shift(i, bit)
-    i = np.left_shift(bit, index-bit)
+        i = ls(i, bit)
+    i = ls(bit, index-bit)
     while i:
-        current_bit = np.bitwise_and(i, occ)
-        attacks = np.bitwise_or(attacks, i)
+        current_bit = b_and(i, occ)
+        attacks = b_or(attacks, i)
         if current_bit:
             break
-        i = np.right_shift(i, bit)
+        i = rs(i, bit)
     return attacks
 
-def calc_file_h_attacks(index:np.uint8, occ:np.uint8):
+def calc_file_h_attacks(index:u8, occ:u8):
 
-    index = np.uint64(index)
-    occ = np.uint64(occ)
+    index = u64(index)
+    occ = u64(occ)
 
-    attacks = np.uint64(0)
-    bit = np.uint64(1)
-    byte = np.uint64(8)
-    i = np.left_shift(bit, index+bit)
+    attacks = u64(0)
+    bit = u64(1)
+    byte = u64(8)
+    i = ls(bit, index+bit)
     j = index+bit
     while i:
-        current_bit = np.bitwise_and(i, occ)
-        attacks = np.bitwise_or(attacks, np.left_shift(bit, j*byte))
+        current_bit = b_and(i, occ)
+        attacks = b_or(attacks, ls(bit, j*byte))
         if current_bit:
             break
-        i = np.left_shift(i, bit)
+        i = ls(i, bit)
         j += bit
-    i = np.left_shift(bit, index-bit)
+    i = ls(bit, index-bit)
     j = index-bit
     while i:
-        current_bit = np.bitwise_and(i, occ)
-        attacks = np.bitwise_or(attacks, np.left_shift(bit, j*byte))
+        current_bit = b_and(i, occ)
+        attacks = b_or(attacks, ls(bit, j*byte))
         if current_bit:
             break
-        i = np.right_shift(i, bit)
+        i = rs(i, bit)
         j -= bit
     return attacks
 
-def first_rank_attacks_init(arr:np.ndarray):
+def first_rank_attacks_init(arr:ndarray):
     for index in range(8):
         for occ in range(256):
             arr[index, occ] = calc_first_rank_attacks(index, occ)
 
-def file_h_attacks_init(arr:np.ndarray):
+def file_h_attacks_init(arr:ndarray):
     for index in range(8):
         for occ in range(256):
             arr[index, occ] = calc_file_h_attacks(index, occ)
 
-def knight_bb_init(bbs:np.ndarray):
+def knight_bb_init(bbs:ndarray):
     # Init of movegeneration bitboards for knights.
     # The bitboard of bbs[index] represents the bitboard with all possible destinationsquares given a source square = index
-    src_bb = np.uint64(1) # source bb to generate moves from
-    for index in range(np.uint64(64)):
-        dst_bb = np.uint64(0) # destination bb to track all possible move destinations
+    src_bb = u64(1) # source bb to generate moves from
+    for index in range(u64(64)):
+        dst_bb = u64(0) # destination bb to track all possible move destinations
 
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.right_shift(src_bb, np.uint8(17)), np.bitwise_not(FILE_A_BB)))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.right_shift(src_bb, np.uint8(15)), np.bitwise_not(FILE_H_BB)))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.right_shift(src_bb, np.uint8(10)), np.bitwise_not(np.bitwise_or(FILE_A_BB, FILE_B_BB))))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.right_shift(src_bb, np.uint8(6)),  np.bitwise_not(np.bitwise_or(FILE_G_BB, FILE_H_BB))))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and( np.left_shift(src_bb, np.uint8(6)),  np.bitwise_not(np.bitwise_or(FILE_A_BB, FILE_B_BB))))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and( np.left_shift(src_bb, np.uint8(10)), np.bitwise_not(np.bitwise_or(FILE_G_BB, FILE_H_BB))))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and( np.left_shift(src_bb, np.uint8(15)), np.bitwise_not(FILE_A_BB)))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and( np.left_shift(src_bb, np.uint8(17)), np.bitwise_not(FILE_H_BB)))
+        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(17)), b_not(FILE_A_BB)))
+        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(15)), b_not(FILE_H_BB)))
+        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(10)), b_not(b_or(FILE_A_BB, FILE_B_BB))))
+        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(6)),  b_not(b_or(FILE_G_BB, FILE_H_BB))))
+        dst_bb = b_or(dst_bb, b_and( ls(src_bb, u8(6)),  b_not(b_or(FILE_A_BB, FILE_B_BB))))
+        dst_bb = b_or(dst_bb, b_and( ls(src_bb, u8(10)), b_not(b_or(FILE_G_BB, FILE_H_BB))))
+        dst_bb = b_or(dst_bb, b_and( ls(src_bb, u8(15)), b_not(FILE_A_BB)))
+        dst_bb = b_or(dst_bb, b_and( ls(src_bb, u8(17)), b_not(FILE_H_BB)))
 
         bbs[index] = dst_bb
-        src_bb = np.left_shift(src_bb, np.uint8(1)) # shift src_bb to match index
+        src_bb = ls(src_bb, u8(1)) # shift src_bb to match index
 
 
-def king_bb_init(bbs:np.ndarray):
+def king_bb_init(bbs:ndarray):
     # Init of movegeneration bitboards for kings.
     # The bitboard of bbs[index] represents the bitboard with all possible destinationsquares given a source square = index
-    src_bb = np.uint64(1) # source bb to generate moves from
-    for index in range(np.uint64(64)):
-        dst_bb = np.uint64(0) # destination bb to track all possible move destinations
+    src_bb = u64(1) # source bb to generate moves from
+    for index in range(u64(64)):
+        dst_bb = u64(0) # destination bb to track all possible move destinations
 
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.right_shift(src_bb, np.uint8(9)), np.bitwise_not(FILE_A_BB)))
-        dst_bb = np.bitwise_or(dst_bb,                np.right_shift(src_bb, np.uint8(8)))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.right_shift(src_bb, np.uint8(7)), np.bitwise_not(FILE_H_BB)))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.right_shift(src_bb, np.uint8(1)), np.bitwise_not(FILE_A_BB)))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.left_shift(src_bb, np.uint8(1)),  np.bitwise_not(FILE_H_BB)))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.left_shift(src_bb, np.uint8(7)),  np.bitwise_not(FILE_A_BB)))
-        dst_bb = np.bitwise_or(dst_bb,                np.left_shift(src_bb, np.uint8(8)))
-        dst_bb = np.bitwise_or(dst_bb, np.bitwise_and(np.left_shift(src_bb, np.uint8(9)),  np.bitwise_not(FILE_H_BB)))
+        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(9)), b_not(FILE_A_BB)))
+        dst_bb = b_or(dst_bb,                rs(src_bb, u8(8)))
+        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(7)), b_not(FILE_H_BB)))
+        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(1)), b_not(FILE_A_BB)))
+        dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(1)),  b_not(FILE_H_BB)))
+        dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(7)),  b_not(FILE_A_BB)))
+        dst_bb = b_or(dst_bb,                ls(src_bb, u8(8)))
+        dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(9)),  b_not(FILE_H_BB)))
 
         bbs[index] = dst_bb
-        src_bb = np.left_shift(src_bb, np.uint8(1)) # shift src_bb to match index
+        src_bb = ls(src_bb, u8(1)) # shift src_bb to match index
 
 rank_masks_init(RANK_MASKS)
 file_masks_init(FILE_MASKS)
@@ -221,12 +230,12 @@ class Piece(IntEnum):
     KING   = 5
 
 class Move():
-    src_index      : np.uint8
-    dst_index      : np.uint8
+    src_index      : u8
+    dst_index      : u8
     promotion_type : Piece
     is_take        : bool
 
-    def __init__(self, src_index:np.uint8, dst_index:np.uint8, promotion_type=None, is_take=False):
+    def __init__(self, src_index:u8, dst_index:u8, promotion_type=None, is_take=False):
         self.src_index      = src_index
         self.dst_index      = dst_index
         self.promotion_type = promotion_type
@@ -329,75 +338,75 @@ class Chessboard():
     # The first index represents color, 0 = white, 1 = black
     # The second index represents piece-type.
     # 0 = pawns, 1 = knights, 2 = bishops, 3 = rooks, 4 = queens, 5 = kings
-    bitboards : np.ndarray
+    bitboards : ndarray
     # index 0 = bitboard of combined white pieces
     # index 1 = bitboard of combined black pieces
     # index 2 = bitboard of combined black and white pieces
-    combined  : np.ndarray
+    combined  : ndarray
     # other logic
     player_to_move : Color
     not_player_to_move : Color
-    fifty_move_counter : List[np.uint8]
+    fifty_move_counter : List[u8]
 
     # init empty board
     def __init__(self):
-        self.bitboards = np.zeros((2, 6), dtype=np.uint64)
-        self.combined  = np.zeros(3, dtype=np.uint64)
+        self.bitboards = zeros((2, 6), dtype=u64)
+        self.combined  = zeros(3, dtype=u64)
         self.player_to_move = Color.WHITE
         self.not_player_to_move = Color.BLACK
         self.fifty_move_counter = []
-        self.fifty_move_counter.append(np.uint8(0))
+        self.fifty_move_counter.append(u8(0))
 
     def __str__(self):
         str_builder = []
-        mask_bb = np.uint64(pow(2, 63))
+        mask_bb = u64(pow(2, 63))
         for i in range(64):
             if not i % 8:
                 str_builder.append('\n')
             # if white pawn
-            if np.bitwise_and(self.bitboards[0][0], mask_bb):
+            if b_and(self.bitboards[0][0], mask_bb):
                 str_builder.append('P ')
             # if black pawn
-            elif np.bitwise_and(self.bitboards[1][0], mask_bb):
+            elif b_and(self.bitboards[1][0], mask_bb):
                 str_builder.append('p ')
 
             # if white knight
-            elif np.bitwise_and(self.bitboards[0][1], mask_bb):
+            elif b_and(self.bitboards[0][1], mask_bb):
                 str_builder.append('K ')
             # if black knight
-            elif np.bitwise_and(self.bitboards[1][1], mask_bb):
+            elif b_and(self.bitboards[1][1], mask_bb):
                 str_builder.append('k ')
 
             # if white bishop
-            elif np.bitwise_and(self.bitboards[0][2], mask_bb):
+            elif b_and(self.bitboards[0][2], mask_bb):
                 str_builder.append('B ')
             # if black bishop
-            elif np.bitwise_and(self.bitboards[1][2], mask_bb):
+            elif b_and(self.bitboards[1][2], mask_bb):
                 str_builder.append('b ')
 
             # if white rook
-            elif np.bitwise_and(self.bitboards[0][3], mask_bb):
+            elif b_and(self.bitboards[0][3], mask_bb):
                 str_builder.append('R ')
             # if black rook
-            elif np.bitwise_and(self.bitboards[1][3], mask_bb):
+            elif b_and(self.bitboards[1][3], mask_bb):
                 str_builder.append('r ')
 
             # if white queen
-            elif np.bitwise_and(self.bitboards[0][4], mask_bb):
+            elif b_and(self.bitboards[0][4], mask_bb):
                 str_builder.append('Q ')
             # if black queen
-            elif np.bitwise_and(self.bitboards[1][4], mask_bb):
+            elif b_and(self.bitboards[1][4], mask_bb):
                 str_builder.append('q ')
 
             # if white king
-            elif np.bitwise_and(self.bitboards[0][5], mask_bb):
+            elif b_and(self.bitboards[0][5], mask_bb):
                 str_builder.append('K ')
             # if black king
-            elif np.bitwise_and(self.bitboards[1][5], mask_bb):
+            elif b_and(self.bitboards[1][5], mask_bb):
                 str_builder.append('k ')
             else:
                 str_builder.append('. ')
-            mask_bb = np.right_shift(mask_bb, np.uint8(1))
+            mask_bb = rs(mask_bb, u8(1))
 
         return ''.join(str_builder)
 
@@ -408,7 +417,7 @@ class Chessboard():
 
     def try_move(self, src_index, dst_index, promotion_type:Piece=None):
         # used for interface to attempt a move, returns True if successful, False if not successful
-        move = Move(np.uint8(src_index), np.uint8(dst_index), promotion_type) # create function parameters into a Move()
+        move = Move(u8(src_index), u8(dst_index), promotion_type) # create function parameters into a Move()
         moves = self.get_moves() # get legal moves
         for m in moves:
             # checks if input move is in legal moves
@@ -421,13 +430,13 @@ class Chessboard():
         # main function to move a piece and updates all nessecary properties of class
 
         # temporary variables to update parameters in the chessboard
-        pawns_old = np.bitwise_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
+        pawns_old = b_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
         count_old = self._get_piece_count()
 
-        bit = np.uint64(1)
+        bit = u64(1)
         # create move indexes into bbs
-        src_bb = np.left_shift(bit, move.src_index)
-        dst_bb = np.left_shift(bit, move.dst_index)
+        src_bb = ls(bit, move.src_index)
+        dst_bb = ls(bit, move.dst_index)
         promotion_type = move.promotion_type
 
         player = self.player_to_move
@@ -436,21 +445,21 @@ class Chessboard():
         # iterate over all piece_type bbs and remove all bits on destination square for opponent
         # and add bit on piece_type for player if piece_type has a 1 on source square
         for i in range(6):
-            self.bitboards[opponent, i] = np.bitwise_and(self.bitboards[opponent, i], np.bitwise_not(dst_bb))
-            if np.bitwise_and(self.bitboards[player, i], src_bb):
-                self.bitboards[player, i] = np.bitwise_xor(self.bitboards[player, i], src_bb)
+            self.bitboards[opponent, i] = b_and(self.bitboards[opponent, i], b_not(dst_bb))
+            if b_and(self.bitboards[player, i], src_bb):
+                self.bitboards[player, i] = b_xor(self.bitboards[player, i], src_bb)
                 if promotion_type:
-                    self.bitboards[player, promotion_type] = np.bitwise_or(self.bitboards[player, promotion_type], dst_bb)
+                    self.bitboards[player, promotion_type] = b_or(self.bitboards[player, promotion_type], dst_bb)
                 else:
-                    self.bitboards[player, i] = np.bitwise_or(self.bitboards[player, i], dst_bb)
+                    self.bitboards[player, i] = b_or(self.bitboards[player, i], dst_bb)
         # check for changes in pawn locations or number of pieces on board for 50 move rule
-        pawns_new = np.bitwise_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
+        pawns_new = b_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
         count_new = self._get_piece_count()
 
         if (pawns_new != pawns_old) or (count_new != count_old):
-            self.fifty_move_counter.append(np.uint8(0))
+            self.fifty_move_counter.append(u8(0))
         else:
-            self.fifty_move_counter.append(self.fifty_move_counter[-1] + np.uint8(1))
+            self.fifty_move_counter.append(self.fifty_move_counter[-1] + u8(1))
 
         # update player to move
         tmp = self.player_to_move
@@ -458,27 +467,27 @@ class Chessboard():
         self.not_player_to_move = tmp
 
     def _get_piece_count(self):
-        bit = np.uint8(1)
+        bit = u8(1)
         count = 0
         for player in self.bitboards:
             for piece_bb in player:
                 while piece_bb:
-                    if np.bitwise_and(piece_bb, bit):
+                    if b_and(piece_bb, bit):
                         count += 1
-                    piece_bb = np.right_shift(piece_bb, bit)
+                    piece_bb = rs(piece_bb, bit)
         return count
     
     def combine_bb(self):
         # combines bb of both player colors seperately and together
         index = 0
         for player in self.bitboards:
-            combined = np.uint64(0)
+            combined = u64(0)
             for bb in player:
-                combined = np.bitwise_or(combined, bb)
+                combined = b_or(combined, bb)
             self.combined[index] = combined
             index += 1
 
-        self.combined[2] = np.bitwise_or(self.combined[Color.WHITE], self.combined[Color.BLACK])
+        self.combined[2] = b_or(self.combined[Color.WHITE], self.combined[Color.BLACK])
     def get_moves(self):
         # get legal moves given current state
 
@@ -499,27 +508,27 @@ class Chessboard():
 
         return moves
 
-    def get_moves_by_bb(self, src_index:np.uint8, dst_bb:np.uint64, takes:bool=False):
+    def get_moves_by_bb(self, src_index:u8, dst_bb:u64, takes:bool=False):
         # converts moves represented by a source index and a destination bb to
         # moves represented by the Move() class and returns them.
         moves:List[Move] = []
-        dst_index = np.uint8(0)
-        bit = np.uint8(1)
+        dst_index = u8(0)
+        bit = u8(1)
         while dst_bb:
-            if np.bitwise_and(dst_bb, bit):
+            if b_and(dst_bb, bit):
                 moves.append(Move(src_index, dst_index, is_take=takes))
             dst_index += bit
-            dst_bb = np.right_shift(dst_bb, bit)
+            dst_bb = rs(dst_bb, bit)
         return moves
     
-    def get_moves_by_bb_pawn(self, src_index:np.uint8, dst_bb:np.uint64, takes:bool=False):
+    def get_moves_by_bb_pawn(self, src_index:u8, dst_bb:u64, takes:bool=False):
         # converts moves represented by a source index and a destination bb to
         # moves represented by the Move() class and returns them.
         moves:List[Move] = []
-        dst_index = np.uint8(0)
-        bit = np.uint8(1)
+        dst_index = u8(0)
+        bit = u8(1)
         while dst_bb:
-            if np.bitwise_and(dst_bb, bit):
+            if b_and(dst_bb, bit):
                 if (dst_index < 8) or (56 <= dst_index):
                     for piece_type in (Piece):
                         if piece_type != Piece.PAWN:
@@ -527,24 +536,24 @@ class Chessboard():
                 else:
                     moves.append(Move(src_index, dst_index, is_take=takes))
             dst_index += bit
-            dst_bb = np.right_shift(dst_bb, bit)
+            dst_bb = rs(dst_bb, bit)
         return moves
     
     def _get_moves(self):
         # get moves by the self.player_to_move kings bb and returns them as [Move]
         moves:List[Move] = []
-        bit = np.uint8(1)
+        bit = u8(1)
         for piece_type in Piece:
-            src_index = np.uint(0)
+            src_index = uint(0)
             src_bb = self.bitboards[self.player_to_move, piece_type]
             while src_bb:
-                if np.bitwise_and(src_bb, bit):
+                if b_and(src_bb, bit):
                     moves += self._get_moves_by_piece_type(piece_type, src_index)
                 src_index += bit
-                src_bb = np.right_shift(src_bb, bit)
+                src_bb = rs(src_bb, bit)
         return moves
     
-    def _get_moves_by_piece_type(self, piece_type:Piece, src_index:np.uint8):
+    def _get_moves_by_piece_type(self, piece_type:Piece, src_index:u8):
         if piece_type == Piece.PAWN:
             if self.player_to_move == Color.WHITE:
                 return self._get_moves_pawn_white(src_index)
@@ -565,143 +574,143 @@ class Chessboard():
         else:
             raise RuntimeError("Invalid piece_type: %s" % str(piece_type))
 
-    def _get_moves_file(self, src_index:np.uint8):
+    def _get_moves_file(self, src_index:u8):
         moves:List[Move] = []
-        shift = np.bitwise_and(src_index, np.uint8(0b000_111))
-        rank_index = np.right_shift(np.bitwise_and(src_index, np.uint8(0b111_000)), np.uint8(3))
+        shift = b_and(src_index, u8(0b000_111))
+        rank_index = rs(b_and(src_index, u8(0b111_000)), u8(3))
 
-        occ = np.right_shift(self.combined[2], shift)
-        occ = np.bitwise_and(occ, FILE_H_BB)
+        occ = rs(self.combined[2], shift)
+        occ = b_and(occ, FILE_H_BB)
         occ *= DIAG_MASKS[7]
-        occ = np.right_shift(occ, np.uint8(0b111_000))
+        occ = rs(occ, u8(0b111_000))
 
         dst_bb = FILE_H_ATTACKS[rank_index, occ]
-        dst_bb = np.left_shift(dst_bb, shift)
+        dst_bb = ls(dst_bb, shift)
 
-        takes_bb = np.bitwise_and(dst_bb, self.combined[self.not_player_to_move])
-        moves_bb = np.bitwise_and(dst_bb, np.bitwise_not(self.combined[2]))
-
-        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
-        moves += self.get_moves_by_bb(src_index, moves_bb)
-        return moves
-
-    def _get_moves_rank(self, src_index:np.uint8):
-        moves:List[Move] = []
-        rank_index = np.bitwise_and(src_index, np.uint8(0b000_111))
-        shift:np.uint8 = np.bitwise_and(src_index, np.uint8(0b111_000))
-
-        occ = np.uint8(np.right_shift(self.combined[2], shift))
-
-        dst_bb = np.uint64(FIRST_RANK_ATTACKS[rank_index, occ])
-        dst_bb = np.left_shift(dst_bb, shift)
-        takes_bb = np.bitwise_and(dst_bb, self.combined[self.not_player_to_move])
-        moves_bb = np.bitwise_and(dst_bb, np.bitwise_not(self.combined[2]))
+        takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
+        moves_bb = b_and(dst_bb, b_not(self.combined[2]))
 
         moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
         moves += self.get_moves_by_bb(src_index, moves_bb)
         return moves
 
-    def _get_moves_diag(self, src_index:np.uint8):
+    def _get_moves_rank(self, src_index:u8):
         moves:List[Move] = []
-        rank_index = np.bitwise_and(src_index, np.uint8(0b000_111))
+        rank_index = b_and(src_index, u8(0b000_111))
+        shift:u8 = b_and(src_index, u8(0b111_000))
 
-        occ = np.bitwise_and(self.combined[2], DIAG_MASKS[src_index])
+        occ = u8(rs(self.combined[2], shift))
+
+        dst_bb = u64(FIRST_RANK_ATTACKS[rank_index, occ])
+        dst_bb = ls(dst_bb, shift)
+        takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
+        moves_bb = b_and(dst_bb, b_not(self.combined[2]))
+
+        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self.get_moves_by_bb(src_index, moves_bb)
+        return moves
+
+    def _get_moves_diag(self, src_index:u8):
+        moves:List[Move] = []
+        rank_index = b_and(src_index, u8(0b000_111))
+
+        occ = b_and(self.combined[2], DIAG_MASKS[src_index])
         occ *= FILE_H_BB
-        occ = np.right_shift(occ, np.uint8(0b111_000))
+        occ = rs(occ, u8(0b111_000))
 
         dst_bb = FIRST_RANK_ATTACKS[rank_index, occ]
         dst_bb *= FILE_H_BB
-        dst_bb = np.bitwise_and(dst_bb, DIAG_MASKS[src_index])
+        dst_bb = b_and(dst_bb, DIAG_MASKS[src_index])
 
-        takes_bb = np.bitwise_and(dst_bb, self.combined[self.not_player_to_move])
-        moves_bb = np.bitwise_and(dst_bb, np.bitwise_not(self.combined[2]))
+        takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
+        moves_bb = b_and(dst_bb, b_not(self.combined[2]))
 
         moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
         moves += self.get_moves_by_bb(src_index, moves_bb)
         return moves
 
-    def _get_moves_antidiag(self, src_index:np.uint8):
+    def _get_moves_antidiag(self, src_index:u8):
         moves:List[Move] = []
-        rank_index = np.bitwise_and(src_index, np.uint8(0b000_111))
+        rank_index = b_and(src_index, u8(0b000_111))
 
-        occ = np.bitwise_and(self.combined[2], ANTIDIAG_MASKS[src_index])
+        occ = b_and(self.combined[2], ANTIDIAG_MASKS[src_index])
         occ *= FILE_H_BB
-        occ = np.right_shift(occ, np.uint8(0b111_000))
+        occ = rs(occ, u8(0b111_000))
 
         dst_bb = FIRST_RANK_ATTACKS[rank_index, occ]
         dst_bb *= FILE_H_BB
-        dst_bb = np.bitwise_and(dst_bb, ANTIDIAG_MASKS[src_index])
+        dst_bb = b_and(dst_bb, ANTIDIAG_MASKS[src_index])
 
-        takes_bb = np.bitwise_and(dst_bb, self.combined[self.not_player_to_move])
-        moves_bb = np.bitwise_and(dst_bb, np.bitwise_not(self.combined[2]))
+        takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
+        moves_bb = b_and(dst_bb, b_not(self.combined[2]))
 
         moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
         moves += self.get_moves_by_bb(src_index, moves_bb)
         return moves
 
-    def _get_moves_pawn_white(self, src_index:np.uint8):
+    def _get_moves_pawn_white(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
-        src_bb = np.left_shift(np.uint64(1), src_index)
+        src_bb = ls(u64(1), src_index)
 
-        takes_bb = np.bitwise_and(np.left_shift(src_bb, np.uint8(9)), np.bitwise_not(FILE_H_BB))
-        takes_bb = np.bitwise_or(takes_bb, np.bitwise_and(np.left_shift(src_bb, np.uint8(7)), np.bitwise_not(FILE_A_BB)))
-        takes_bb = np.bitwise_and(takes_bb, self.combined[Color.BLACK])
+        takes_bb = b_and(ls(src_bb, u8(9)), b_not(FILE_H_BB))
+        takes_bb = b_or(takes_bb, b_and(ls(src_bb, u8(7)), b_not(FILE_A_BB)))
+        takes_bb = b_and(takes_bb, self.combined[Color.BLACK])
 
         if takes_bb: # if takes avaiable, no need to find non-takes
             return self.get_moves_by_bb_pawn(src_index, takes_bb, takes=True)
 
-        moves_bb = np.left_shift(src_bb, np.uint8(8))
+        moves_bb = ls(src_bb, u8(8))
         if (8 <= src_index < 16):
-            moves_bb = np.bitwise_or(moves_bb, np.left_shift(src_bb, np.uint8(16)))
-        moves_bb = np.bitwise_and(moves_bb, np.bitwise_not(np.bitwise_or(self.combined[2], np.left_shift(np.bitwise_and(np.bitwise_not(src_bb), self.combined[2]), np.uint8(8)))))
+            moves_bb = b_or(moves_bb, ls(src_bb, u8(16)))
+        moves_bb = b_and(moves_bb, b_not(b_or(self.combined[2], ls(b_and(b_not(src_bb), self.combined[2]), u8(8)))))
 
-        bb = np.bitwise_or(moves_bb, takes_bb)
+        bb = b_or(moves_bb, takes_bb)
 
         return self.get_moves_by_bb_pawn(src_index, bb)
 
-    def _get_moves_pawn_black(self, src_index:np.uint8):
+    def _get_moves_pawn_black(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
-        src_bb = np.left_shift(np.uint64(1), src_index)
+        src_bb = ls(u64(1), src_index)
 
-        takes_bb = np.bitwise_and(np.right_shift(src_bb, np.uint8(7)), np.bitwise_not(FILE_H_BB))
-        takes_bb = np.bitwise_or(takes_bb, np.bitwise_and(np.right_shift(src_bb, np.uint8(9)), np.bitwise_not(FILE_A_BB)))
-        takes_bb = np.bitwise_and(takes_bb, self.combined[Color.WHITE])
+        takes_bb = b_and(rs(src_bb, u8(7)), b_not(FILE_H_BB))
+        takes_bb = b_or(takes_bb, b_and(rs(src_bb, u8(9)), b_not(FILE_A_BB)))
+        takes_bb = b_and(takes_bb, self.combined[Color.WHITE])
 
         if takes_bb: # if takes avaiable, no need to find non-takes
             return self.get_moves_by_bb_pawn(src_index, takes_bb, takes=True)
 
-        moves_bb = np.right_shift(src_bb, np.uint8(8))
+        moves_bb = rs(src_bb, u8(8))
         if (48 <= src_index < 56):
-            moves_bb = np.bitwise_or(moves_bb, np.right_shift(src_bb, np.uint8(16)))
-        moves_bb = np.bitwise_and(moves_bb, np.bitwise_not(np.bitwise_or(self.combined[2], np.right_shift(np.bitwise_and(np.bitwise_not(src_bb), self.combined[2]), np.uint8(8)))))
+            moves_bb = b_or(moves_bb, rs(src_bb, u8(16)))
+        moves_bb = b_and(moves_bb, b_not(b_or(self.combined[2], rs(b_and(b_not(src_bb), self.combined[2]), u8(8)))))
 
-        bb = np.bitwise_or(moves_bb, takes_bb)
+        bb = b_or(moves_bb, takes_bb)
 
         return self.get_moves_by_bb_pawn(src_index, bb)
     
-    def _get_moves_knight(self, src_index:np.uint8):
+    def _get_moves_knight(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
         moves:List[Move] = []
         dst_bb = KNIGHT_BB[src_index]
-        takes_bb = np.bitwise_and(dst_bb, self.combined[self.not_player_to_move])
-        moves_bb = np.bitwise_and(dst_bb, np.bitwise_not(self.combined[2]))
+        takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
+        moves_bb = b_and(dst_bb, b_not(self.combined[2]))
         moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
         moves += self.get_moves_by_bb(src_index, moves_bb)
         return moves
 
-    def _get_moves_bishop(self, src_index:np.uint8):
+    def _get_moves_bishop(self, src_index:u8):
         moves:List[Move] = []
         moves += self._get_moves_diag(src_index)
         moves += self._get_moves_antidiag(src_index)
         return moves
 
-    def _get_moves_rook(self, src_index:np.uint8):
+    def _get_moves_rook(self, src_index:u8):
         moves:List[Move] = []
         moves += self._get_moves_rank(src_index)
         moves += self._get_moves_file(src_index)
         return moves
     
-    def _get_moves_queen(self, src_index:np.uint8):
+    def _get_moves_queen(self, src_index:u8):
         moves:List[Move] = []
         moves += self._get_moves_diag(src_index)
         moves += self._get_moves_antidiag(src_index)
@@ -709,12 +718,12 @@ class Chessboard():
         moves += self._get_moves_file(src_index)
         return moves
 
-    def _get_moves_king(self, src_index:np.uint8):
+    def _get_moves_king(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
         moves:List[Move] = []
         dst_bb = KING_BB[src_index]
-        takes_bb = np.bitwise_and(dst_bb, self.combined[self.not_player_to_move])
-        moves_bb = np.bitwise_and(dst_bb, np.bitwise_not(self.combined[2]))
+        takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
+        moves_bb = b_and(dst_bb, b_not(self.combined[2]))
         moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
         moves += self.get_moves_by_bb(src_index, moves_bb)
         return moves
@@ -765,8 +774,8 @@ class Chessboard():
             for piece_type in player:
                 for i in range(0, 8):
                     for l in range(0, 8):
-                        position = np.bitwise_and(rank_nr_list[i], rank_l_list[l])
-                        if np.bitwise_and(piece_type, position) != 0:
+                        position = b_and(rank_nr_list[i], rank_l_list[l])
+                        if b_and(piece_type, position) != 0:
                             representation[0][i][l].append(1)
                         else:
                             representation[0][i][l].append(0)
@@ -779,40 +788,40 @@ class Chessboard():
         # TODO represent the no progress counter
         no_progress = 0
         # TODO calculate and represent en passant squares as specific squares in a 8x8 bitboard
-        en_passant = np.uint64(0b0000000000000000000000000000000000000000000000000000000000000000)
+        en_passant = u64(0b0000000000000000000000000000000000000000000000000000000000000000)
         for i in range(0, 8):
             for l in range(0, 8):
                 representation[0][i][l].append(repetitions_w)
                 representation[0][i][l].append(repetitions_b)
                 representation[0][i][l].append(color)
                 representation[0][i][l].append(no_progress)
-                position = np.bitwise_and(rank_nr_list[i], rank_l_list[l])
-                if np.bitwise_and(en_passant, position) != 0:
+                position = b_and(rank_nr_list[i], rank_l_list[l])
+                if b_and(en_passant, position) != 0:
                     representation[0][i][l].append(1)
                 else:
                     representation[0][i][l].append(0)
 
         #for row in range(0,8):
             #print(representation[0][row])
-        return np.array(representation)
+        return array(representation)
 
     # init standard chess board
     def init_board_standard(self):
 
         # white pieces
-        self.bitboards[Color.WHITE, Piece.PAWN]   = np.uint64(0b1111111100000000)
-        self.bitboards[Color.WHITE, Piece.KNIGHT] = np.uint64(0b01000010)
-        self.bitboards[Color.WHITE, Piece.BISHOP] = np.uint64(0b00100100)
-        self.bitboards[Color.WHITE, Piece.ROOK]   = np.uint64(0b10000001)
-        self.bitboards[Color.WHITE, Piece.QUEEN]  = np.uint64(0b00010000)
-        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b00001000)
+        self.bitboards[Color.WHITE, Piece.PAWN]   = u64(0b1111111100000000)
+        self.bitboards[Color.WHITE, Piece.KNIGHT] = u64(0b01000010)
+        self.bitboards[Color.WHITE, Piece.BISHOP] = u64(0b00100100)
+        self.bitboards[Color.WHITE, Piece.ROOK]   = u64(0b10000001)
+        self.bitboards[Color.WHITE, Piece.QUEEN]  = u64(0b00010000)
+        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b00001000)
         # black pieces
-        self.bitboards[Color.BLACK, Piece.PAWN]   = np.uint64(0b11111111000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KNIGHT] = np.uint64(0b0100001000000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.BISHOP] = np.uint64(0b0010010000000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.ROOK]   = np.uint64(0b1000000100000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.QUEEN]  = np.uint64(0b0001000000000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b0000100000000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.PAWN]   = u64(0b11111111000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KNIGHT] = u64(0b0100001000000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.BISHOP] = u64(0b0010010000000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.ROOK]   = u64(0b1000000100000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.QUEEN]  = u64(0b0001000000000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b0000100000000000000000000000000000000000000000000000000000000000)
 
     def init_board_test_1(self):
         # initializes a board with the following configuration:
@@ -826,11 +835,11 @@ class Chessboard():
         # wR wK .. .. .. .. .. ..
 
         # white pieces
-        self.bitboards[Color.WHITE, Piece.ROOK] = np.uint64(0b10000000)
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b1100000001000000)
+        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b10000000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b1100000001000000)
         # black pieces
-        self.bitboards[Color.BLACK, Piece.ROOK] = np.uint64(0b0000000100000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b0000001000000011000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b0000000100000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b0000001000000011000000000000000000000000000000000000000000000000)
     def init_board_test_2(self):
         # initializes a board with the following configuration:
         # .. .. .. .. .. .. .. ..
@@ -843,11 +852,11 @@ class Chessboard():
         # .. .. .. .. .. .. .. ..
 
         # white pieces
-        self.bitboards[Color.WHITE, Piece.ROOK] = np.uint64(0b0001000000000000)
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b001110000000000000000000)
+        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b0001000000000000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b001110000000000000000000)
         # black pieces
-        self.bitboards[Color.BLACK, Piece.ROOK] = np.uint64(0b00010000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b001110000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b00010000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b001110000000000000000000000000000000000000000000)
     def init_board_test_3(self):
         # initializes a board with the following configuration:
         # .. .. .. .. .. .. .. ..
@@ -860,11 +869,11 @@ class Chessboard():
         # .. .. .. .. .. .. .. ..
 
         # white pieces
-        self.bitboards[Color.WHITE, Piece.ROOK] = np.uint64(0b000100000000000000000000)
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b00111000000000000000000000000000)
+        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b000100000000000000000000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00111000000000000000000000000000)
         # black pieces
-        self.bitboards[Color.BLACK, Piece.ROOK] = np.uint64(0b000100000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b0011100000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b000100000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b0011100000000000000000000000000000000000)
     def init_board_test_4(self):
         # initializes a board with the following configuration:
         # bK .. .. .. .. .. .. ..
@@ -877,9 +886,9 @@ class Chessboard():
         # .. .. .. .. .. .. .. wR
 
         # white pieces
-        self.bitboards[Color.WHITE, Piece.ROOK] = np.uint64(0b1)
+        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b1)
         # black pieces
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b1000000000000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b1000000000000000000000000000000000000000000000000000000000000000)
     def init_board_test_5(self):
         # initializes a board with the following configuration:
         # bK bK bK .. .. .. .. ..
@@ -892,11 +901,11 @@ class Chessboard():
         # .. .. .. .. .. wK wK wK
 
         # white pieces
-        self.bitboards[Color.WHITE, Piece.PAWN] = np.uint64(0b0000011100000000)
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b00000111)
+        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b0000011100000000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00000111)
         # black pieces
-        self.bitboards[Color.BLACK, Piece.PAWN] = np.uint64(0b11100000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b1110000000000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b11100000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b1110000000000000000000000000000000000000000000000000000000000000)
     def init_board_test_6(self):
         # initializes a board with the following configuration:
         # bK bK bK bk .. .. .. ..
@@ -909,13 +918,13 @@ class Chessboard():
         # .. .. .. .. wk wK wK wK
 
         # white pieces
-        self.bitboards[Color.WHITE, Piece.PAWN]   = np.uint64(0b0000011100000000)
-        self.bitboards[Color.WHITE, Piece.KNIGHT] = np.uint64(0b0000100000001000)
-        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b00000111)
+        self.bitboards[Color.WHITE, Piece.PAWN]   = u64(0b0000011100000000)
+        self.bitboards[Color.WHITE, Piece.KNIGHT] = u64(0b0000100000001000)
+        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b00000111)
         # black pieces
-        self.bitboards[Color.BLACK, Piece.PAWN]   = np.uint64(0b11100000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KNIGHT] = np.uint64(0b0001000000010000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b1110000000000000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.PAWN]   = u64(0b11100000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KNIGHT] = u64(0b0001000000010000000000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b1110000000000000000000000000000000000000000000000000000000000000)
     def init_board_test_pawn_white_takes(self):
         # used for unit testing
         # move cardinality should be 21
@@ -930,8 +939,8 @@ class Chessboard():
         # .. .. .. wP .. .. wP ..
         # .. .. .. .. .. .. .. .. 
 
-        self.bitboards[Color.WHITE, Piece.PAWN] = np.uint64(0b11010011000000000000000000000000000000000001001000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b1100001100000000000000000000000000000000000010000000000000000000)
+        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b11010011000000000000000000000000000000000001001000000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b1100001100000000000000000000000000000000000010000000000000000000)
         self.player_to_move = Color.WHITE
     def init_board_test_pawn_white_moves(self):
         # used for unit testing
@@ -947,8 +956,8 @@ class Chessboard():
         # wP bK wP .. .. .. .. wP
         # .. .. .. .. .. .. .. .. 
 
-        self.bitboards[Color.WHITE, Piece.PAWN] = np.uint64(0b00000010000000000000000000000000000000001010000100000000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b100000000100000000000000)
+        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b00000010000000000000000000000000000000001010000100000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b100000000100000000000000)
         self.player_to_move = Color.WHITE
     def init_board_test_knight_white_takes(self):
         # used for unit testing
@@ -964,8 +973,8 @@ class Chessboard():
         # .. bK .. .. wk .. .. ..
         # .. .. .. wk .. wk .. wk 
 
-        self.bitboards[Color.WHITE, Piece.KNIGHT] = np.uint64(0b0000010011101000000100000000100000010101)
-        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b0000000100000000000000100100000000000000)
+        self.bitboards[Color.WHITE, Piece.KNIGHT] = u64(0b0000010011101000000100000000100000010101)
+        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b0000000100000000000000100100000000000000)
         self.player_to_move = Color.WHITE
     def init_board_test_knight_white_moves(self):
         # used for unit testing
@@ -981,8 +990,8 @@ class Chessboard():
         # .. .. .. .. .. .. wk ..
         # .. .. .. .. .. .. .. wk 
 
-        self.bitboards[Color.WHITE, Piece.KNIGHT] = np.uint64(0b1000000001000000000000000000000000000000000000000000001000000001)
-        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b100000000000000000000000)
+        self.bitboards[Color.WHITE, Piece.KNIGHT] = u64(0b1000000001000000000000000000000000000000000000000000001000000001)
+        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b100000000000000000000000)
         self.player_to_move = Color.WHITE
     def init_board_test_bishop_white_takes(self):
         # used for unit testing
@@ -997,9 +1006,9 @@ class Chessboard():
         # .. .. .. .. .. wK .. ..
         # .. wB .. .. .. .. .. ..
         # .. .. bK bK .. .. .. wB 
-        self.bitboards[Color.WHITE, Piece.BISHOP] = np.uint64(0b0100000000000001)
-        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b000001000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b0000100100010000000000000000000000110000)
+        self.bitboards[Color.WHITE, Piece.BISHOP] = u64(0b0100000000000001)
+        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b000001000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b0000100100010000000000000000000000110000)
         self.player_to_move = Color.WHITE
     def init_board_test_bishop_white_moves(self):
         # used for unit testing
@@ -1015,9 +1024,9 @@ class Chessboard():
         # .. .. .. .. .. .. .. ..
         # .. .. .. .. .. .. .. wB 
 
-        self.bitboards[Color.WHITE, Piece.PAWN]   = np.uint64(0b000001000000000000000000)
-        self.bitboards[Color.WHITE, Piece.BISHOP] = np.uint64(0b00000100000000000000000000000001)
-        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b001000000000000000000000000000000000000000000000)
+        self.bitboards[Color.WHITE, Piece.PAWN]   = u64(0b000001000000000000000000)
+        self.bitboards[Color.WHITE, Piece.BISHOP] = u64(0b00000100000000000000000000000001)
+        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b001000000000000000000000000000000000000000000000)
         self.player_to_move = Color.WHITE
     def init_board_test_rook_white_takes(self):
         # used for unit testing
@@ -1033,9 +1042,9 @@ class Chessboard():
         # .. .. .. .. .. .. .. ..
         # .. .. bK .. wK .. .. wR 
 
-        self.bitboards[Color.WHITE, Piece.ROOK] = np.uint64(0b0010000000000000000000000000000000000001)
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b00001000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b000000010000000100000000000000000000000000100000)
+        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b0010000000000000000000000000000000000001)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00001000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b000000010000000100000000000000000000000000100000)
         self.player_to_move = Color.WHITE
     def init_board_test_rook_white_moves(self):
         # used for unit testing
@@ -1051,9 +1060,9 @@ class Chessboard():
         # .. .. .. .. wR .. .. ..
         # .. .. bK .. wP .. .. wR 
         
-        self.bitboards[Color.WHITE, Piece.PAWN] = np.uint64(0b00001000)
-        self.bitboards[Color.WHITE, Piece.ROOK] = np.uint64(0b000000010000100000000001)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b00100000)
+        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b00001000)
+        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b000000010000100000000001)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b00100000)
         self.player_to_move = Color.WHITE
     def init_board_test_queen_white_takes(self):
         # used for unit testing
@@ -1069,9 +1078,9 @@ class Chessboard():
         # .. .. .. .. bK .. .. ..
         # .. .. .. .. .. .. .. .. 
 
-        self.bitboards[Color.WHITE, Piece.QUEEN] = np.uint64(0b01000000000000000000000000001000000000000000000000000000)
-        self.bitboards[Color.WHITE, Piece.KING]  = np.uint64(0b010000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]  = np.uint64(0b000010000000000001100010000000000000100000000000)
+        self.bitboards[Color.WHITE, Piece.QUEEN] = u64(0b01000000000000000000000000001000000000000000000000000000)
+        self.bitboards[Color.WHITE, Piece.KING]  = u64(0b010000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING]  = u64(0b000010000000000001100010000000000000100000000000)
         self.player_to_move = Color.WHITE
     def init_board_test_queen_white_moves(self):
         # used for unit testing
@@ -1087,9 +1096,9 @@ class Chessboard():
         # .. .. .. .. .. wP .. ..
         # .. .. .. bK .. wP .. wQ 
 
-        self.bitboards[Color.WHITE, Piece.PAWN]  = np.uint64(0b000001000000010000000100)
-        self.bitboards[Color.WHITE, Piece.QUEEN] = np.uint64(0b00000100000000000000000000000001)
-        self.bitboards[Color.BLACK, Piece.KING]  = np.uint64(0b00010000)
+        self.bitboards[Color.WHITE, Piece.PAWN]  = u64(0b000001000000010000000100)
+        self.bitboards[Color.WHITE, Piece.QUEEN] = u64(0b00000100000000000000000000000001)
+        self.bitboards[Color.BLACK, Piece.KING]  = u64(0b00010000)
         self.player_to_move = Color.WHITE
     def init_board_test_king_white_takes(self):
         # used for unit testing
@@ -1105,8 +1114,8 @@ class Chessboard():
         # .. .. .. .. .. bK wK bK
         # wK .. .. .. .. bK bK bK
 
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b100000000000001010000000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b10000000000001010000010100000111)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b100000000000001010000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000000001010000010100000111)
         self.player_to_move = Color.WHITE
     def init_board_test_king_white_moves(self):
         # used for unit testing
@@ -1122,8 +1131,8 @@ class Chessboard():
         # .. .. .. .. .. .. .. ..
         # bK .. .. .. .. .. .. wK 
 
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b1000000000000000000000000000000000010000000000000000000000000001)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b10000000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b1000000000000000000000000000000000010000000000000000000000000001)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000)
         self.player_to_move = Color.WHITE
     def init_board_test_pawn_black_takes(self):
         # used for unit testing
@@ -1139,8 +1148,8 @@ class Chessboard():
         # bP bP .. bP .. .. bP bP
         # wK wK .. .. .. .. wK wK 
 
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b000010000000000000000000000000000000000011000011)
-        self.bitboards[Color.BLACK, Piece.PAWN] = np.uint64(0b00010010000000000000000000000000000000001101001100000000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b000010000000000000000000000000000000000011000011)
+        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00010010000000000000000000000000000000001101001100000000)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_pawn_black_moves(self):
@@ -1157,8 +1166,8 @@ class Chessboard():
         # .. .. .. .. .. .. bP ..
         # .. .. .. .. .. .. .. .. 
 
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b01000000100000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.PAWN] = np.uint64(0b10100001000000000000000000000000000000000000001000000000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b01000000100000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b10100001000000000000000000000000000000000000001000000000)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_knight_black_takes(self):
@@ -1175,8 +1184,8 @@ class Chessboard():
         # .. wK .. .. bk .. .. ..
         # .. .. .. bk .. bk .. bk 
 
-        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b0000000100000000000000100100000000000000)
-        self.bitboards[Color.BLACK, Piece.KNIGHT] = np.uint64(0b0000010011101000000100000000100000010101)
+        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b0000000100000000000000100100000000000000)
+        self.bitboards[Color.BLACK, Piece.KNIGHT] = u64(0b0000010011101000000100000000100000010101)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_knight_black_moves(self):
@@ -1193,8 +1202,8 @@ class Chessboard():
         # .. .. .. .. .. .. bk ..
         # .. .. .. .. .. .. .. bk 
 
-        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b100000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KNIGHT] = np.uint64(0b1000000001000000000000000000000000000000000000000000001000000001)
+        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b100000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KNIGHT] = u64(0b1000000001000000000000000000000000000000000000000000001000000001)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_bishop_black_takes(self):
@@ -1211,9 +1220,9 @@ class Chessboard():
         # .. bB .. .. .. .. .. ..
         # .. .. wK wK .. .. .. bB 
 
-        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b0000100100010000000000000000000000110000)
-        self.bitboards[Color.BLACK, Piece.BISHOP] = np.uint64(0b0100000000000001)
-        self.bitboards[Color.BLACK, Piece.KING]   = np.uint64(0b000001000000000000000000)
+        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b0000100100010000000000000000000000110000)
+        self.bitboards[Color.BLACK, Piece.BISHOP] = u64(0b0100000000000001)
+        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b000001000000000000000000)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_bishop_black_moves(self):
@@ -1230,9 +1239,9 @@ class Chessboard():
         # .. .. .. .. .. bB .. ..
         # .. .. .. .. .. .. .. bB 
 
-        self.bitboards[Color.WHITE, Piece.KING]   = np.uint64(0b001000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.PAWN]   = np.uint64(0b000001000000000000000000)
-        self.bitboards[Color.BLACK, Piece.BISHOP] = np.uint64(0b0000010000000001)
+        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b001000000000000000000000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.PAWN]   = u64(0b000001000000000000000000)
+        self.bitboards[Color.BLACK, Piece.BISHOP] = u64(0b0000010000000001)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_rook_black_takes(self):
@@ -1249,9 +1258,9 @@ class Chessboard():
         # .. .. .. .. .. .. .. ..
         # .. .. wK .. bK .. .. bR 
 
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b000000010000000100000000000000000000000000100000)
-        self.bitboards[Color.BLACK, Piece.ROOK] = np.uint64(0b0010000000000000000000000000000000000001)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b00001000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b000000010000000100000000000000000000000000100000)
+        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b0010000000000000000000000000000000000001)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b00001000)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_rook_black_moves(self):
@@ -1268,9 +1277,9 @@ class Chessboard():
         # .. .. .. .. bR .. .. ..
         # .. .. wK .. bP .. .. bR 
         
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b00100000)
-        self.bitboards[Color.BLACK, Piece.PAWN] = np.uint64(0b00001000)
-        self.bitboards[Color.BLACK, Piece.ROOK] = np.uint64(0b000000010000100000000001)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00100000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00001000)
+        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b000000010000100000000001)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_queen_black_takes(self):
@@ -1287,9 +1296,9 @@ class Chessboard():
         # .. .. .. .. wK .. .. ..
         # .. .. .. .. .. .. .. .. 
 
-        self.bitboards[Color.WHITE, Piece.KING]  = np.uint64(0b000010000000000001100010000000000000100000000000)
-        self.bitboards[Color.BLACK, Piece.QUEEN] = np.uint64(0b01000000000000000000000000001000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]  = np.uint64(0b010000000000000000000000000000000000000000000000)
+        self.bitboards[Color.WHITE, Piece.KING]  = u64(0b000010000000000001100010000000000000100000000000)
+        self.bitboards[Color.BLACK, Piece.QUEEN] = u64(0b01000000000000000000000000001000000000000000000000000000)
+        self.bitboards[Color.BLACK, Piece.KING]  = u64(0b010000000000000000000000000000000000000000000000)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_queen_black_moves(self):
@@ -1306,9 +1315,9 @@ class Chessboard():
         # .. .. .. .. .. bP .. ..
         # .. .. .. wK .. bP .. bQ 
 
-        self.bitboards[Color.WHITE, Piece.KING]  = np.uint64(0b00010000)
-        self.bitboards[Color.BLACK, Piece.PAWN]  = np.uint64(0b000001000000010000000100)
-        self.bitboards[Color.BLACK, Piece.QUEEN] = np.uint64(0b00000100000000000000000000000001)
+        self.bitboards[Color.WHITE, Piece.KING]  = u64(0b00010000)
+        self.bitboards[Color.BLACK, Piece.PAWN]  = u64(0b000001000000010000000100)
+        self.bitboards[Color.BLACK, Piece.QUEEN] = u64(0b00000100000000000000000000000001)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_king_black_takes(self):
@@ -1325,8 +1334,8 @@ class Chessboard():
         # .. .. .. .. .. wK bK wK
         # bK .. .. .. .. wK wK wK
 
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b10000000000001010000010100000111)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b100000000000001010000000)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b10000000000001010000010100000111)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b100000000000001010000000)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_king_black_moves(self):
@@ -1343,8 +1352,8 @@ class Chessboard():
         # .. .. .. .. .. .. .. ..
         # wK .. .. .. .. .. .. bK 
         
-        self.bitboards[Color.WHITE, Piece.KING] = np.uint64(0b10000000)
-        self.bitboards[Color.BLACK, Piece.KING] = np.uint64(0b1000000000000000000000000000000000010000000000000000000000000001)
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b10000000)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b1000000000000000000000000000000000010000000000000000000000000001)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_enpassante_white(self):
@@ -1352,16 +1361,16 @@ class Chessboard():
     def init_board_test_enpassante_black(self):
         pass
 
-def print_bb(bb:np.uint64):
-    mask_bb = np.uint64(pow(2, 63))
+def print_bb(bb:u64):
+    mask_bb = u64(pow(2, 63))
     for i in range(64):
         if not(i%8):
             print()
-        if np.bitwise_and(bb, mask_bb):
+        if b_and(bb, mask_bb):
             print("1 ", end="")
         else:
             print(". ", end="")
-        mask_bb = np.right_shift(mask_bb, np.uint8(1))
+        mask_bb = rs(mask_bb, u8(1))
     print()
 
 def main():
