@@ -26,196 +26,190 @@ from itertools import chain
 
 # ranks used for masking
 # ranks by number
-RANK_8_BB = u64(0b1111111100000000000000000000000000000000000000000000000000000000)
-RANK_7_BB = u64(0b11111111000000000000000000000000000000000000000000000000)
-RANK_6_BB = u64(0b111111110000000000000000000000000000000000000000)
-RANK_5_BB = u64(0b1111111100000000000000000000000000000000)
-RANK_4_BB = u64(0b11111111000000000000000000000000)
-RANK_3_BB = u64(0b111111110000000000000000)
-RANK_2_BB = u64(0b1111111100000000)
-RANK_1_BB = u64(0b11111111)
 
-rank_nr_list: list[u64] = [RANK_8_BB, RANK_7_BB, RANK_6_BB, RANK_5_BB, RANK_4_BB, RANK_3_BB, RANK_2_BB, RANK_1_BB]
+class LOOKUP_TABLES():
 
-# ranks by letter
-FILE_A_BB = u64(0b1000000010000000100000001000000010000000100000001000000010000000)
-FILE_B_BB = u64(0b0100000001000000010000000100000001000000010000000100000001000000)
-FILE_C_BB = u64(0b0010000000100000001000000010000000100000001000000010000000100000)
-FILE_D_BB = u64(0b0001000000010000000100000001000000010000000100000001000000010000)
-FILE_E_BB = u64(0b0000100000001000000010000000100000001000000010000000100000001000)
-FILE_F_BB = u64(0b0000010000000100000001000000010000000100000001000000010000000100)
-FILE_G_BB = u64(0b0000001000000010000000100000001000000010000000100000001000000010)
-FILE_H_BB = u64(0b0000000100000001000000010000000100000001000000010000000100000001)
+    def __init__(self):
+        self.RANK_8_BB = u64(0b1111111100000000000000000000000000000000000000000000000000000000)
+        self.RANK_7_BB = u64(0b11111111000000000000000000000000000000000000000000000000)
+        self.RANK_6_BB = u64(0b111111110000000000000000000000000000000000000000)
+        self.RANK_5_BB = u64(0b1111111100000000000000000000000000000000)
+        self.RANK_4_BB = u64(0b11111111000000000000000000000000)
+        self.RANK_3_BB = u64(0b111111110000000000000000)
+        self.RANK_2_BB = u64(0b1111111100000000)
+        self.RANK_1_BB = u64(0b11111111)
 
-rank_l_list: list[u64] = [FILE_A_BB, FILE_B_BB, FILE_C_BB, FILE_D_BB, FILE_E_BB, FILE_F_BB, FILE_G_BB, FILE_H_BB]
+        self.rank_nr_list: list[u64] = [self.RANK_8_BB, self.RANK_7_BB, self.RANK_6_BB, self.RANK_5_BB, self.RANK_4_BB, self.RANK_3_BB, self.RANK_2_BB, self.RANK_1_BB]
 
-KNIGHT_BB = zeros(64, dtype=u64)
-KING_BB = zeros(64, dtype=u64)
+        # ranks by letter
+        self.FILE_A_BB = u64(0b1000000010000000100000001000000010000000100000001000000010000000)
+        self.FILE_B_BB = u64(0b0100000001000000010000000100000001000000010000000100000001000000)
+        self.FILE_C_BB = u64(0b0010000000100000001000000010000000100000001000000010000000100000)
+        self.FILE_D_BB = u64(0b0001000000010000000100000001000000010000000100000001000000010000)
+        self.FILE_E_BB = u64(0b0000100000001000000010000000100000001000000010000000100000001000)
+        self.FILE_F_BB = u64(0b0000010000000100000001000000010000000100000001000000010000000100)
+        self.FILE_G_BB = u64(0b0000001000000010000000100000001000000010000000100000001000000010)
+        self.FILE_H_BB = u64(0b0000000100000001000000010000000100000001000000010000000100000001)
 
-FIRST_RANK_ATTACKS = zeros((8, 256), dtype=u8)
-FILE_H_ATTACKS = zeros((8, 256), dtype=u64)
+        self.rank_l_list: list[u64] = [self.FILE_A_BB, self.FILE_B_BB, self.FILE_C_BB, self.FILE_D_BB, self.FILE_E_BB, self.FILE_F_BB, self.FILE_G_BB, self.FILE_H_BB]
 
-RANK_MASKS     = zeros(64, dtype=u64)
-FILE_MASKS     = zeros(64, dtype=u64)
-DIAG_MASKS     = zeros(64, dtype=u64)
-ANTIDIAG_MASKS = zeros(64, dtype=u64)
+        self.KNIGHT_BB = zeros(64, dtype=u64)
+        self.KING_BB = zeros(64, dtype=u64)
 
-def print_byte(byte:u8):
-    i = u8(0b10000000)
-    while i:
-        if byte & i:
-            print("1", end="")
-        else:
-            print("0", end="")
-        i >>= u8(1)
-    print()
+        self.FIRST_RANK_ATTACKS = self._rank_masks_init()
+        self.FILE_H_ATTACKS = self._file_masks_init()
+        self.DIAG_MASKS = self._diag_masks_init()
+        self.ANTIDIAG_MASKS = self._antidiag_masks_init()
+        self.FIRST_RANK_ATTACKS = self._first_rank_attacks_init()
+        self.FILE_H_ATTACKS = self._file_h_attacks_init()
+        self.KNIGHT_BB = self._knight_bb_init()
+        self.KING_BB = self._king_bb_init()
 
-def rank_masks_init(arr:ndarray):
-    for index in range(64):
-        if not index%8:
-            rank = ls(RANK_1_BB, u8(index))
-        arr[index] = rank
+    def _rank_masks_init(self):
+        arr = zeros(64, dtype=u64)
+        for index in range(64):
+            if not index%8:
+                rank = ls(self.RANK_1_BB, u8(index))
+            arr[index] = rank
+        return arr
+    def _file_masks_init(self):
+        arr = zeros(64, dtype=u64)
+        for index in range(64):
+            if not index%8:
+                file = self.FILE_H_BB
+            else:
+                file = ls(file, u8(1))
+            arr[index] = file
+        return arr
+    def _diag_masks_init(self):
+        arr = zeros(64, dtype=u64)
+        bit = u64(1)
+        for index in range(64):
+            bb = u64(0)
+            sq = ls(bit, u64(index))
+            while(sq):
+                bb = b_or(bb, sq)
+                sq = b_and(ls(sq, uint(7)), b_not(self.FILE_A_BB))
+            sq = ls(bit, u64(index))
+            while(sq):
+                bb = b_or(bb, sq)
+                sq = b_and(rs(sq, uint(7)), b_not(self.FILE_H_BB))
+            arr[index] = bb
+        return arr
+    def _antidiag_masks_init(self):
+        arr = zeros(64, dtype=u64)
+        bit = u64(1)
+        for index in range(64):
+            bb = u64(0)
+            sq = ls(bit, u64(index))
+            while(sq):
+                bb = b_or(bb, sq)
+                sq = b_and(ls(sq, uint(9)), b_not(self.FILE_H_BB))
+            sq = ls(bit, u64(index))
+            while(sq):
+                bb = b_or(bb, sq)
+                sq = b_and(rs(sq, uint(9)), b_not(self.FILE_A_BB))
+            arr[index] = bb
+        return arr
+    def _calc_first_rank_attacks(self, index:u8, occ:u8):
+        attacks = u8(0)
+        bit = u8(1)
+        i = ls(bit, index+bit)
+        while i:
+            current_bit = b_and(i, occ)
+            attacks = b_or(attacks, i)
+            if current_bit:
+                break
+            i = ls(i, bit)
+        i = ls(bit, index-bit)
+        while i:
+            current_bit = b_and(i, occ)
+            attacks = b_or(attacks, i)
+            if current_bit:
+                break
+            i = rs(i, bit)
+        return attacks
+    def _calc_file_h_attacks(self, index:u8, occ:u8):
 
-def file_masks_init(arr:ndarray):
-    for index in range(64):
-        if not index%8:
-            file = FILE_H_BB
-        else:
-            file = ls(file, u8(1))
-        arr[index] = file
+        index = u64(index)
+        occ = u64(occ)
 
-def diag_masks_init(arr:ndarray):
-    bit = u64(1)
-    for index in range(64):
-        bb = u64(0)
-        sq = ls(bit, u64(index))
-        while(sq):
-            bb = b_or(bb, sq)
-            sq = b_and(ls(sq, uint(7)), b_not(FILE_A_BB))
-        sq = ls(bit, u64(index))
-        while(sq):
-            bb = b_or(bb, sq)
-            sq = b_and(rs(sq, uint(7)), b_not(FILE_H_BB))
-        arr[index] = bb
+        attacks = u64(0)
+        bit = u64(1)
+        byte = u64(8)
+        i = ls(bit, index+bit)
+        j = index+bit
+        while i:
+            current_bit = b_and(i, occ)
+            attacks = b_or(attacks, ls(bit, j*byte))
+            if current_bit:
+                break
+            i = ls(i, bit)
+            j += bit
+        i = ls(bit, index-bit)
+        j = index-bit
+        while i:
+            current_bit = b_and(i, occ)
+            attacks = b_or(attacks, ls(bit, j*byte))
+            if current_bit:
+                break
+            i = rs(i, bit)
+            j -= bit
+        return attacks
+    def _first_rank_attacks_init(self):
+        arr = zeros((8, 256), dtype=u8)
+        for index in range(8):
+            for occ in range(256):
+                arr[index, occ] = self._calc_first_rank_attacks(index, occ)
+        return arr
+    def _file_h_attacks_init(self):
+        arr = zeros((8, 256), dtype=u64)
+        for index in range(8):
+            for occ in range(256):
+                arr[index, occ] = self._calc_file_h_attacks(index, occ)
+        return arr
+    def _knight_bb_init(self):
+        # Init of movegeneration bitboards for knights.
+        # The bitboard of bbs[index] represents the bitboard with all possible destinationsquares given a source square = index
+        bbs = zeros(64, dtype=u64)
+        src_bb = u64(1) # source bb to generate moves from
+        for index in range(u64(64)):
+            dst_bb = u64(0) # destination bb to track all possible move destinations
 
-def antidiag_masks_init(arr:ndarray):
-    bit = u64(1)
-    for index in range(64):
-        bb = u64(0)
-        sq = ls(bit, u64(index))
-        while(sq):
-            bb = b_or(bb, sq)
-            sq = b_and(ls(sq, uint(9)), b_not(FILE_H_BB))
-        sq = ls(bit, u64(index))
-        while(sq):
-            bb = b_or(bb, sq)
-            sq = b_and(rs(sq, uint(9)), b_not(FILE_A_BB))
-        arr[index] = bb
+            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(17)), b_not(self.FILE_A_BB)))
+            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(15)), b_not(self.FILE_H_BB)))
+            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(10)), b_not(b_or(self.FILE_A_BB, self.FILE_B_BB))))
+            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(6)),  b_not(b_or(self.FILE_G_BB, self.FILE_H_BB))))
+            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(6)),  b_not(b_or(self.FILE_A_BB, self.FILE_B_BB))))
+            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(10)), b_not(b_or(self.FILE_G_BB, self.FILE_H_BB))))
+            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(15)), b_not(self.FILE_A_BB)))
+            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(17)), b_not(self.FILE_H_BB)))
 
-def calc_first_rank_attacks(index:u8, occ:u8):
-    attacks = u8(0)
-    bit = u8(1)
-    i = ls(bit, index+bit)
-    while i:
-        current_bit = b_and(i, occ)
-        attacks = b_or(attacks, i)
-        if current_bit:
-            break
-        i = ls(i, bit)
-    i = ls(bit, index-bit)
-    while i:
-        current_bit = b_and(i, occ)
-        attacks = b_or(attacks, i)
-        if current_bit:
-            break
-        i = rs(i, bit)
-    return attacks
+            bbs[index] = dst_bb
+            src_bb = ls(src_bb, u8(1)) # shift src_bb to match index
+        return bbs
+    def _king_bb_init(self):
+        # Init of movegeneration bitboards for kings.
+        # The bitboard of bbs[index] represents the bitboard with all possible destinationsquares given a source square = index
+        bbs = zeros(64, dtype=u64)
+        src_bb = u64(1) # source bb to generate moves from
+        for index in range(u64(64)):
+            dst_bb = u64(0) # destination bb to track all possible move destinations
 
-def calc_file_h_attacks(index:u8, occ:u8):
+            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(9)), b_not(self.FILE_A_BB)))
+            dst_bb = b_or(dst_bb,                rs(src_bb, u8(8)))
+            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(7)), b_not(self.FILE_H_BB)))
+            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(1)), b_not(self.FILE_A_BB)))
+            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(1)),  b_not(self.FILE_H_BB)))
+            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(7)),  b_not(self.FILE_A_BB)))
+            dst_bb = b_or(dst_bb,                ls(src_bb, u8(8)))
+            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(9)),  b_not(self.FILE_H_BB)))
 
-    index = u64(index)
-    occ = u64(occ)
+            bbs[index] = dst_bb
+            src_bb = ls(src_bb, u8(1)) # shift src_bb to match index
+        return bbs
 
-    attacks = u64(0)
-    bit = u64(1)
-    byte = u64(8)
-    i = ls(bit, index+bit)
-    j = index+bit
-    while i:
-        current_bit = b_and(i, occ)
-        attacks = b_or(attacks, ls(bit, j*byte))
-        if current_bit:
-            break
-        i = ls(i, bit)
-        j += bit
-    i = ls(bit, index-bit)
-    j = index-bit
-    while i:
-        current_bit = b_and(i, occ)
-        attacks = b_or(attacks, ls(bit, j*byte))
-        if current_bit:
-            break
-        i = rs(i, bit)
-        j -= bit
-    return attacks
-
-def first_rank_attacks_init(arr:ndarray):
-    for index in range(8):
-        for occ in range(256):
-            arr[index, occ] = calc_first_rank_attacks(index, occ)
-
-def file_h_attacks_init(arr:ndarray):
-    for index in range(8):
-        for occ in range(256):
-            arr[index, occ] = calc_file_h_attacks(index, occ)
-
-def knight_bb_init(bbs:ndarray):
-    # Init of movegeneration bitboards for knights.
-    # The bitboard of bbs[index] represents the bitboard with all possible destinationsquares given a source square = index
-    src_bb = u64(1) # source bb to generate moves from
-    for index in range(u64(64)):
-        dst_bb = u64(0) # destination bb to track all possible move destinations
-
-        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(17)), b_not(FILE_A_BB)))
-        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(15)), b_not(FILE_H_BB)))
-        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(10)), b_not(b_or(FILE_A_BB, FILE_B_BB))))
-        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(6)),  b_not(b_or(FILE_G_BB, FILE_H_BB))))
-        dst_bb = b_or(dst_bb, b_and( ls(src_bb, u8(6)),  b_not(b_or(FILE_A_BB, FILE_B_BB))))
-        dst_bb = b_or(dst_bb, b_and( ls(src_bb, u8(10)), b_not(b_or(FILE_G_BB, FILE_H_BB))))
-        dst_bb = b_or(dst_bb, b_and( ls(src_bb, u8(15)), b_not(FILE_A_BB)))
-        dst_bb = b_or(dst_bb, b_and( ls(src_bb, u8(17)), b_not(FILE_H_BB)))
-
-        bbs[index] = dst_bb
-        src_bb = ls(src_bb, u8(1)) # shift src_bb to match index
-
-
-def king_bb_init(bbs:ndarray):
-    # Init of movegeneration bitboards for kings.
-    # The bitboard of bbs[index] represents the bitboard with all possible destinationsquares given a source square = index
-    src_bb = u64(1) # source bb to generate moves from
-    for index in range(u64(64)):
-        dst_bb = u64(0) # destination bb to track all possible move destinations
-
-        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(9)), b_not(FILE_A_BB)))
-        dst_bb = b_or(dst_bb,                rs(src_bb, u8(8)))
-        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(7)), b_not(FILE_H_BB)))
-        dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(1)), b_not(FILE_A_BB)))
-        dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(1)),  b_not(FILE_H_BB)))
-        dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(7)),  b_not(FILE_A_BB)))
-        dst_bb = b_or(dst_bb,                ls(src_bb, u8(8)))
-        dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(9)),  b_not(FILE_H_BB)))
-
-        bbs[index] = dst_bb
-        src_bb = ls(src_bb, u8(1)) # shift src_bb to match index
-
-rank_masks_init(RANK_MASKS)
-file_masks_init(FILE_MASKS)
-diag_masks_init(DIAG_MASKS)
-antidiag_masks_init(ANTIDIAG_MASKS)
-first_rank_attacks_init(FIRST_RANK_ATTACKS)
-file_h_attacks_init(FILE_H_ATTACKS)
-knight_bb_init(KNIGHT_BB)
-king_bb_init(KING_BB)
+LOOKUP = LOOKUP_TABLES()
 
 class Color(IntEnum):
     WHITE = 0
@@ -346,7 +340,11 @@ class Chessboard():
     # other logic
     player_to_move : Color
     not_player_to_move : Color
-    fifty_move_counter : List[u8]
+    no_progress_counter : List[u8]
+    # a list of bitboards that represent the state
+    repetitions_list : List[ndarray]
+    # a list of legal moves for the current state
+    moves : List[Move]
 
     # init empty board
     def __init__(self):
@@ -354,8 +352,10 @@ class Chessboard():
         self.combined  = zeros(3, dtype=u64)
         self.player_to_move = Color.WHITE
         self.not_player_to_move = Color.BLACK
-        self.fifty_move_counter = []
-        self.fifty_move_counter.append(u8(0))
+        self.no_progress_counter = []
+        self.no_progress_counter.append(u8(0))
+        self.repetitions_list = []
+        self.moves = []
 
     def __str__(self):
         str_builder = []
@@ -426,21 +426,52 @@ class Chessboard():
                 return True
         return False
 
+    def get_game_status(self):
+        # checks if the game is over
+        # returns 0 if white wins
+        # returns 1 if black wins
+        # returns 2 if draw
+        # returns 3 if game not over
+        self.moves = self.get_moves()
+
+        if not len(self.moves):
+            return self.player_to_move
+        
+        if self._check_repetitions():
+            return 2
+        
+        if self._check_no_progress():
+            return 2
+        
+        return 3
+
+    def _check_repetitions(self):
+        if self._get_repetitions() == 2:
+            return True
+        return False
+    
+    def _check_no_progress(self):
+        if self.no_progress_counter[-1] == 50:
+            return True
+        return False
+
     def move(self, move:Move):
         # main function to move a piece and updates all nessecary properties of class
+
+        # add current state to repeitions_list
+        self.repetitions_list.append(self.bitboards.copy())
 
         # temporary variables to update parameters in the chessboard
         pawns_old = b_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
         count_old = self._get_piece_count()
 
-        bit = u64(1)
         # create move indexes into bbs
-        src_bb = ls(bit, move.src_index)
-        dst_bb = ls(bit, move.dst_index)
+        src_bb = ls(u64(1), move.src_index)
+        dst_bb = ls(u64(1), move.dst_index)
         promotion_type = move.promotion_type
 
         player = self.player_to_move
-        opponent = (self.player_to_move+1)%2
+        opponent = self.not_player_to_move
 
         # iterate over all piece_type bbs and remove all bits on destination square for opponent
         # and add bit on piece_type for player if piece_type has a 1 on source square
@@ -457,14 +488,27 @@ class Chessboard():
         count_new = self._get_piece_count()
 
         if (pawns_new != pawns_old) or (count_new != count_old):
-            self.fifty_move_counter.append(u8(0))
+            self.no_progress_counter.append(u8(0))
         else:
-            self.fifty_move_counter.append(self.fifty_move_counter[-1] + u8(1))
+            self.no_progress_counter.append(self.no_progress_counter[-1] + u8(1))
+
 
         # update player to move
         tmp = self.player_to_move
         self.player_to_move = self.not_player_to_move
         self.not_player_to_move = tmp
+
+        game_over_state = self.get_game_status()
+        if game_over_state == Color.WHITE:
+            print("White wins!")
+        elif game_over_state == Color.BLACK:
+            print("Black wins!")
+        elif game_over_state == 2:
+            print("Draw!")
+        elif game_over_state == 3:
+            print("Game is ongoing!")
+            
+        #print(self.no_progress_counter)
 
     def _get_piece_count(self):
         bit = u8(1)
@@ -477,6 +521,21 @@ class Chessboard():
                     piece_bb = rs(piece_bb, bit)
         return count
     
+    def _get_repetitions(self):
+        repetitions = 0
+        for state in self.repetitions_list:
+            if self._bbs_equal(state, self.bitboards):
+                repetitions += 1
+        print(repetitions)
+        return repetitions
+
+    def _bbs_equal(self, bbs1:ndarray, bbs2:ndarray):
+        for player in Color:
+            for piece_type in Piece:
+                if bbs1[player, piece_type] != bbs2[player, piece_type]:
+                    return False
+        return True
+
     def combine_bb(self):
         # combines bb of both player colors seperately and together
         index = 0
@@ -580,11 +639,11 @@ class Chessboard():
         rank_index = rs(b_and(src_index, u8(0b111_000)), u8(3))
 
         occ = rs(self.combined[2], shift)
-        occ = b_and(occ, FILE_H_BB)
-        occ *= DIAG_MASKS[7]
+        occ = b_and(occ, LOOKUP.FILE_H_BB)
+        occ *= LOOKUP.DIAG_MASKS[7]
         occ = rs(occ, u8(0b111_000))
 
-        dst_bb = FILE_H_ATTACKS[rank_index, occ]
+        dst_bb = LOOKUP.FILE_H_ATTACKS[rank_index, occ]
         dst_bb = ls(dst_bb, shift)
 
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
@@ -601,7 +660,7 @@ class Chessboard():
 
         occ = u8(rs(self.combined[2], shift))
 
-        dst_bb = u64(FIRST_RANK_ATTACKS[rank_index, occ])
+        dst_bb = u64(LOOKUP.FIRST_RANK_ATTACKS[rank_index, occ])
         dst_bb = ls(dst_bb, shift)
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
@@ -614,13 +673,13 @@ class Chessboard():
         moves:List[Move] = []
         rank_index = b_and(src_index, u8(0b000_111))
 
-        occ = b_and(self.combined[2], DIAG_MASKS[src_index])
-        occ *= FILE_H_BB
+        occ = b_and(self.combined[2], LOOKUP.DIAG_MASKS[src_index])
+        occ *= LOOKUP.FILE_H_BB
         occ = rs(occ, u8(0b111_000))
 
-        dst_bb = FIRST_RANK_ATTACKS[rank_index, occ]
-        dst_bb *= FILE_H_BB
-        dst_bb = b_and(dst_bb, DIAG_MASKS[src_index])
+        dst_bb = LOOKUP.FIRST_RANK_ATTACKS[rank_index, occ]
+        dst_bb *= LOOKUP.FILE_H_BB
+        dst_bb = b_and(dst_bb, LOOKUP.DIAG_MASKS[src_index])
 
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
@@ -633,13 +692,13 @@ class Chessboard():
         moves:List[Move] = []
         rank_index = b_and(src_index, u8(0b000_111))
 
-        occ = b_and(self.combined[2], ANTIDIAG_MASKS[src_index])
-        occ *= FILE_H_BB
+        occ = b_and(self.combined[2], LOOKUP.ANTIDIAG_MASKS[src_index])
+        occ *= LOOKUP.FILE_H_BB
         occ = rs(occ, u8(0b111_000))
 
-        dst_bb = FIRST_RANK_ATTACKS[rank_index, occ]
-        dst_bb *= FILE_H_BB
-        dst_bb = b_and(dst_bb, ANTIDIAG_MASKS[src_index])
+        dst_bb = LOOKUP.FIRST_RANK_ATTACKS[rank_index, occ]
+        dst_bb *= LOOKUP.FILE_H_BB
+        dst_bb = b_and(dst_bb, LOOKUP.ANTIDIAG_MASKS[src_index])
 
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
@@ -652,8 +711,8 @@ class Chessboard():
         # given a src_index, generate moves and returns them as [Move]
         src_bb = ls(u64(1), src_index)
 
-        takes_bb = b_and(ls(src_bb, u8(9)), b_not(FILE_H_BB))
-        takes_bb = b_or(takes_bb, b_and(ls(src_bb, u8(7)), b_not(FILE_A_BB)))
+        takes_bb = b_and(ls(src_bb, u8(9)), b_not(LOOKUP.FILE_H_BB))
+        takes_bb = b_or(takes_bb, b_and(ls(src_bb, u8(7)), b_not(LOOKUP.FILE_A_BB)))
         takes_bb = b_and(takes_bb, self.combined[Color.BLACK])
 
         if takes_bb: # if takes avaiable, no need to find non-takes
@@ -672,8 +731,8 @@ class Chessboard():
         # given a src_index, generate moves and returns them as [Move]
         src_bb = ls(u64(1), src_index)
 
-        takes_bb = b_and(rs(src_bb, u8(7)), b_not(FILE_H_BB))
-        takes_bb = b_or(takes_bb, b_and(rs(src_bb, u8(9)), b_not(FILE_A_BB)))
+        takes_bb = b_and(rs(src_bb, u8(7)), b_not(LOOKUP.FILE_H_BB))
+        takes_bb = b_or(takes_bb, b_and(rs(src_bb, u8(9)), b_not(LOOKUP.FILE_A_BB)))
         takes_bb = b_and(takes_bb, self.combined[Color.WHITE])
 
         if takes_bb: # if takes avaiable, no need to find non-takes
@@ -691,7 +750,7 @@ class Chessboard():
     def _get_moves_knight(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
         moves:List[Move] = []
-        dst_bb = KNIGHT_BB[src_index]
+        dst_bb = LOOKUP.KNIGHT_BB[src_index]
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
         moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
@@ -721,7 +780,7 @@ class Chessboard():
     def _get_moves_king(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
         moves:List[Move] = []
-        dst_bb = KING_BB[src_index]
+        dst_bb = LOOKUP.KING_BB[src_index]
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
         moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
@@ -774,7 +833,7 @@ class Chessboard():
             for piece_type in player:
                 for i in range(0, 8):
                     for l in range(0, 8):
-                        position = b_and(rank_nr_list[i], rank_l_list[l])
+                        position = b_and(LOOKUP.rank_nr_list[i], LOOKUP.rank_l_list[l])
                         if b_and(piece_type, position) != 0:
                             representation[0][i][l].append(1)
                         else:
@@ -795,7 +854,7 @@ class Chessboard():
                 representation[0][i][l].append(repetitions_b)
                 representation[0][i][l].append(color)
                 representation[0][i][l].append(no_progress)
-                position = b_and(rank_nr_list[i], rank_l_list[l])
+                position = b_and(LOOKUP.rank_nr_list[i], LOOKUP.rank_l_list[l])
                 if b_and(en_passant, position) != 0:
                     representation[0][i][l].append(1)
                 else:
@@ -1360,6 +1419,42 @@ class Chessboard():
         pass
     def init_board_test_enpassante_black(self):
         pass
+    def init_board_test_stalemate_white(self):
+        # used for unit testing
+        # is_game_over should return 0
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. bP .. .. .. ..
+        # .. .. .. wP bP .. .. ..
+        # .. .. .. .. wP .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. .. 
+
+        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000_00000000)
+        self.player_to_move = Color.WHITE
+        self.not_player_to_move = Color.BLACK
+    def init_board_test_stalemate_black(self):
+        # used for unit testing
+        # is_game_over should return 0
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. bP .. .. .. ..
+        # .. .. .. wP bP .. .. ..
+        # .. .. .. .. wP .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. .. 
+
+        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000_00000000)
+        self.player_to_move = Color.BLACK
+        self.not_player_to_move = Color.WHITE
 
 def print_bb(bb:u64):
     mask_bb = u64(pow(2, 63))
@@ -1371,6 +1466,16 @@ def print_bb(bb:u64):
         else:
             print(". ", end="")
         mask_bb = rs(mask_bb, u8(1))
+    print()
+
+def print_byte(byte:u8):
+    i = u8(0b10000000)
+    while i:
+        if byte & i:
+            print("1", end="")
+        else:
+            print("0", end="")
+        i >>= u8(1)
     print()
 
 def main():

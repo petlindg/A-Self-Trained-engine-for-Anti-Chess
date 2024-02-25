@@ -130,8 +130,21 @@ class TestMoveGen(unittest.TestCase):
     def test_en_passante_black(self):
         pass
 
+class TestGameState(unittest.TestCase):
+    # tests that the get_game_status() function works correctly
+    def test_stalemate_white(self):
+        board = cb.Chessboard()
+        board.init_board_test_stalemate_white()
+        self.assertEqual(0, board.get_game_status())
+
+    def test_stalemate_black(self):
+        board = cb.Chessboard()
+        board.init_board_test_stalemate_black()
+        self.assertEqual(1, board.get_game_status())
+ 
 def main():
     unittest.main()
+
 
 if __name__ == "__main__":
     main()
