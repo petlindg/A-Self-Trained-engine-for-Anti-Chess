@@ -34,6 +34,13 @@ def possible_moves(state: Chessboard, model):
 # Function that returns the singular p value for a given move
 # from the model output.
 def fetch_p_from_move(move: chess.Move, model_output):
+    """Function that returns the P value for a specific move
+    from the model output.
+
+    :param move: Move class, The move to fetch the value from
+    :param model_output: array of shape (1x1x8x8x76), The output from the model from which to fetch the P value
+    :return: Float value P, from the model_output
+    """
     src_col = move.src_index % 8
     src_row = move.src_index // 8
 
@@ -41,10 +48,21 @@ def fetch_p_from_move(move: chess.Move, model_output):
     return model_output[0][0][src_row][src_col][move_type]
 
 def ucb(node, c):
+    """Calculates the upper confidence bound for trees
+
+    :param node: Node class, The current node to calculate the UCB for.
+    :param c: Float, the exploration constant
+    :return: Float, the UCB score
+    """
     return (node.p * c * sqrt(node.parent.visits)/(1+node.visits) + (node.value/node.visits if node.visits > 0 else 0))
 
 # class defining the contents of a singular node
 class Node:
+    """
+    Class representing a single node in the tree. Includes references to its parent and children
+    and the values for the node itself, such as what move was made to get to this node, the current node's state
+    the value of the current node, how many visits etc.
+    """
     def __init__(self, p, state, parent_node, player, root_node, move):
         self.root_node = root_node
         self.parent = parent_node
@@ -63,7 +81,11 @@ class Node:
 
     # string method in order to represent the tree from the current node and down
     # when you try to print a particular node
-    def __str__(self, level=0):
+    def __str__(self):
+        """Method to return a node as a string.
+
+        :return: String, A string representing the entire subtree from this node.
+        """
         string_buffer = []
         self.print_tree(string_buffer, "", "")
         return "".join(string_buffer)
@@ -71,6 +93,11 @@ class Node:
     # method that can be called on a node which will print it with a given depth
     # any nodes that exist deeper than this depth will not be printed
     def print_selectively(self, depth):
+        """Method to print the subtree from the node with a given depth from the current node.
+
+        :param depth: Integer, parameter to define how deeply to print
+        :return: String, string representing the limited subtree from this node
+        """
         string_buffer = []
         self.print_tree(string_buffer, "", "", depth)
         print("".join(string_buffer))
@@ -80,6 +107,14 @@ class Node:
     # depth parameter determines how deep the tree will print from the node, if depth=None then
     # all children will be printed
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
+        """Method that will iterate through the nodes and append strings onto the string_buffer list.
+
+        :param string_buffer: List, list of strings that builds up over time
+        :param prefix: String, a prefix string to the current node's values
+        :param child_prefix: String, a prefix string for the new children
+        :param depth: Integer, How deep to go from the current level
+        :return: None
+        """
         if depth is None or depth > 0:
             string_buffer.append(prefix)
             p = round(self.p, 10)
@@ -104,6 +139,11 @@ class Node:
 
     # expand method which does both the expansion and the backpropagation, using backpropagate
     def expand(self, model):
+        """Method that attempts to expand the current node in accordance to mcts using the neural network
+
+        :param model: A reference to the neural network object.
+        :return: None
+        """
         self.leaf = False
         # TODO implement possible_moves
         new_states, v = possible_moves(self.state, model)
@@ -122,6 +162,14 @@ class Node:
     # v is the result value from the model and player is the player that performed the move
     # that resulted in the v value.
     def backpropagate(self, node, v, player):
+        """Method that backpropagates the value v for the current node.
+
+        :param node: Node class, the current node to backpropagate from
+        :param v: Float, the value to backpropagate up the tree
+        :param player: Player, the player that performed the move, determines how the value is backpropagated
+                       for the current node
+        :return: None
+        """
         # if the actor performing the action with result v is the same as the current node
         # then we increase the value for the node by v
         if node.player == player:
@@ -139,6 +187,11 @@ class Node:
 
 # class defining a singular MCTS search
 class MCTS:
+    """
+    Class representing a single MCTS tree.
+    Contains methods to perform search, selection and expansion and
+    values representing the root node, exploration constant etc.
+    """
     def __init__(self, root_state, iterations, model):
         # defining the root node of the tree
         self.root_node = Node(1, root_state, None, True, None, None)
@@ -153,6 +206,10 @@ class MCTS:
     # selection, expansion, backpropagation,
     # backpropagation occurs inside the expand() function
     def search(self):
+        """Method that performs a single search and then tries to expand the found leaf node
+
+        :return: None
+        """
         leaf_node, w = self.selection(self.root_node)
         if w == 0:
             leaf_node.expand(self.model)
@@ -160,6 +217,12 @@ class MCTS:
     # method that performs the selection process
     # goes down the tree based off of UCB until it hits a leaf node.
     def selection(self, current_node):
+        """Method that moves through the current node until it finds a leaf node
+
+        :param current_node: Node class, the node to run the selection search from.
+        :return: Tuple (Node, Integer), a tuple representing the leaf node and an integer representing
+                 whether the leaf node has any children.
+        """
         while not current_node.leaf:
             if len(current_node.children) != 0:
                 current_node = max(current_node.children, key=lambda node: ucb(node, self.exploration_constant))
@@ -170,6 +233,10 @@ class MCTS:
     # run method that will continually perform tree searches
     # until the iterations runs out
     def run(self):
+        """ Runs the MCTS search for the total number of iterations as defined by the iterations value
+
+        :return: None
+        """
         for i in range(0, self.iterations):
             self.search()
 
@@ -187,17 +254,6 @@ def main():
     # 16 iterations per second
     tree.root_node.print_selectively(3)
 
-    #performance()
-
-def performance():
-    iterations = 10
-    start = time.time()
-    tree = MCTS('none', iterations)
-    tree.run()
-    print(tree.root_node)
-
-    end = time.time()
-    print(f'runtime: {end-start} s | iterations per second: {iterations/(end-start)}')
 
 # performance metrics: 100000 iterations takes about 3.6s on my (liam's) pc
 # comparing that to my java implementation, which takes 0.272s on my pc
