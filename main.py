@@ -45,8 +45,20 @@ class Game:
 
         :return: a list of tuples [(state, mcts_distribution, reward)]
         '''
-        # TODO use the chess interface to check who won and whether the game has ended
-        game_over, winner = False, 'white'
+
+        status = self.current_state.get_game_status()
+        if status != 3:
+            game_over = True
+        else:
+            game_over = False
+
+        if status == 0:
+            winner = 'white'
+        elif status == 1:
+            winner = 'black'
+        else:
+            winner = 'draw'
+
         finalized_history = []
         if game_over:
             for (state, mcts, v, player) in self.game_history:
