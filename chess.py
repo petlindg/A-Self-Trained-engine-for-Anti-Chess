@@ -1623,11 +1623,3 @@ def print_byte(byte:u8):
             print("0", end="")
         i >>= u8(1)
     print()
-
-def main():
-    chessboard = Chessboard()
-    chessboard.init_board_standard()
-    chessboard.translate_moves_to_output()
-
-if __name__ == '__main__':
-    main()
