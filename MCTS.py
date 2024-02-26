@@ -16,7 +16,10 @@ def possible_moves(state: Chessboard, model):
     # get the valid moves for the current chessboard
     moves = state.get_moves()
     # get the model predictions for the current state
+    time_predict_start = time.time()
     p, v = model.predict(input_repr, verbose = None)
+    time_predict_end = time.time()
+    time_predict = time_predict_end - time_predict_start
     v = v[0][0]
     p_array = p.reshape(1,1,8,8,76)
 
@@ -29,7 +32,7 @@ def possible_moves(state: Chessboard, model):
         p_val = fetch_p_from_move(move, p_array)
         return_list.append((new_state, move, p_val))
 
-    return (return_list, v)
+    return ((return_list, v), time_predict)
 
 # Function that returns the singular p value for a given move
 # from the model output.
@@ -74,7 +77,7 @@ class Node:
         self.v = 0
         self.p = p
         self.leaf = True
-        # player is either 'self' or 'opponent', self == True, opponent == False
+        # player is either white or black
         # TODO figure out how this will interact with the model when it comes to evaluations
         # how the player that is currently trying to find the best move will interact with the model
         self.player = player
@@ -146,22 +149,27 @@ class Node:
         """
         self.leaf = False
         # TODO implement possible_moves
-        new_states, v = possible_moves(self.state, model)
+        (new_states, v), time_predict = possible_moves(self.state, model)
 
         # the initial value v from the model is stored separate from the value variable
         # so that it can be used in backpropagation when training the actual model.
         self.v = v
         # creating the new child nodes, making sure to swap around the player variable
+        if self.player == chess.Color.WHITE:
+            new_player = chess.Color.BLACK
+        else:
+            new_player = chess.Color.WHITE
+
         for (new_state, move, p) in new_states:
-            self.children.append(Node(p, new_state, self, not self.player, self.root_node, move))
+            self.children.append(Node(p, new_state, self, new_player, self.root_node, move))
 
         # backpropagation process
-        self.backpropagate(self, v, self.player)
-
+        self.backpropagate(self, v)
+        return time_predict
     # backpropagation function, node is the current node to backpropagate to
     # v is the result value from the model and player is the player that performed the move
     # that resulted in the v value.
-    def backpropagate(self, node, v, player):
+    def backpropagate(self, node, v):
         """Method that backpropagates the value v for the current node.
 
         :param node: Node class, the current node to backpropagate from
@@ -170,11 +178,11 @@ class Node:
                        for the current node
         :return: None
         """
-        # if the actor performing the action with result v is the same as the current node
+        # if the actor performing the action with result v is the same as the root node
         # then we increase the value for the node by v
-        if node.player == player:
+        if node.player == node.root_node.player:
             node.value += v
-        # if the actor performing the action with result v is the opposite of the current node
+        # if the actor performing the action with result v is the opposite of the root node
         # then increase the value by (1-v) to get the oppositions value
         else:
             node.value += (1-v)
@@ -182,7 +190,7 @@ class Node:
         node.visits += 1
         # if the parent is not none we aren't at the root yet and should continue
         if node.parent is not None:
-            self.backpropagate(node.parent, v, player)
+            self.backpropagate(node.parent, v)
 
 
 # class defining a singular MCTS search
@@ -194,13 +202,13 @@ class MCTS:
     """
     def __init__(self, root_state, iterations, model):
         # defining the root node of the tree
-        self.root_node = Node(1, root_state, None, True, None, None)
+        self.root_node = Node(1, root_state, None, root_state.get_player(), None, None)
         self.root_node.root_node = self.root_node
         # number of MCTS iterations left, each iteration is one search
         self.iterations = iterations
         self.exploration_constant = sqrt(2)
         self.model = model
-
+        self.time_prediction = 0
     # method to perform a single search 'iteration'
     # goes through the 3 steps of an AlphaZero MCTS loop
     # selection, expansion, backpropagation,
@@ -212,7 +220,26 @@ class MCTS:
         """
         leaf_node, w = self.selection(self.root_node)
         if w == 0:
-            leaf_node.expand(self.model)
+            self.time_prediction += leaf_node.expand(self.model)
+        elif w == 1:
+            status = leaf_node.state.get_game_status()
+            if status == 0:
+                winner = chess.Color.WHITE
+            elif status == 1:
+                winner = chess.Color.BLACK
+            else:
+                winner = 'draw'
+
+            if winner == 'draw':
+                leaf_node.backpropagate(leaf_node, 0)
+            # if the winner is the same as the root node, backpropagate a 100% win value from the leaf node
+            elif winner == self.root_node.player:
+                leaf_node.backpropagate(leaf_node, 1)
+            elif winner != self.root_node.player:
+                leaf_node.backpropagate(leaf_node, -1)
+
+
+
     # TODO look into how end of game states are handled with alphazero MCTS
     # method that performs the selection process
     # goes down the tree based off of UCB until it hits a leaf node.
