@@ -10,26 +10,19 @@ from numpy import zeros, ndarray, uint, array
 
 from enum import IntEnum
 from typing import List
-from typing import Tuple
 from itertools import chain
 
 # -----------------------------
 # ----------- TO DO -----------
 # -----------------------------
-# clean up structure of code
-# clean up storage and naming of constants
 # comment code
-# clean up initialization of constants
-# implement move-generation for en-passante
-# implement test cases for en-passante
+# divide the code in move into functions
 # fix overflow warnings in bb multiplication
-
-# ranks used for masking
-# ranks by number
 
 class LOOKUP_TABLES():
 
     def __init__(self):
+        # ranks by number
         self.RANK_8_BB = u64(0b1111111100000000000000000000000000000000000000000000000000000000)
         self.RANK_7_BB = u64(0b11111111000000000000000000000000000000000000000000000000)
         self.RANK_6_BB = u64(0b111111110000000000000000000000000000000000000000)
@@ -336,7 +329,9 @@ class Chessboard():
     # index 0 = bitboard of combined white pieces
     # index 1 = bitboard of combined black pieces
     # index 2 = bitboard of combined black and white pieces
-    combined  : ndarray
+    combined : ndarray
+    # bitboard to keep track of en-passant-able squares
+    enpassante : u64
     # other logic
     player_to_move : Color
     not_player_to_move : Color
@@ -348,12 +343,12 @@ class Chessboard():
     def __init__(self):
         self.bitboards = zeros((2, 6), dtype=u64)
         self.combined  = zeros(3, dtype=u64)
+        self.enpassante = u64(0)
         self.player_to_move = Color.WHITE
         self.not_player_to_move = Color.BLACK
         self.no_progress_counter = []
         self.no_progress_counter.append(u8(0))
         self.repetitions_list = []
-        self.moves = []
 
     def __str__(self):
         str_builder = []
@@ -477,16 +472,31 @@ class Chessboard():
         player = self.player_to_move
         opponent = self.not_player_to_move
 
+        # enpassante stuff
+        enpassante_old = self.enpassante
+        self.enpassante = u64(0)
+
         # iterate over all piece_type bbs and remove all bits on destination square for opponent
         # and add bit on piece_type for player if piece_type has a 1 on source square
-        for i in range(6):
-            self.bitboards[opponent, i] = b_and(self.bitboards[opponent, i], b_not(dst_bb))
-            if b_and(self.bitboards[player, i], src_bb):
-                self.bitboards[player, i] = b_xor(self.bitboards[player, i], src_bb)
+        for piece_type in Piece:
+            self.bitboards[opponent, piece_type] = b_and(self.bitboards[opponent, piece_type], b_not(dst_bb))
+            if b_and(self.bitboards[player, piece_type], src_bb):
+                self.bitboards[player, piece_type] = b_xor(self.bitboards[player, piece_type], src_bb)
                 if promotion_type:
                     self.bitboards[player, promotion_type] = b_or(self.bitboards[player, promotion_type], dst_bb)
                 else:
-                    self.bitboards[player, i] = b_or(self.bitboards[player, i], dst_bb)
+                    if piece_type == Piece.PAWN:
+                        if player == Color.WHITE:
+                            if dst_bb == enpassante_old:
+                                self.bitboards[opponent, Piece.PAWN] = b_xor(self.bitboards[opponent, Piece.PAWN], rs(dst_bb, u64(8)))
+                            if dst_bb == ls(src_bb, u64(16)):
+                                self.enpassante = ls(src_bb, u64(8))
+                        elif player == Color.BLACK:
+                            if dst_bb == enpassante_old:
+                                self.bitboards[opponent, Piece.PAWN] = b_xor(self.bitboards[opponent, Piece.PAWN], ls(dst_bb, u64(8)))
+                            if dst_bb == rs(src_bb, u64(16)):
+                                self.enpassante = rs(src_bb, u64(8))
+                    self.bitboards[player, piece_type] = b_or(self.bitboards[player, piece_type], dst_bb)
         # check for changes in pawn locations or number of pieces on board for 50 move rule
         pawns_new = b_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
         count_new = self._get_piece_count()
@@ -714,7 +724,7 @@ class Chessboard():
 
         takes_bb = b_and(ls(src_bb, u8(9)), b_not(LOOKUP.FILE_H_BB))
         takes_bb = b_or(takes_bb, b_and(ls(src_bb, u8(7)), b_not(LOOKUP.FILE_A_BB)))
-        takes_bb = b_and(takes_bb, self.combined[Color.BLACK])
+        takes_bb = b_and(takes_bb, b_or(self.combined[Color.BLACK], self.enpassante))
 
         if takes_bb: # if takes avaiable, no need to find non-takes
             return self.get_moves_by_bb_pawn(src_index, takes_bb, takes=True)
@@ -734,7 +744,7 @@ class Chessboard():
 
         takes_bb = b_and(rs(src_bb, u8(7)), b_not(LOOKUP.FILE_H_BB))
         takes_bb = b_or(takes_bb, b_and(rs(src_bb, u8(9)), b_not(LOOKUP.FILE_A_BB)))
-        takes_bb = b_and(takes_bb, self.combined[Color.WHITE])
+        takes_bb = b_and(takes_bb, b_or(self.combined[Color.WHITE], self.enpassante))
 
         if takes_bb: # if takes avaiable, no need to find non-takes
             return self.get_moves_by_bb_pawn(src_index, takes_bb, takes=True)
@@ -1417,12 +1427,66 @@ class Chessboard():
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
     def init_board_test_enpassante_white(self):
-        pass
+        # used for unit testing
+        # move cardinality should be 3
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # bP wP bP wP wP .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. .. 
+    
+        # and en-passante bb with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. 1. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+
+        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b01011000_00000000_00000000_00000000_00000000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b10100000_00000000_00000000_00000000_00000000)
+        self.enpassante = u64(0b00100000_00000000_00000000_00000000_00000000_00000000)
+        self.player_to_move = Color.WHITE
+        self.not_player_to_move = Color.BLACK
     def init_board_test_enpassante_black(self):
-        pass
+        # used for unit testing
+        # move cardinality should be 3
+
+        # initializes a board with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # wP bP wP bP bP .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. .. 
+    
+        # and en-passante bb with the following configuration:
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. 1. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+
+        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b10100000_00000000_00000000_00000000)
+        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b01011000_00000000_00000000_00000000)
+        self.enpassante = u64(0b00100000_00000000_00000000)
+        self.player_to_move = Color.BLACK
+        self.not_player_to_move = Color.WHITE
     def init_board_test_stalemate_white(self):
         # used for unit testing
-        # is_game_over should return 0
+        # get_game_status should return 0
 
         # initializes a board with the following configuration:
         # .. .. .. .. .. .. .. ..
@@ -1440,7 +1504,7 @@ class Chessboard():
         self.not_player_to_move = Color.BLACK
     def init_board_test_stalemate_black(self):
         # used for unit testing
-        # is_game_over should return 0
+        # get_game_status should return 0
 
         # initializes a board with the following configuration:
         # .. .. .. .. .. .. .. ..

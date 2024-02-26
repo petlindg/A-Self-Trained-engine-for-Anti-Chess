@@ -125,10 +125,14 @@ class TestMoveGen(unittest.TestCase):
         self.assertEqual(14, len(board.get_moves()))
     
     def test_enpassante_white(self):
-        pass
+        board = cb.Chessboard()
+        board.init_board_test_enpassante_white()
+        self.assertEqual(2, len(board.get_moves()))
 
     def test_en_passante_black(self):
-        pass
+        board = cb.Chessboard()
+        board.init_board_test_enpassante_black()
+        self.assertEqual(2, len(board.get_moves()))
 
 class TestGameState(unittest.TestCase):
     # tests that the get_game_status() function works correctly

@@ -8,7 +8,7 @@
 # -----------------------------
 # make pieces dragable
 # implement translation function from logical move to (x1, y1, x2, y2) as a tkinter grid
-# make interface for promotion
+# fix a better way to communicate with the chessboard, for example winchecking and some popup on win
 
 from tkinter import *
 from typing import List
@@ -261,7 +261,7 @@ class Game():
 
 def main():
     game = Game()
-    game.state.init_board_test_draw_repetition()
+    game.state.init_board_standard()
 
     game.GUI.init_board(game.state.bitboards)
 
