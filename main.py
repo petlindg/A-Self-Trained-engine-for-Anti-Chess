@@ -45,6 +45,7 @@ class Game:
 
         :return: a list of tuples [(state, mcts_distribution, reward)]
         '''
+        # TODO use the chess interface to check who won and whether the game has ended
         game_over, winner = False, 'white'
         finalized_history = []
         if game_over:
