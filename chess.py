@@ -361,55 +361,59 @@ class Chessboard():
         self.piece_count = u8(0)
 
     def __str__(self):
-        str_builder = []
+        str_builder = ['a b c d e f g h \n']
         mask_bb = u64(pow(2, 63))
+        n = 8
         for i in range(64):
             if not i % 8:
-                str_builder.append('\n')
+                if i != 0:
+                    str_builder.append(f'{n}\n')
+                    n = n - 1
             # if white pawn
             if b_and(self.bitboards[0][0], mask_bb):
-                str_builder.append('P ')
+                str_builder.append('wP')
             # if black pawn
             elif b_and(self.bitboards[1][0], mask_bb):
-                str_builder.append('p ')
+                str_builder.append('bP')
 
             # if white knight
             elif b_and(self.bitboards[0][1], mask_bb):
-                str_builder.append('K ')
+                str_builder.append('wH')
             # if black knight
             elif b_and(self.bitboards[1][1], mask_bb):
-                str_builder.append('k ')
+                str_builder.append('bH')
 
             # if white bishop
             elif b_and(self.bitboards[0][2], mask_bb):
-                str_builder.append('B ')
+                str_builder.append('wB')
             # if black bishop
             elif b_and(self.bitboards[1][2], mask_bb):
-                str_builder.append('b ')
+                str_builder.append('bB')
 
             # if white rook
             elif b_and(self.bitboards[0][3], mask_bb):
-                str_builder.append('R ')
+                str_builder.append('wR')
             # if black rook
             elif b_and(self.bitboards[1][3], mask_bb):
-                str_builder.append('r ')
+                str_builder.append('bR')
 
             # if white queen
             elif b_and(self.bitboards[0][4], mask_bb):
-                str_builder.append('Q ')
+                str_builder.append('wQ')
             # if black queen
             elif b_and(self.bitboards[1][4], mask_bb):
-                str_builder.append('q ')
+                str_builder.append('bQ')
 
             # if white king
             elif b_and(self.bitboards[0][5], mask_bb):
-                str_builder.append('K ')
+                str_builder.append('wK')
             # if black king
             elif b_and(self.bitboards[1][5], mask_bb):
-                str_builder.append('k ')
+                str_builder.append('bK')
             else:
                 str_builder.append('. ')
             mask_bb = rs(mask_bb, u8(1))
+        str_builder.append('1')
 
         return ''.join(str_builder)
 
