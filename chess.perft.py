@@ -8,6 +8,7 @@ from chess import *
 import timeit as t
 
 def perft(cb:Chessboard, depth:int):
+    global counter
     if depth==0:
         return
     moves = cb.get_moves()

@@ -15,11 +15,11 @@ from itertools import chain
 # -----------------------------
 # ----------- TO DO -----------
 # -----------------------------
-# comment code
-# divide the code in move into functions
-# fix overflow warnings in bb multiplication
 
 class LOOKUP_TABLES():
+    """
+    A class to store lookuptables for generating moves and masking parts of a bitboard
+    """
 
     def __init__(self):
         # ranks by number
@@ -217,6 +217,10 @@ class Piece(IntEnum):
     KING   = 5
 
 class Move():
+    """
+    Class for representing a move, used for functions within the Chessboard class
+    """
+
     src_index      : u8
     dst_index      : u8
     promotion_type : Piece
@@ -232,9 +236,9 @@ class Move():
         # str function for moves
         return "src: " + str(self.src_index) + ", dst: " + str(self.dst_index) + ", pro: " + str(self.promotion_type) + ", take: " + str(self.is_take)
 
-# function to calculate what type of move it is based on the source and destination indexes
-# returns a value from 0 to 72 which is in the form of the output representation for the NN model
 def calc_move(source: int, destination: int, promotion_piece: Piece):
+    # function to calculate what type of move it is based on the source and destination indexes
+    # returns a value from 0 to 72 which is in the form of the output representation for the NN model
     # board size
 
     src_col = source % 8
@@ -320,7 +324,6 @@ def calc_move(source: int, destination: int, promotion_piece: Piece):
 
 
 class Chessboard():
-
     # main bitboard variable for representing the 12 bitboards.
     # The first index represents color, 0 = white, 1 = black
     # The second index represents piece-type.
@@ -338,6 +341,11 @@ class Chessboard():
     no_progress_counter : List[u8]
     # a list of bitboards that represent the state
     repetitions_list : List[ndarray]
+    # a bitboard to keep track of combined pawn positions
+    pawns : u64
+    # keeping track of number of pieces on the board
+    piece_count : u8
+    
 
     # init empty board
     def __init__(self):
@@ -349,6 +357,8 @@ class Chessboard():
         self.no_progress_counter = []
         self.no_progress_counter.append(u8(0))
         self.repetitions_list = []
+        self.pawns = u64(0)
+        self.piece_count = u8(0)
 
     def __str__(self):
         str_builder = []
@@ -405,11 +415,21 @@ class Chessboard():
 
 
     def get(self):
-        # used for interface to display
+        """
+        :return: shape (2,6) dtype=u64 ndarray where [i,j] represents the bitboard of Color i and Piece j
+        """
         return self.bitboards
 
-    def try_move(self, src_index, dst_index, promotion_type:Piece=None):
-        # used for interface to attempt a move, returns True if successful, False if not successful
+    def try_move(self, src_index:int, dst_index:int, promotion_type:Piece=None):
+        """
+        Given input parameters, makes a move on the board if it's legal
+
+        :param src_index: Index of the source square of a move in range 0-63
+        :param dst_iondex: Index of the destination square of a move in range 0-63
+        :param promotion_type: Optional promotion type of a move reprenented as Piece (range 1-5)
+        :return: True if move was legal, False otherwise
+        """
+
         move = Move(u8(src_index), u8(dst_index), promotion_type) # create function parameters into a Move()
         moves = self.get_moves() # get legal moves
         for m in moves:
@@ -420,11 +440,12 @@ class Chessboard():
         return False
 
     def get_game_status(self):
-        # checks if the game is over
-        # returns 0 if white wins
-        # returns 1 if black wins
-        # returns 2 if draw
-        # returns 3 if game not over
+        """
+        Gets the status of the game in the current state
+
+        :return: 0 if white wins, 1 if black wins, 2 if game is draw, 3 if game is ongoing
+        """
+    
         moves = self.get_moves()
         if not len(moves):
             return self.player_to_move
@@ -435,9 +456,21 @@ class Chessboard():
         return 3
     
     def get_player(self):
+        """
+        Gets current player
+
+        :return: Color of current player to move
+        """
+
         return self.player_to_move
     
     def is_draw(self):
+        """
+        Checks if the game is a draw or not based on repetitions and no-progress
+
+        :return: True if game is draw, False otherwise
+        """
+
         if self._check_repetitions():
             return True
         if self._check_no_progress():
@@ -455,61 +488,83 @@ class Chessboard():
         return False
 
     def move(self, move:Move):
-        # main function to move a piece and updates all nessecary properties of class
+        """
+        Executes a move and updates all the parameters of the Chessboard
 
-        # add current state to repeitions_list
-        self.repetitions_list.append(self.bitboards.copy())
+        :param move: Type Move, represents the move to be executed
+        :return: True if game is drawed after move is executed, False otherwise
+        """
 
-        # temporary variables to update parameters in the chessboard
-        pawns_old = b_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
-        count_old = self._get_piece_count()
+        self._update_repetitions()
+        self._update_bitboards(move)
+        self._update_no_progress()
+        self._update_player()
+        return self.is_draw()
 
-        # create move indexes into bbs
+    def _update_bitboards(self, move:Move):
         src_bb = ls(u64(1), move.src_index)
         dst_bb = ls(u64(1), move.dst_index)
         promotion_type = move.promotion_type
 
-        player = self.player_to_move
-        opponent = self.not_player_to_move
-
-        # enpassante stuff
-        enpassante_old = self.enpassante
+        enpassante = self.enpassante
         self.enpassante = u64(0)
 
-        # iterate over all piece_type bbs and remove all bits on destination square for opponent
-        # and add bit on piece_type for player if piece_type has a 1 on source square
         for piece_type in Piece:
-            self.bitboards[opponent, piece_type] = b_and(self.bitboards[opponent, piece_type], b_not(dst_bb))
-            if b_and(self.bitboards[player, piece_type], src_bb):
-                self.bitboards[player, piece_type] = b_xor(self.bitboards[player, piece_type], src_bb)
-                if promotion_type:
-                    self.bitboards[player, promotion_type] = b_or(self.bitboards[player, promotion_type], dst_bb)
+            self.bitboards[self.not_player_to_move, piece_type] = b_and(self.bitboards[self.not_player_to_move, piece_type], b_not(dst_bb))
+            if b_and(self.bitboards[self.player_to_move, piece_type], src_bb):
+                if piece_type == Piece.PAWN:
+                    self._move_pawn(src_bb, dst_bb, enpassante, promotion_type)
                 else:
-                    if piece_type == Piece.PAWN:
-                        if player == Color.WHITE:
-                            if dst_bb == enpassante_old:
-                                self.bitboards[opponent, Piece.PAWN] = b_xor(self.bitboards[opponent, Piece.PAWN], rs(dst_bb, u64(8)))
-                            if dst_bb == ls(src_bb, u64(16)):
-                                self.enpassante = ls(src_bb, u64(8))
-                        elif player == Color.BLACK:
-                            if dst_bb == enpassante_old:
-                                self.bitboards[opponent, Piece.PAWN] = b_xor(self.bitboards[opponent, Piece.PAWN], ls(dst_bb, u64(8)))
-                            if dst_bb == rs(src_bb, u64(16)):
-                                self.enpassante = rs(src_bb, u64(8))
-                    self.bitboards[player, piece_type] = b_or(self.bitboards[player, piece_type], dst_bb)
-        # check for changes in pawn locations or number of pieces on board for 50 move rule
-        pawns_new = b_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
-        count_new = self._get_piece_count()
+                    self._move_piece(src_bb, dst_bb, piece_type)
 
-        if (pawns_new != pawns_old) or (count_new != count_old):
+    def _move_pawn(self, src_bb:u64, dst_bb:u64, enpassante:u64, promotion_type:Piece):
+        self.bitboards[self.player_to_move, Piece.PAWN] = b_xor(self.bitboards[self.player_to_move, Piece.PAWN], src_bb)
+        if promotion_type:
+            self._move_promote(dst_bb, promotion_type)
+        elif b_and(dst_bb, enpassante):
+            self._move_enpassante(dst_bb)
+        else:
+            self.bitboards[self.player_to_move, Piece.PAWN] = b_or(self.bitboards[self.player_to_move, Piece.PAWN], dst_bb)
+
+    def _move_promote(self, dst_bb:u64, promotion_type:Piece):
+        self.bitboards[self.player_to_move, promotion_type] = b_or(self.bitboards[self.player_to_move, promotion_type], dst_bb)
+
+    def _move_enpassante(self, dst_bb:u64):
+        self.bitboards[self.player_to_move, Piece.PAWN] = b_or(self.bitboards[self.player_to_move, Piece.PAWN], dst_bb)
+        if self.player_to_move == Color.WHITE:
+            self.bitboards[self.not_player_to_move, Piece.PAWN] = b_xor(self.bitboards[self.not_player_to_move, Piece.PAWN], rs(dst_bb, u64(8)))
+        else:
+            self.bitboards[self.not_player_to_move, Piece.PAWN] = b_xor(self.bitboards[self.not_player_to_move, Piece.PAWN], ls(dst_bb, u64(8)))
+
+    def _move_piece(self, src_bb:u64, dst_bb:u64, piece_type:Piece):
+        self.bitboards[self.player_to_move, piece_type] = b_xor(self.bitboards[self.player_to_move, piece_type], src_bb)
+        self.bitboards[self.player_to_move, piece_type] = b_or(self.bitboards[self.player_to_move, piece_type], dst_bb)
+
+    def _update_repetitions(self):
+        self.repetitions_list.append(self.bitboards.copy())
+
+    def _update_no_progress(self):
+        if self._update_piece_count() or self._update_pawns():
             self.no_progress_counter.append(u8(0))
         else:
-            self.no_progress_counter.append(self.no_progress_counter[-1] + u8(1))
+            self.no_progress_counter.append(self.no_progress_counter[-1]+u8(1))
 
-        # update player to move
-        self._update_player()
+    def _update_piece_count(self):
+        new_piece_count = self._get_piece_count()
+        if new_piece_count != self.piece_count:
+            self.piece_count = new_piece_count
+            return True
+        return False
+    
+    def _update_pawns(self):
+        new_pawns = self._get_pawns()
+        if new_pawns != self.pawns:
+            self.pawns = new_pawns
+            return True
+        return False
 
-        return self.is_draw()
+    def _get_pawns(self):
+        return b_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
     
     def unmove(self):
         self._update_player()
@@ -546,7 +601,7 @@ class Chessboard():
                     return False
         return True
 
-    def combine_bb(self):
+    def _combine_bb(self):
         # combines bb of both player colors seperately and together
         index = 0
         for player in self.bitboards:
@@ -559,10 +614,14 @@ class Chessboard():
         self.combined[2] = b_or(self.combined[Color.WHITE], self.combined[Color.BLACK])
 
     def get_moves(self):
-        # get legal moves given current state
+        """
+        Gets the legal moves of the current state
+
+        :return: A List[Move] of legal moves
+        """
 
         # combines the piece_type bitboards of both colors seperately, used in later calculations
-        self.combine_bb()
+        self._combine_bb()
         # vars to hold legal moves and takes
         moves:List[Move] = []
         takes:List[Move] = []
@@ -578,7 +637,7 @@ class Chessboard():
 
         return moves
 
-    def get_moves_by_bb(self, src_index:u8, dst_bb:u64, takes:bool=False):
+    def _get_moves_by_bb(self, src_index:u8, dst_bb:u64, takes:bool=False):
         # converts moves represented by a source index and a destination bb to
         # moves represented by the Move() class and returns them.
         moves:List[Move] = []
@@ -591,7 +650,7 @@ class Chessboard():
             dst_bb = rs(dst_bb, bit)
         return moves
     
-    def get_moves_by_bb_pawn(self, src_index:u8, dst_bb:u64, takes:bool=False):
+    def _get_moves_by_bb_pawn(self, src_index:u8, dst_bb:u64, takes:bool=False):
         # converts moves represented by a source index and a destination bb to
         # moves represented by the Move() class and returns them.
         moves:List[Move] = []
@@ -660,8 +719,8 @@ class Chessboard():
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
 
-        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
-        moves += self.get_moves_by_bb(src_index, moves_bb)
+        moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self._get_moves_by_bb(src_index, moves_bb)
         return moves
 
     def _get_moves_rank(self, src_index:u8):
@@ -676,8 +735,8 @@ class Chessboard():
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
 
-        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
-        moves += self.get_moves_by_bb(src_index, moves_bb)
+        moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self._get_moves_by_bb(src_index, moves_bb)
         return moves
 
     def _get_moves_diag(self, src_index:u8):
@@ -695,8 +754,8 @@ class Chessboard():
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
 
-        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
-        moves += self.get_moves_by_bb(src_index, moves_bb)
+        moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self._get_moves_by_bb(src_index, moves_bb)
         return moves
 
     def _get_moves_antidiag(self, src_index:u8):
@@ -714,8 +773,8 @@ class Chessboard():
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
 
-        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
-        moves += self.get_moves_by_bb(src_index, moves_bb)
+        moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self._get_moves_by_bb(src_index, moves_bb)
         return moves
 
     def _get_moves_pawn_white(self, src_index:u8):
@@ -727,7 +786,7 @@ class Chessboard():
         takes_bb = b_and(takes_bb, b_or(self.combined[Color.BLACK], self.enpassante))
 
         if takes_bb: # if takes avaiable, no need to find non-takes
-            return self.get_moves_by_bb_pawn(src_index, takes_bb, takes=True)
+            return self._get_moves_by_bb_pawn(src_index, takes_bb, takes=True)
 
         moves_bb = ls(src_bb, u8(8))
         if (8 <= src_index < 16):
@@ -736,7 +795,7 @@ class Chessboard():
 
         bb = b_or(moves_bb, takes_bb)
 
-        return self.get_moves_by_bb_pawn(src_index, bb)
+        return self._get_moves_by_bb_pawn(src_index, bb)
 
     def _get_moves_pawn_black(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
@@ -747,7 +806,7 @@ class Chessboard():
         takes_bb = b_and(takes_bb, b_or(self.combined[Color.WHITE], self.enpassante))
 
         if takes_bb: # if takes avaiable, no need to find non-takes
-            return self.get_moves_by_bb_pawn(src_index, takes_bb, takes=True)
+            return self._get_moves_by_bb_pawn(src_index, takes_bb, takes=True)
 
         moves_bb = rs(src_bb, u8(8))
         if (48 <= src_index < 56):
@@ -756,7 +815,7 @@ class Chessboard():
 
         bb = b_or(moves_bb, takes_bb)
 
-        return self.get_moves_by_bb_pawn(src_index, bb)
+        return self._get_moves_by_bb_pawn(src_index, bb)
     
     def _get_moves_knight(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
@@ -764,8 +823,8 @@ class Chessboard():
         dst_bb = LOOKUP.KNIGHT_BB[src_index]
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
-        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
-        moves += self.get_moves_by_bb(src_index, moves_bb)
+        moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self._get_moves_by_bb(src_index, moves_bb)
         return moves
 
     def _get_moves_bishop(self, src_index:u8):
@@ -794,8 +853,8 @@ class Chessboard():
         dst_bb = LOOKUP.KING_BB[src_index]
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
-        moves += self.get_moves_by_bb(src_index, takes_bb, takes=True)
-        moves += self.get_moves_by_bb(src_index, moves_bb)
+        moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
+        moves += self._get_moves_by_bb(src_index, moves_bb)
         return moves
 
     # translates the bitboard move representation into the output representation for the neural network
@@ -875,8 +934,8 @@ class Chessboard():
             #print(representation[0][row])
         return array(representation)
 
-    # init standard chess board
     def init_board_standard(self):
+        # init standard chess board
 
         # white pieces
         self.bitboards[Color.WHITE, Piece.PAWN]   = u64(0b1111111100000000)
@@ -910,6 +969,7 @@ class Chessboard():
         # black pieces
         self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b0000000100000000000000000000000000000000000000000000000000000000)
         self.bitboards[Color.BLACK, Piece.KING] = u64(0b0000001000000011000000000000000000000000000000000000000000000000)
+        self._update_no_progress()
     def init_board_test_2(self):
         # initializes a board with the following configuration:
         # .. .. .. .. .. .. .. ..
@@ -1556,6 +1616,7 @@ class Chessboard():
         self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000)
         self.player_to_move = Color.WHITE
         self.not_player_to_move = Color.BLACK
+        self._update_no_progress()
 
 
 def print_bb(bb:u64):
