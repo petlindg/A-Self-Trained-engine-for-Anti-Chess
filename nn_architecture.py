@@ -141,10 +141,12 @@ class NeuralNetwork:
 
         # Compile the model with specified losses, optimizer, and loss weights
         model.compile(
-            loss={
-                'policy_head': 'categorical_crossentropy', #measures the disparity between the actual distribution of the labels and the predicted probabilities. 
-                'value_head': 'mean_squared_error'         #uses the gradients of the loss function to update the model's weights in a way that minimizes the loss
-            },
+            loss=[
+                'categorical_crossentropy',
+                # measures the disparity between the actual distribution of the labels and the predicted probabilities.
+                'mean_squared_error'
+                # uses the gradients of the loss function to update the model's weights in a way that minimizes the loss
+            ],
             #optimizer=Adam(learning_rate=LEARNING_RATE),
             #loss_weights={
             #    'policy_head': 0.5,  # Equal weighting for policy and value losses
