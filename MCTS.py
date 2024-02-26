@@ -1,7 +1,7 @@
 import time
 from math import sqrt
 import random
-
+import numpy as np
 import chess
 from chess import Chessboard
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
@@ -66,7 +66,7 @@ class Node:
     and the values for the node itself, such as what move was made to get to this node, the current node's state
     the value of the current node, how many visits etc.
     """
-    def __init__(self, p, state, parent_node, player, root_node, move):
+    def __init__(self, p, state, parent_node, player, root_node, move, root = False):
         self.root_node = root_node
         self.parent = parent_node
         self.state = state
@@ -77,6 +77,8 @@ class Node:
         self.v = 0
         self.p = p
         self.leaf = True
+        self.terminal = False
+        self.root = root
         # player is either white or black
         # TODO figure out how this will interact with the model when it comes to evaluations
         # how the player that is currently trying to find the best move will interact with the model
@@ -93,6 +95,11 @@ class Node:
         self.print_tree(string_buffer, "", "")
         return "".join(string_buffer)
 
+
+    def select_child(self, move):
+        for child in self.children:
+            if child.move == move:
+                return child
     # method that can be called on a node which will print it with a given depth
     # any nodes that exist deeper than this depth will not be printed
     def print_selectively(self, depth):
@@ -148,7 +155,6 @@ class Node:
         :return: None
         """
         self.leaf = False
-        # TODO implement possible_moves
         (new_states, v), time_predict = possible_moves(self.state, model)
 
         # the initial value v from the model is stored separate from the value variable
@@ -160,8 +166,18 @@ class Node:
         else:
             new_player = chess.Color.WHITE
 
-        for (new_state, move, p) in new_states:
-            self.children.append(Node(p, new_state, self, new_player, self.root_node, move))
+        # if the node is the root node then add symmetric dirichlet noise
+        if self.root:
+            diri_dist = np.random.dirichlet([0.03] * (len(new_states)))
+            p_dist = [0.75*P+0.25*D for ((s, m, P), D) in zip(diri_dist, new_states)]
+            p_sum = sum(p_dist)
+            p_dist = [p/p_sum for p in p_dist]
+            for ((new_state, move, p_old), p) in zip(new_states, p_dist):
+
+                self.children.append(Node(p, new_state, self, new_player, self.root_node, move))
+        else:
+            for (new_state, move, p) in new_states:
+                self.children.append(Node(p, new_state, self, new_player, self.root_node, move))
 
         # backpropagation process
         self.backpropagate(self, v)
@@ -200,12 +216,19 @@ class MCTS:
     Contains methods to perform search, selection and expansion and
     values representing the root node, exploration constant etc.
     """
-    def __init__(self, root_state, iterations, model):
+    def __init__(self, root_state, iterations, model, old_tree=None):
         # defining the root node of the tree
-        self.root_node = Node(1, root_state, None, root_state.get_player(), None, None)
-        self.root_node.root_node = self.root_node
-        # number of MCTS iterations left, each iteration is one search
-        self.iterations = iterations
+        if old_tree is None:
+            self.root_node = Node(1, root_state, None, root_state.get_player(), None, None)
+            self.root_node.root_node = self.root_node
+            self.iterations = iterations
+        # if we initialize the MCTS with an old tree instead of completely fresh
+        else:
+            self.root_node = old_tree
+            self.root_node.root_node = self.root_node
+            self.root_node.parent = None
+            self.root_node.root = True
+            self.iterations = iterations - self.root_node.visits
         self.exploration_constant = sqrt(2)
         self.model = model
         self.time_prediction = 0
@@ -222,6 +245,8 @@ class MCTS:
         if w == 0:
             self.time_prediction += leaf_node.expand(self.model)
         elif w == 1:
+            leaf_node.terminal = True
+            #print(leaf_node.state)
             status = leaf_node.state.get_game_status()
             if status == 0:
                 winner = chess.Color.WHITE
@@ -238,7 +263,12 @@ class MCTS:
             elif winner != self.root_node.player:
                 leaf_node.backpropagate(leaf_node, -1)
 
-
+    # selects a child from the current root node and returns it
+    # selection is done by matching the move argument to the child move.
+    def select_child(self, move):
+        for child in self.root_node.children:
+            if child.move == move:
+                return child
 
     # TODO look into how end of game states are handled with alphazero MCTS
     # method that performs the selection process
@@ -270,9 +300,10 @@ class MCTS:
 def main():
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
+    model.load_weights("checkpoints/checkpoint.ckpt")
     root_state = Chessboard()
     root_state.init_board_standard()
-    tree = MCTS(root_state, 800, model)
+    tree = MCTS(root_state, 160, model)
     start = time.time()
     tree.run()
     end = time.time()
