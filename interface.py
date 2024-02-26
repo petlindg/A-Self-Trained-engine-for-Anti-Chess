@@ -261,7 +261,7 @@ class Game():
 
 def main():
     game = Game()
-    game.state.init_board_test_bishop_white_moves()
+    game.state.init_board_test_draw_repetition()
 
     game.GUI.init_board(game.state.bitboards)
 

@@ -343,8 +343,6 @@ class Chessboard():
     no_progress_counter : List[u8]
     # a list of bitboards that represent the state
     repetitions_list : List[ndarray]
-    # a list of legal moves for the current state
-    moves : List[Move]
 
     # init empty board
     def __init__(self):
@@ -432,18 +430,24 @@ class Chessboard():
         # returns 1 if black wins
         # returns 2 if draw
         # returns 3 if game not over
-        self.moves = self.get_moves()
-
-        if not len(self.moves):
+        moves = self.get_moves()
+        if not len(moves):
             return self.player_to_move
-        
         if self._check_repetitions():
             return 2
-        
         if self._check_no_progress():
             return 2
-        
         return 3
+    
+    def get_player(self):
+        return self.player_to_move
+    
+    def is_draw(self):
+        if self._check_repetitions():
+            return True
+        if self._check_no_progress():
+            return True
+        return False
 
     def _check_repetitions(self):
         if self._get_repetitions() == 2:
@@ -492,23 +496,20 @@ class Chessboard():
         else:
             self.no_progress_counter.append(self.no_progress_counter[-1] + u8(1))
 
-
         # update player to move
+        self._update_player()
+
+        return self.is_draw()
+    
+    def unmove(self):
+        self._update_player()
+        self.bitboards = self.repetitions_list.pop()
+        self.no_progress_counter.pop()
+
+    def _update_player(self):
         tmp = self.player_to_move
         self.player_to_move = self.not_player_to_move
         self.not_player_to_move = tmp
-
-        game_over_state = self.get_game_status()
-        if game_over_state == Color.WHITE:
-            print("White wins!")
-        elif game_over_state == Color.BLACK:
-            print("Black wins!")
-        elif game_over_state == 2:
-            print("Draw!")
-        elif game_over_state == 3:
-            print("Game is ongoing!")
-            
-        #print(self.no_progress_counter)
 
     def _get_piece_count(self):
         bit = u8(1)
@@ -526,7 +527,6 @@ class Chessboard():
         for state in self.repetitions_list:
             if self._bbs_equal(state, self.bitboards):
                 repetitions += 1
-        print(repetitions)
         return repetitions
 
     def _bbs_equal(self, bbs1:ndarray, bbs2:ndarray):
@@ -547,6 +547,7 @@ class Chessboard():
             index += 1
 
         self.combined[2] = b_or(self.combined[Color.WHITE], self.combined[Color.BLACK])
+
     def get_moves(self):
         # get legal moves given current state
 
@@ -1455,6 +1456,43 @@ class Chessboard():
         self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000_00000000)
         self.player_to_move = Color.BLACK
         self.not_player_to_move = Color.WHITE
+    def init_board_test_draw_repetition(self):
+        # used for unit testing
+        # is_game_over should return 0
+
+        # initializes a board with the following configuration:
+        # bK .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. wK 
+
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00000001)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000)
+        self.player_to_move = Color.WHITE
+        self.not_player_to_move = Color.BLACK
+    def init_board_test_draw_no_progress(self):
+        # used for unit testing
+        # is_game_over should return 0
+
+        # initializes a board with the following configuration:
+        # bK .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. ..
+        # .. .. .. .. .. .. .. wK 
+
+        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00000001)
+        self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000)
+        self.player_to_move = Color.WHITE
+        self.not_player_to_move = Color.BLACK
+
 
 def print_bb(bb:u64):
     mask_bb = u64(pow(2, 63))

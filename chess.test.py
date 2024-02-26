@@ -2,7 +2,7 @@ import unittest
 import chess as cb
 
 class TestMoveGen(unittest.TestCase):
-    # class tests cardinality of movegeneration in different board states
+    # class tests cardinality of generated legal moves in different board states
 
     def test_pawn_white_takes(self):
         board = cb.Chessboard()
@@ -141,6 +141,44 @@ class TestGameState(unittest.TestCase):
         board = cb.Chessboard()
         board.init_board_test_stalemate_black()
         self.assertEqual(1, board.get_game_status())
+
+    def test_draw_repetition(self):
+        board = cb.Chessboard()
+        board.init_board_test_draw_repetition()
+        w_m1 = cb.Move(cb.u64(0), cb.u64(1))
+        b_m1 = cb.Move(cb.u64(63), cb.u64(62))
+        w_m2 = cb.Move(cb.u64(1), cb.u64(0))
+        b_m2 = cb.Move(cb.u64(62), cb.u64(63))
+        self.assertFalse(board.move(w_m1))
+        self.assertFalse(board.move(b_m1))
+        self.assertFalse(board.move(w_m2))
+        self.assertFalse(board.move(b_m2))
+        self.assertFalse(board.move(w_m1))
+        self.assertFalse(board.move(b_m1))
+        self.assertFalse(board.move(w_m2))
+        self.assertTrue(board.move(b_m2))
+
+    def test_draw_no_progress(self):
+        board = cb.Chessboard()
+        board.init_board_test_draw_no_progress()
+        w_m1 = cb.Move(cb.u64(0), cb.u64(1))
+        b_m1 = cb.Move(cb.u64(63), cb.u64(62))
+        w_m2 = cb.Move(cb.u64(1), cb.u64(0))
+        b_m2 = cb.Move(cb.u64(62), cb.u64(63))
+        for _ in range(12):
+            board.move(w_m1)
+            self.assertFalse(board._check_no_progress())
+            board.move(b_m1)
+            self.assertFalse(board._check_no_progress())
+            board.move(w_m2)
+            self.assertFalse(board._check_no_progress())
+            board.move(b_m2)
+            self.assertFalse(board._check_no_progress())
+        board.move(w_m1)
+        self.assertFalse(board._check_no_progress())
+        self.assertTrue(board.move(b_m1))
+        self.assertTrue(board._check_no_progress())
+            
  
 def main():
     unittest.main()
