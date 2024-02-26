@@ -133,7 +133,7 @@ def main():
     global model
     model = model_config.build_nn()
     starting_board = chess.Chessboard()
-    starting_board.init_board_standard()
+    starting_board.init_board_test_1()
     game1 = Game(starting_board, 40)
     while True:
         print(game1.current_state)
