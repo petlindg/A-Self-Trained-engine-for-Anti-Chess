@@ -834,12 +834,14 @@ class Chessboard():
         # TODO represent repetitions in some shape or form for the Chessboard class
         repetitions_w = 0
         repetitions_b = 0
-        # TODO represent color for the current players turn
-        color = 0
-        # TODO represent the no progress counter
-        no_progress = 0
-        # TODO calculate and represent en passant squares as specific squares in a 8x8 bitboard
-        en_passant = u64(0b0000000000000000000000000000000000000000000000000000000000000000)
+
+        if self.player_to_move == Color.WHITE:
+            color = 0
+        else:
+            color = 1
+
+        no_progress = self.no_progress_counter[-1]
+        en_passant = self.enpassante
         for i in range(0, 8):
             for l in range(0, 8):
                 representation[0][i][l].append(repetitions_w)
