@@ -5,25 +5,25 @@ from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 
 # a class representing the generation of the Training Data
 class TrainingData:
-    def __init__(self, max_buffer_size, initial_state, tree_iterations):
+    def __init__(self, max_buffer_size, initial_state, tree_iterations, training_iterations):
         # a buffer with a max size operating on a first in first out principle
         # during the training process, the oldest data will be replaced with the newest data
         # inside this buffer
         self.buffer = deque(max_buffer_size)
-        self.training = True
         self.initial_state = initial_state
         self.tree_iterations = tree_iterations
-
+        self.training_iterations = training_iterations
     # method that will continually generate training data through self play while self.training is true
     def train(self):
         # main training loop, creates a game, runs the game and saves the game data - repeat
-        while self.training:
+        training_count = 0
+        while training_count < self.training_iterations:
             game = Game(self.initial_state, self.tree_iterations)
             while game.check_end_state():
                 game.make_move()
             # TODO check if we need to perform a copy function
             self.buffer.append(game.game_history)
-
+            training_count += 1
 
 # class representing an entire game session
 class Game:
