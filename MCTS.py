@@ -166,24 +166,37 @@ class Node:
         else:
             new_player = chess.Color.WHITE
 
-        # if the node is the root node then add symmetric dirichlet noise
-        if self.root:
-            diri_dist = np.random.dirichlet([0.03] * (len(new_states)))
-            p_dist = [0.75*P+0.25*D for ((s, m, P), D) in zip(diri_dist, new_states)]
-            p_sum = sum(p_dist)
-            p_dist = [p/p_sum for p in p_dist]
-            for ((new_state, move, p_old), p) in zip(new_states, p_dist):
 
-                self.children.append(Node(p, new_state, self, new_player, self.root_node, move))
-        else:
-            # normalization for the states
-            p_sum = sum([p for (state, move, p) in new_states])
-            for (new_state, move, p) in new_states:
-                self.children.append(Node(p/p_sum, new_state, self, new_player, self.root_node, move))
+
+        # normalization for the states
+        p_sum = sum([p for (state, move, p) in new_states])
+        for (new_state, move, p) in new_states:
+            self.children.append(Node(p/p_sum, new_state, self, new_player, self.root_node, move))
+
+        # add noise if the current node is a root node
+        if self.root:
+            self.add_noise()
 
         # backpropagation process
         self.backpropagate(self, v)
         return time_predict
+
+    def add_noise(self, dir_a=0.03, frac=0.25):
+        """Adds dirichlet noise to all the p values for the children of the current node
+
+        :param dir_a: Float, dirichlet alpha value. 0.03 is default
+        :param frac: Float, fraction deciding how to weigh the P vs the noise, 0.25 is default
+        :return:None
+        """
+        diri_dist = np.random.dirichlet([dir_a] * (len(self.children)))
+        child_dist = [child.p for child in self.children]
+        new_dist = [(1-frac)*p + frac*d for (p, d) in zip(child_dist, diri_dist)]
+        # re normalizing the p values
+        sum_dist = sum(new_dist)
+        new_dist = [p/sum_dist for p in new_dist]
+        for i, child in enumerate(self.children):
+            child.p = new_dist[i]
+
     # backpropagation function, node is the current node to backpropagate to
     # v is the result value from the model and player is the player that performed the move
     # that resulted in the v value.
@@ -228,6 +241,8 @@ class MCTS:
         else:
             self.root_node = old_tree
             self.root_node.root_node = self.root_node
+            # add noise to the new root node
+            self.root_node.add_noise()
             self.root_node.parent = None
             self.root_node.root = True
             self.iterations = iterations - self.root_node.visits
