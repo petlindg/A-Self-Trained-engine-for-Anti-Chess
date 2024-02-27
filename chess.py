@@ -370,6 +370,12 @@ class Chessboard():
 
     # init empty board
     def __init__(self, fen:str="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - 0 1"):
+        """
+        Initializes the chessboard. By default with standard chess configuration
+        alternatively by a string given in FEN format, excluding the field for castling.
+
+        :param fen: String stating boardstate in FEN format, excluding the castling rights field
+        """
         self.bitboards = zeros((2, 6), dtype=u64)
         self.combined  = zeros(3, dtype=u64)
         self.repetitions_list = []
@@ -378,11 +384,6 @@ class Chessboard():
         self.pawns = self._get_pawns()
         self.piece_count = self._get_piece_count()
         
-        #self.enpassante = u64(0)
-        #self.player_to_move = Color.WHITE
-        #self.not_player_to_move = Color.BLACK
-        #self.no_progress_counter = [].append(u8(0))
-
     def __str__(self):
         str_builder = ['a b c d e f g h \n']
         mask_bb = u64(pow(2, 63))
