@@ -234,7 +234,27 @@ class Move():
 
     def __str__(self):
         # str function for moves
-        return "src: " + str(self.src_index) + ", dst: " + str(self.dst_index) + ", pro: " + str(self.promotion_type) + ", take: " + str(self.is_take)
+        return str(move_to_algebraic(self))
+               #+ "src: " + str(self.src_index) + ", dst: " + str(self.dst_index) + ", pro: " + str(self.promotion_type) + ", take: " + str(self.is_take)
+
+
+def move_to_algebraic(move):
+    """Function for translating a move into a string in algebraic notation
+
+    :param move: Move Class
+    :return: String
+    """
+    cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+    src = move.src_index
+    src_row = str(src//8 + 1)
+    src_col = cols[(src%8-1)]
+
+    dst = move.dst_index
+    dst_row = str(dst//8 + 1)
+    dst_col = cols[(dst%8-1)]
+
+    return src_col + src_row + dst_col + dst_row
 
 def calc_move(source: int, destination: int, promotion_piece: Piece):
     # function to calculate what type of move it is based on the source and destination indexes
