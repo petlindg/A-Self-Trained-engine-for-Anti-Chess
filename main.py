@@ -1,4 +1,5 @@
 import os
+import random
 import time
 from sklearn.model_selection import train_test_split
 import numpy as np
@@ -200,11 +201,11 @@ class Game:
 
 class EvaluateModel:
     '''Class representing the evaluation of two models playing against one another'''
-    def __init__(self, initial_state, tree_iterations, model_1, model_2, games_to_play):
+    def __init__(self, initial_state, tree_iterations, model_1, games_to_play, model_2=None):
         self.initial_state = initial_state
         self.current_state = None
         self.model_1 = model_1
-        self.model_2 = model_2
+        self.model_2 = model_2 # can be None if we want a fully random move selector
         self.tree_iterations = tree_iterations
         self.games_to_play = games_to_play
         self.color_model_1 = chess.Color.WHITE
@@ -232,10 +233,11 @@ class EvaluateModel:
             #print('game ended')
             #print(self.current_state)
             game_counter += 1
-            self.swap_colors()
-        print(f'winrate white: {self.wins_model_1 / (self.wins_model_2 + self.wins_model_1 + self.draws)} | '
-              f'winrate black: {self.wins_model_2 / (self.wins_model_2 + self.wins_model_1 + self.draws)} | '
+            #self.swap_colors()
+        print(f'winrate model 1: {self.wins_model_1 / (self.wins_model_2 + self.wins_model_1 + self.draws)} | '
+              f'winrate model 2: {self.wins_model_2 / (self.wins_model_2 + self.wins_model_1 + self.draws)} | '
               f'drawrate: {self.draws/(self.wins_model_2 + self.wins_model_1 + self.draws)}')
+
 
 
     def play_game(self):
@@ -247,8 +249,6 @@ class EvaluateModel:
         self.current_state = copy.deepcopy(self.initial_state)
         self.old_tree_1 = None
         self.old_tree_2 = None
-        print(self.old_tree_1)
-        print(self.old_tree_2)
 
         while check_end_state(self.current_state):
             #print(self.current_state)
@@ -262,29 +262,43 @@ class EvaluateModel:
 
             # if the second model is the one to move
             else:
-                # update the tree and get the move that model 2 made
-                self.old_tree_2, move = self.model_move(self.model_2, self.old_tree_2)
-                # if the first model has a previous tree then update that tree with the move that model 2 performed
-                if self.old_tree_1 is not None:
-                    self.old_tree_1 = self.old_tree_1.select_child(move)
+                if self.model_2 is None:
+                    move = self.random_move()
+                    self.current_state.move(move)
+                    if self.old_tree_1 is not None:
+                        self.old_tree_1 = self.old_tree_1.select_child(move)
+                else:
+                    # update the tree and get the move that model 2 made
+                    self.old_tree_2, move = self.model_move(self.model_2, self.old_tree_2)
+                    # if the first model has a previous tree then update that tree with the move that model 2 performed
+                    if self.old_tree_1 is not None:
+                        self.old_tree_1 = self.old_tree_1.select_child(move)
 
         # fetch the status when the game has ended
         # and depending on what happened, increment the variables
         status = self.current_state.get_game_status()
+
+        # white wins
         if status == 0:
+            # if model 1 is white and white wins, increase wins for 1
             if self.color_model_1 == chess.Color.WHITE:
                 self.wins_model_1 += 1
             else:
                 self.wins_model_2 += 1
+
+        # black wins
         elif status == 1:
+            # if model 1 is black and black wins, increase wins for 1
             if self.color_model_1 == chess.Color.BLACK:
                 self.wins_model_1 += 1
             else:
                 self.wins_model_2 += 1
 
+        # draw
         elif status == 2:
             self.draws += 1
-
+        print(f'Model1: {self.color_model_1} wins: {self.wins_model_1}')
+        print(f'Model2: {self.color_model_2} wins: {self.wins_model_2}')
     def model_move(self, model_ref, old_tree=None):
         '''Method for performing a single move for a given model
 
@@ -311,11 +325,18 @@ class EvaluateModel:
         # debug, best_move should never be None, if it is None then the game has ended without ruleset knowing it has ended
         if best_move is None:
             print(self.current_state)
-        print(best_move)
+        #print(best_move)
         self.current_state.move(best_move)
         return tree.select_child(best_move), best_move
 
+    def random_move(self):
+        '''Performes a completely randomized move out of every possible move
 
+        :return: Class Move
+        '''
+        moves = self.current_state.get_moves()
+        chosen_move = random.choice(moves)
+        return chosen_move
 
 def check_end_state(current_state):
     '''
@@ -557,15 +578,16 @@ def main_play():
 
 def main_evaluate():
     model_config_1 = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
-    model_config_2 = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
+    #model_config_2 = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
 
     model_1 = model_config_1.build_nn()
+    model_1.load_weights(checkpoint_path)
 
-    model_2 = model_config_2.build_nn()
-    model_2.load_weights(checkpoint_path)
+    #model_2 = model_config_2.build_nn()
+    #model_2.load_weights(checkpoint_path)
     starting_board = chess.Chessboard()
     starting_board.init_board_test_2()
-    game = EvaluateModel(starting_board, 160, model_1, model_2, 20)
+    game = EvaluateModel(starting_board, 160, model_1, 20, None)
     game.run()
 
 if __name__ == "__main__":
