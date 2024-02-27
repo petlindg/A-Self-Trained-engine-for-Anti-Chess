@@ -1,6 +1,6 @@
 import os
 import time
-
+from sklearn.model_selection import train_test_split
 import numpy as np
 import tensorflow
 
@@ -15,7 +15,7 @@ checkpoint_path = "checkpoints/checkpoint.ckpt"
 checkpoint_dir = os.path.dirname(checkpoint_path)
 
 class TrainingData:
-    def __init__(self, max_buffer_size, initial_state, tree_iterations, training_iterations):
+    def __init__(self, max_buffer_size, initial_state, tree_iterations, training_iterations, games):
         # a buffer with a max size operating on a first in first out principle
         # during the training process, the oldest data will be replaced with the newest data
         # inside this buffer
@@ -23,30 +23,36 @@ class TrainingData:
         self.initial_state = initial_state
         self.tree_iterations = tree_iterations
         self.training_iterations = training_iterations
+        self.games_per_iteration = games
+        self.evaluation_result = []
     # method that will continually generate training data through self play while self.training is true
     def train(self):
         # main training loop, creates a game, runs the game and saves the game data - repeat
         training_count = 0
         initial_game = Game(self.initial_state, self.tree_iterations)
         while training_count < self.training_iterations:
-            game = copy.deepcopy(initial_game)
-            game_start_time = time.time()
-            state_result = game.check_end_state()
-            tree = None
-            while type(state_result) == bool:
-                tree = game.make_move(tree)
+            game_counter = 0
+            while game_counter < self.games_per_iteration:
+                game = copy.deepcopy(initial_game)
+                game_start_time = time.time()
                 state_result = game.check_end_state()
-                #print(game.current_state)
+                tree = None
+                while type(state_result) == bool:
+                    tree = game.make_move(tree)
+                    state_result = game.check_end_state()
+                    #print(game.current_state)
 
-            game_end_time = time.time()
-            # total time spent for the entire single game
-            total_game_time = game_end_time - game_start_time
-            print(total_game_time, 's | ', game.time_prediction, 's | thinking %: ', game.time_prediction/total_game_time)
-            self.buffer.append(state_result)
-           # print(state_result)
+                game_end_time = time.time()
+                # total time spent for the entire single game
+                total_game_time = game_end_time - game_start_time
+                print(total_game_time, 's | ', game.time_prediction, 's | thinking %: ', game.time_prediction/total_game_time)
+                self.buffer.append(state_result)
+                game_counter += 1
             training_count += 1
+
+            # after a training iteration is complete, enough play data has been generated to fit the model once
             self.fit_data()
-        model.save_weights(checkpoint_path)
+            model.save_weights(checkpoint_path)
 
     def test(self):
         initial_game = Game(self.initial_state, self.tree_iterations)
@@ -64,20 +70,38 @@ class TrainingData:
         total_game_time = game_end_time - game_start_time
         print(total_game_time, 's | ', game.time_prediction, 's | thinking %: ', game.time_prediction / total_game_time)
 
-    def fit_data(self):
-        list_states = []
-        list_dists = []
-        list_vs = []
-        for (state, dist, v) in self.buffer[0]:
-            list_states.append(np.array(state[0]))
-            list_dists.append(np.array(dist).flatten())
-            list_vs.append(v)
 
-        print('training')
-        start_time = time.time()
-        model.fit(np.array(list_states), [np.array(list_dists), np.array(list_vs)], epochs=50, verbose=0, batch_size=16)
-        end_time = time.time()
-        print(end_time-start_time)
+    def fit_data(self):
+        """Method that uses  the data stored in the buffer to fit the model
+           and also evaluates the model, using a train test split.
+
+        :return:
+        """
+        list_states = []
+        list_outputs = []
+        # flattening out the buffer of games into the input and output data lists
+        for game in self.buffer:
+            for (state, dist, v) in game:
+                list_states.append(state[0])
+                list_outputs.append((np.array(dist).flatten(), v))
+
+        print(len(self.buffer))
+
+        X_train, X_test, y_train, y_test = train_test_split(list_states, list_outputs, shuffle=True)
+        # transforming the now shuffled list of tuples into two separate lists
+        dists_train, vs_train = zip(*y_train)
+        dists_test, vs_test = zip(*y_test)
+        model.fit(np.array(X_train),
+                  [np.array(dists_train), np.array(vs_train)],
+                  epochs=50,
+                  verbose=0,
+                  batch_size=16
+                  )
+
+        self.evaluation_result.append(model.evaluate(np.array(X_test),
+                                        [np.array(dists_test), np.array(vs_test)]
+                                        ))
+
 
 
 # class representing an entire game session
@@ -222,39 +246,19 @@ class PlayGame:
         """
         hasnt_moved = True
         while hasnt_moved:
-            alg_not = input('algebraic notation:')
-            src = alg_not[0:2]
-            dst = alg_not[2:4]
-            #print(src, dst)
-
-            src_col = src[0]
-            src_row = int(src[1])
-
-            dst_col = dst[0]
-            dst_row = int(dst[1])
-
-            cols = ['a','b','c','d','e','f','g','h']
-
-            # convert letters to integers
-            for i, c in enumerate(cols):
-                if src_col == c:
-                    src_col = i+1
-                if dst_col == c:
-                    dst_col = i+1
-
-            src_index = np.uint8(-src_col +  8*src_row)
-            dst_index = np.uint8(-dst_col +  8*dst_row)
-            #print(src_col, src_row, dst_col, dst_row)
-            #print(src_index, dst_index)
-
-            # d3d4 = 21 - 29
-
-            move = chess.Move(src_index, dst_index)
             possible_moves = self.current_state.get_moves()
+            m_string = '| '
+            for m in possible_moves:
+                m_string = m_string + str(m) + ' | '
+            print(m_string)
+            alg_not = input('algebraic notation:')
+
+            move = algebraic_to_bitboard(alg_not)
+
             for m in possible_moves:
                 s = m.src_index
                 d = m.dst_index
-                if src_index == s and d == dst_index:
+                if move.src_index == s and d == move.dst_index:
                     self.current_state.move(move)
                     hasnt_moved = False
                     if self.old_tree is not None:
@@ -311,6 +315,70 @@ class PlayGame:
                 self.old_tree = self.ai_move(self.old_tree)
             print(self.current_state)
 
+def algebraic_to_bitboard(s):
+    """Takes an algebraic representation string s and returns the move representation for this string
+
+    :param s: String
+    :return: Class Move
+    """
+    s = list(s.lower())
+    fst_c = ''
+    fst_d = 0
+    snd_c = ''
+    snd_d = 0
+    counter = 0
+    for character in s:
+        if counter == 4:
+            break
+        if counter == 0 and character.isalpha():
+            fst_c = str(character)
+        if counter == 1 and character.isdigit():
+            fst_d = int(character)
+        if counter == 2 and character.isalpha():
+            snd_c = str(character)
+        if counter == 3 and character.isdigit():
+            snd_d = int(character)
+        counter +=1
+    cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+    # default values in the case that the input is wrong and the characters arent valid
+    if fst_c not in cols:
+        src_col = 1
+    if snd_c not in cols:
+        dst_col = 1
+    if fst_d > 8:
+        fst_d = 0
+    if snd_d > 8:
+        snd_d = 0
+
+    # convert letters to integers
+    for i, c in enumerate(cols):
+        if fst_c == c:
+            src_col = i + 1
+        if snd_c == c:
+            dst_col = i + 1
+
+    src_index = np.uint8(-src_col + 8 * fst_d)
+    dst_index = np.uint8(-dst_col + 8 * snd_d)
+    print(src_index, dst_index)
+    return chess.Move(src_index, dst_index)
+
+def move_to_algebraic(move):
+    # d6d5 = 44, 36
+
+    cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+    src = move.src_index
+    src_row = str(src//8 + 1)
+    src_col = cols[(src%8-1)]
+
+    dst = move.dst_index
+    dst_row = str(dst//8 + 1)
+    dst_col = cols[(src%8-1)]
+
+    return src_col + src_row + dst_col + dst_row
+
+
 
 # translates the bitboard move representation into the output representation for the neural network
 # returns the output as an array of shape (1,1,8,8,73)
@@ -345,7 +413,7 @@ def main():
         pass
     starting_board = chess.Chessboard()
     starting_board.init_board_test_2()
-    training_session = TrainingData(100, starting_board, 180, 40)
+    training_session = TrainingData(20, starting_board, 180, 40, 5)
     training_session.train()
 
 def main_play():
