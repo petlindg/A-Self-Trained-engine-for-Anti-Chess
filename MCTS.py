@@ -7,6 +7,7 @@ from chess import Chessboard
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 import copy
 
+
 # Function that takes a chessboard as a current state, a reference to the model
 # and then calculates the new possible moves for the current state, gets the model results for
 # the current state and then puts them together as a tuple and returns it.
@@ -34,6 +35,7 @@ def possible_moves(state: Chessboard, model):
 
     return ((return_list, v), time_predict)
 
+
 # Function that returns the singular p value for a given move
 # from the model output.
 def fetch_p_from_move(move: chess.Move, model_output):
@@ -50,6 +52,7 @@ def fetch_p_from_move(move: chess.Move, model_output):
     move_type = chess.calc_move(move.src_index, move.dst_index, move.promotion_type)
     return model_output[0][0][src_row][src_col][move_type]
 
+
 def ucb(node, c):
     """Calculates the upper confidence bound for trees
 
@@ -58,6 +61,7 @@ def ucb(node, c):
     :return: Float, the UCB score
     """
     return (node.p * c * sqrt(node.parent.visits)/(1+node.visits) + (node.value/node.visits if node.visits > 0 else 0))
+
 
 # class defining the contents of a singular node
 class Node:
@@ -313,6 +317,7 @@ class MCTS:
         """
         for i in range(0, self.iterations):
             self.search()
+
 
 def main():
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
