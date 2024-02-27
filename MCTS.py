@@ -176,8 +176,10 @@ class Node:
 
                 self.children.append(Node(p, new_state, self, new_player, self.root_node, move))
         else:
+            # normalization for the states
+            p_sum = sum([p for (state, move, p) in new_states])
             for (new_state, move, p) in new_states:
-                self.children.append(Node(p, new_state, self, new_player, self.root_node, move))
+                self.children.append(Node(p/p_sum, new_state, self, new_player, self.root_node, move))
 
         # backpropagation process
         self.backpropagate(self, v)
@@ -300,7 +302,7 @@ class MCTS:
 def main():
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
-    model.load_weights("checkpoints/checkpoint.ckpt")
+    #model.load_weights("checkpoints/checkpoint.ckpt")
     root_state = Chessboard()
     root_state.init_board_standard()
     tree = MCTS(root_state, 160, model)
@@ -310,7 +312,7 @@ def main():
     print(end-start)
     # tested it with 800 iterations and it took 50 seconds
     # 16 iterations per second
-    tree.root_node.print_selectively(3)
+    tree.root_node.print_selectively(5)
 
 
 # performance metrics: 100000 iterations takes about 3.6s on my (liam's) pc
