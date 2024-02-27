@@ -365,20 +365,23 @@ class Chessboard():
     pawns : u64
     # keeping track of number of pieces on the board
     piece_count : u8
+    move_counter : u8
     
 
     # init empty board
-    def __init__(self):
+    def __init__(self, fen:str="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - 0 1"):
         self.bitboards = zeros((2, 6), dtype=u64)
         self.combined  = zeros(3, dtype=u64)
-        self.enpassante = u64(0)
-        self.player_to_move = Color.WHITE
-        self.not_player_to_move = Color.BLACK
-        self.no_progress_counter = []
-        self.no_progress_counter.append(u8(0))
         self.repetitions_list = []
-        self.pawns = u64(0)
-        self.piece_count = u8(0)
+        self.no_progress_counter = []
+        self._init_fen(fen)
+        self.pawns = self._get_pawns()
+        self.piece_count = self._get_piece_count()
+        
+        #self.enpassante = u64(0)
+        #self.player_to_move = Color.WHITE
+        #self.not_player_to_move = Color.BLACK
+        #self.no_progress_counter = [].append(u8(0))
 
     def __str__(self):
         str_builder = ['a b c d e f g h \n']
@@ -523,7 +526,188 @@ class Chessboard():
         self._update_bitboards(move)
         self._update_no_progress()
         self._update_player()
+        self._update_move_counter()
         return self.is_draw()
+    
+    def _init_fen(self, fen:str):
+        arr = fen.split()
+
+        board = arr[0].split('/')
+        numbers = "12345678"
+        bit = u64(1)
+
+        index = u64(63)
+        for rank in board:
+            for c in rank:
+                if c in numbers:
+                    index -= u64(c)
+                else:
+                    bb_indexes = self._char_to_bb_indexes(c)
+                    self.bitboards[bb_indexes] = b_or(self.bitboards[bb_indexes], ls(bit, index))
+                    index -= bit
+
+        player = arr[1]
+        self.player_to_move = self._char_to_player(player)
+        if self.player_to_move == Color.WHITE:
+            self.not_player_to_move = Color.BLACK
+        else:
+            self.not_player_to_move = Color.WHITE
+
+        enpassante = arr[2]
+        if enpassante == '-':
+            self.enpassante = u64(0)
+        else:
+            self.enpassante = ls(bit, u8(self._alg_sq_to_index(enpassante)))
+
+        no_progress = arr[3]
+        self.no_progress_counter.append(u8(no_progress))
+
+        move_counter = arr[4]
+        self.move_counter = u8(move_counter)
+
+    def _alg_sq_to_index(self, alg:str):
+        file_char = alg[0]
+        rank_char = alg[1]
+        return 72-ord(file_char) + (int(rank_char)-1)*8
+    def _char_to_player(self, c:str):
+        if c=='w':
+            return Color.WHITE
+        elif c=='b':
+            return Color.BLACK
+        else:
+            raise RuntimeError("Invalid character as player color, %s" % c)
+        
+
+    def _char_to_bb_indexes(self, c:str):
+        if c == 'P':
+            return (Color.WHITE, Piece.PAWN)
+        elif c == 'N':
+            return (Color.WHITE, Piece.KNIGHT)
+        elif c == 'B':
+            return (Color.WHITE, Piece.BISHOP)
+        elif c == 'R':
+            return (Color.WHITE, Piece.ROOK)
+        elif c == 'Q':
+            return (Color.WHITE, Piece.QUEEN)
+        elif c == 'K':
+            return (Color.WHITE, Piece.KING)
+        elif c == 'p':
+            return (Color.BLACK, Piece.PAWN)
+        elif c == 'n':
+            return (Color.BLACK, Piece.KNIGHT)
+        elif c == 'b':
+            return (Color.BLACK, Piece.BISHOP)
+        elif c == 'r':
+            return (Color.BLACK, Piece.ROOK)
+        elif c == 'q':
+            return (Color.BLACK, Piece.QUEEN)
+        elif c == 'k':
+            return (Color.BLACK, Piece.KING)
+        else:
+            raise RuntimeError("Invalid character as Color and Piece, %s" % c)
+
+    def get_fen(self):
+        """
+        :return: The FEN representation of the state of the chessboard
+        """
+        bit = u64(1)
+
+        fen = ""
+
+        board = ""
+        bb = ls(bit, u8(63))
+        for rank in range(8):
+            empty_counter = 0
+            for file in range(8):
+                occupied = False
+                for player in Color:
+                    for piece_type in Piece:
+                        if b_and(self.bitboards[player, piece_type], bb):
+                            if empty_counter:
+                                board += str(empty_counter)
+                                empty_counter = 0
+                            board += self._color_piece_type_to_char(player, piece_type)
+                            occupied = True
+                if not occupied:
+                    empty_counter += 1
+                if file==7 and empty_counter:
+                    board += str(empty_counter)
+                bb = rs(bb, bit)
+            if rank!=7:
+                board += '/'
+        fen += board + " "
+
+        player = self._player_to_char(self.player_to_move)
+        fen += player + " "
+
+        enpassante_index = u8(0)
+        enpassante_bb = self.enpassante
+        if enpassante_bb:
+            while enpassante_bb:
+                if b_and(enpassante_bb, bit):
+                    break
+                enpassante_index += 1
+                enpassante_bb = rs(enpassante_bb, bit)
+            enpassante = self._index_to_alg_sq(enpassante_index)
+        else:
+            enpassante = '-'
+        fen += enpassante + " "
+
+        no_progress = str(self.no_progress_counter[-1])
+        fen += no_progress + " "
+        
+        move_counter = str(self.move_counter)
+        fen += move_counter
+
+        return fen
+
+    def _index_to_alg_sq(self, index:u8):
+        rank = str(rs(index, u8(3))+1)
+        file = b_and(index, u8(0b000_111))
+        file = chr(65+(7-file))
+        return file + rank
+
+    def _player_to_char(self, color:Color):
+        if color == Color.WHITE:
+            return 'w'
+        elif color == Color.BLACK:
+            return 'b'
+        else:
+            raise RuntimeError("Invalid Color, %s" % str(color))
+
+    def _color_piece_type_to_char(self, color:Color, piece_type:Piece):
+        if color == Color.WHITE:
+            if piece_type == Piece.PAWN:
+                return 'P'
+            elif piece_type == Piece.KNIGHT:
+                return 'N'
+            elif piece_type == Piece.BISHOP:
+                return 'B'
+            elif piece_type == Piece.ROOK:
+                return 'R'
+            elif piece_type == Piece.QUEEN:
+                return 'Q'
+            elif piece_type == Piece.KING:
+                return 'K'
+            else:
+                raise RuntimeError("Invalid Piece, %s" % str(piece_type))
+        elif color == Color.BLACK:
+            if piece_type == Piece.PAWN:
+                return 'p'
+            elif piece_type == Piece.KNIGHT:
+                return 'n'
+            elif piece_type == Piece.BISHOP:
+                return 'b'
+            elif piece_type == Piece.ROOK:
+                return 'r'
+            elif piece_type == Piece.QUEEN:
+                return 'q'
+            elif piece_type == Piece.KING:
+                return 'k'
+            else:
+                raise RuntimeError("Invalid Piece, %s" % str(piece_type))
+        else:
+            raise RuntimeError("Invalid Color, %s" % str(color))
 
     def _update_bitboards(self, move:Move):
         src_bb = ls(u64(1), move.src_index)
@@ -592,6 +776,7 @@ class Chessboard():
     
     def unmove(self):
         self._update_player()
+        self._reverse_move_counter()
         self.bitboards = self.repetitions_list.pop()
         self.no_progress_counter.pop()
 
@@ -599,6 +784,14 @@ class Chessboard():
         tmp = self.player_to_move
         self.player_to_move = self.not_player_to_move
         self.not_player_to_move = tmp
+
+    def _update_move_counter(self):
+        if self.player_to_move == Color.WHITE:
+            self.move_counter += u8(1)
+
+    def _reverse_move_counter(self):
+        if self.player_to_move == Color.BLACK:
+            self.move_counter -= u8(1)
 
     def _get_piece_count(self):
         bit = u8(1)
@@ -940,691 +1133,6 @@ class Chessboard():
         #for row in range(0,8):
             #print(representation[0][row])
         return array(representation)
-
-    def init_board_standard(self):
-        # init standard chess board
-
-        # white pieces
-        self.bitboards[Color.WHITE, Piece.PAWN]   = u64(0b1111111100000000)
-        self.bitboards[Color.WHITE, Piece.KNIGHT] = u64(0b01000010)
-        self.bitboards[Color.WHITE, Piece.BISHOP] = u64(0b00100100)
-        self.bitboards[Color.WHITE, Piece.ROOK]   = u64(0b10000001)
-        self.bitboards[Color.WHITE, Piece.QUEEN]  = u64(0b00010000)
-        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b00001000)
-        # black pieces
-        self.bitboards[Color.BLACK, Piece.PAWN]   = u64(0b11111111000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KNIGHT] = u64(0b0100001000000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.BISHOP] = u64(0b0010010000000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.ROOK]   = u64(0b1000000100000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.QUEEN]  = u64(0b0001000000000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b0000100000000000000000000000000000000000000000000000000000000000)
-
-    def init_board_test_1(self):
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. bK bR
-        # .. .. .. .. .. .. bK bK
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # wK wK .. .. .. .. .. ..
-        # wR wK .. .. .. .. .. ..
-
-        # white pieces
-        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b10000000)
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b1100000001000000)
-        # black pieces
-        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b0000000100000000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b0000001000000011000000000000000000000000000000000000000000000000)
-        self._update_no_progress()
-    def init_board_test_2(self):
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. bR .. .. .. ..
-        # .. .. bK bK bK .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. wK wK wK .. .. ..
-        # .. .. .. wR .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-
-        # white pieces
-        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b0001000000000000)
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b001110000000000000000000)
-        # black pieces
-        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b00010000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b001110000000000000000000000000000000000000000000)
-    def init_board_test_3(self):
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. bR .. .. .. ..
-        # .. .. bK bK bK .. .. ..
-        # .. .. wK wK wK .. .. ..
-        # .. .. .. wR .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-
-        # white pieces
-        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b000100000000000000000000)
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00111000000000000000000000000000)
-        # black pieces
-        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b000100000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b0011100000000000000000000000000000000000)
-    def init_board_test_4(self):
-        # initializes a board with the following configuration:
-        # bK .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. wR
-
-        # white pieces
-        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b1)
-        # black pieces
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b1000000000000000000000000000000000000000000000000000000000000000)
-    def init_board_test_5(self):
-        # initializes a board with the following configuration:
-        # bK bK bK .. .. .. .. ..
-        # bP bP bP .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. wP wP wP
-        # .. .. .. .. .. wK wK wK
-
-        # white pieces
-        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b0000011100000000)
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00000111)
-        # black pieces
-        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b11100000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b1110000000000000000000000000000000000000000000000000000000000000)
-    def init_board_test_6(self):
-        # initializes a board with the following configuration:
-        # bK bK bK bk .. .. .. ..
-        # bP bP bP bk .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. wk wP wP wP
-        # .. .. .. .. wk wK wK wK
-
-        # white pieces
-        self.bitboards[Color.WHITE, Piece.PAWN]   = u64(0b0000011100000000)
-        self.bitboards[Color.WHITE, Piece.KNIGHT] = u64(0b0000100000001000)
-        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b00000111)
-        # black pieces
-        self.bitboards[Color.BLACK, Piece.PAWN]   = u64(0b11100000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KNIGHT] = u64(0b0001000000010000000000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b1110000000000000000000000000000000000000000000000000000000000000)
-    def init_board_test_pawn_white_takes(self):
-        # used for unit testing
-        # move cardinality should be 21
-
-        # initializes a board with the following configuration:
-        # bK bK .. .. .. .. bK bK
-        # wP wP .. wP .. .. wP wP
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. bK .. .. ..
-        # .. .. .. wP .. .. wP ..
-        # .. .. .. .. .. .. .. .. 
-
-        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b11010011000000000000000000000000000000000001001000000000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b1100001100000000000000000000000000000000000010000000000000000000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_pawn_white_moves(self):
-        # used for unit testing
-        # move cardinality should be 9
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. wP ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # bK .. .. .. .. .. .. ..
-        # wP bK wP .. .. .. .. wP
-        # .. .. .. .. .. .. .. .. 
-
-        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b00000010000000000000000000000000000000001010000100000000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b100000000100000000000000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_knight_white_takes(self):
-        # used for unit testing
-        # move cardinality should be 9
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. wk .. bK
-        # wk wk wk .. wk .. .. ..
-        # .. .. .. wk .. .. bK ..
-        # .. bK .. .. wk .. .. ..
-        # .. .. .. wk .. wk .. wk 
-
-        self.bitboards[Color.WHITE, Piece.KNIGHT] = u64(0b0000010011101000000100000000100000010101)
-        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b0000000100000000000000100100000000000000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_knight_white_moves(self):
-        # used for unit testing
-        # move cardinality should be 12
-
-        # initializes a board with the following configuration:
-        # wk .. .. .. .. .. .. ..
-        # .. wk .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # bK .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. wk ..
-        # .. .. .. .. .. .. .. wk 
-
-        self.bitboards[Color.WHITE, Piece.KNIGHT] = u64(0b1000000001000000000000000000000000000000000000000000001000000001)
-        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b100000000000000000000000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_bishop_white_takes(self):
-        # used for unit testing
-        # move cardinality should be 3
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. bK .. .. bK
-        # .. .. .. bK .. .. wB ..
-        # .. .. .. .. .. wK .. ..
-        # .. wB .. .. .. .. .. ..
-        # .. .. bK bK .. .. .. wB 
-        self.bitboards[Color.WHITE, Piece.BISHOP] = u64(0b0100000000000001)
-        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b000001000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b0000100100010000000000000000000000110000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_bishop_white_moves(self):
-        # used for unit testing
-        # move cardinality should be 12
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. bK .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. wB .. ..
-        # .. .. .. .. .. wP .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. wB 
-
-        self.bitboards[Color.WHITE, Piece.PAWN]   = u64(0b000001000000000000000000)
-        self.bitboards[Color.WHITE, Piece.BISHOP] = u64(0b00000100000000000000000000000001)
-        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b001000000000000000000000000000000000000000000000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_rook_white_takes(self):
-        # used for unit testing
-        # move cardinality should be 3
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. bK
-        # .. .. wR .. .. .. .. bK
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. bK .. wK .. .. wR 
-
-        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b0010000000000000000000000000000000000001)
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00001000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b000000010000000100000000000000000000000000100000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_rook_white_moves(self):
-        # used for unit testing
-        # move cardinality should be 29
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. wR
-        # .. .. .. .. wR .. .. ..
-        # .. .. bK .. wP .. .. wR 
-        
-        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b00001000)
-        self.bitboards[Color.WHITE, Piece.ROOK] = u64(0b000000010000100000000001)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b00100000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_queen_white_takes(self):
-        # used for unit testing
-        # move cardinality should be 4
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. wQ .. .. .. .. .. ..
-        # .. wK .. .. bK .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. bK bK .. wQ .. bK ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. bK .. .. ..
-        # .. .. .. .. .. .. .. .. 
-
-        self.bitboards[Color.WHITE, Piece.QUEEN] = u64(0b01000000000000000000000000001000000000000000000000000000)
-        self.bitboards[Color.WHITE, Piece.KING]  = u64(0b010000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]  = u64(0b000010000000000001100010000000000000100000000000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_queen_white_moves(self):
-        # used for unit testing
-        # move cardinality should be 31
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. bK .. .. .. ..
-        # .. .. .. .. .. wQ .. ..
-        # .. .. .. .. .. wP .. ..
-        # .. .. .. .. .. wP .. ..
-        # .. .. .. bK .. wP .. wQ 
-
-        self.bitboards[Color.WHITE, Piece.PAWN]  = u64(0b000001000000010000000100)
-        self.bitboards[Color.WHITE, Piece.QUEEN] = u64(0b00000100000000000000000000000001)
-        self.bitboards[Color.BLACK, Piece.KING]  = u64(0b00010000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_king_white_takes(self):
-        # used for unit testing
-        # move cardinality should be 8
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # bK .. .. .. .. .. .. ..
-        # wK .. .. .. .. bK .. bK
-        # .. .. .. .. .. bK wK bK
-        # wK .. .. .. .. bK bK bK
-
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b100000000000001010000000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000000001010000010100000111)
-        self.player_to_move = Color.WHITE
-    def init_board_test_king_white_moves(self):
-        # used for unit testing
-        # move cardinality should be 14
-
-        # initializes a board with the following configuration:
-        # wK .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. wK .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # bK .. .. .. .. .. .. wK 
-
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b1000000000000000000000000000000000010000000000000000000000000001)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000)
-        self.player_to_move = Color.WHITE
-    def init_board_test_pawn_black_takes(self):
-        # used for unit testing
-        # move cardinality should be 21
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. bP .. .. bP ..
-        # .. .. .. .. wK .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # bP bP .. bP .. .. bP bP
-        # wK wK .. .. .. .. wK wK 
-
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b000010000000000000000000000000000000000011000011)
-        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00010010000000000000000000000000000000001101001100000000)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_pawn_black_moves(self):
-        # used for unit testing
-        # move cardinality should be 9
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # bP wK bP .. .. .. .. bP
-        # wK .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. bP ..
-        # .. .. .. .. .. .. .. .. 
-
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b01000000100000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b10100001000000000000000000000000000000000000001000000000)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_knight_black_takes(self):
-        # used for unit testing
-        # move cardinality should be 9
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. bk .. wK
-        # bk bk bk .. bk .. .. ..
-        # .. .. .. bk .. .. wK ..
-        # .. wK .. .. bk .. .. ..
-        # .. .. .. bk .. bk .. bk 
-
-        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b0000000100000000000000100100000000000000)
-        self.bitboards[Color.BLACK, Piece.KNIGHT] = u64(0b0000010011101000000100000000100000010101)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_knight_black_moves(self):
-        # used for unit testing
-        # move cardinality should be 12
-
-        # initializes a board with the following configuration:
-        # bk .. .. .. .. .. .. ..
-        # .. bk .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # wK .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. bk ..
-        # .. .. .. .. .. .. .. bk 
-
-        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b100000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KNIGHT] = u64(0b1000000001000000000000000000000000000000000000000000001000000001)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_bishop_black_takes(self):
-        # used for unit testing
-        # move cardinality should be 3
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. wK .. .. wK
-        # .. .. .. wK .. .. bB ..
-        # .. .. .. .. .. bK .. ..
-        # .. bB .. .. .. .. .. ..
-        # .. .. wK wK .. .. .. bB 
-
-        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b0000100100010000000000000000000000110000)
-        self.bitboards[Color.BLACK, Piece.BISHOP] = u64(0b0100000000000001)
-        self.bitboards[Color.BLACK, Piece.KING]   = u64(0b000001000000000000000000)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_bishop_black_moves(self):
-        # used for unit testing
-        # move cardinality should be 10
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. wK .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. bP .. ..
-        # .. .. .. .. .. bB .. ..
-        # .. .. .. .. .. .. .. bB 
-
-        self.bitboards[Color.WHITE, Piece.KING]   = u64(0b001000000000000000000000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.PAWN]   = u64(0b000001000000000000000000)
-        self.bitboards[Color.BLACK, Piece.BISHOP] = u64(0b0000010000000001)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_rook_black_takes(self):
-        # used for unit testing
-        # move cardinality should be 3
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. wK
-        # .. .. bR .. .. .. .. wK
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. wK .. bK .. .. bR 
-
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b000000010000000100000000000000000000000000100000)
-        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b0010000000000000000000000000000000000001)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b00001000)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_rook_black_moves(self):
-        # used for unit testing
-        # move cardinality should be 29
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. bR
-        # .. .. .. .. bR .. .. ..
-        # .. .. wK .. bP .. .. bR 
-        
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00100000)
-        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00001000)
-        self.bitboards[Color.BLACK, Piece.ROOK] = u64(0b000000010000100000000001)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_queen_black_takes(self):
-        # used for unit testing
-        # move cardinality should be 4
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. bQ .. .. .. .. .. ..
-        # .. bK .. .. wK .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. wK wK .. bQ .. wK ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. wK .. .. ..
-        # .. .. .. .. .. .. .. .. 
-
-        self.bitboards[Color.WHITE, Piece.KING]  = u64(0b000010000000000001100010000000000000100000000000)
-        self.bitboards[Color.BLACK, Piece.QUEEN] = u64(0b01000000000000000000000000001000000000000000000000000000)
-        self.bitboards[Color.BLACK, Piece.KING]  = u64(0b010000000000000000000000000000000000000000000000)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_queen_black_moves(self):
-        # used for unit testing
-        # move cardinality should be 31
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. wK .. .. .. ..
-        # .. .. .. .. .. bQ .. ..
-        # .. .. .. .. .. bP .. ..
-        # .. .. .. .. .. bP .. ..
-        # .. .. .. wK .. bP .. bQ 
-
-        self.bitboards[Color.WHITE, Piece.KING]  = u64(0b00010000)
-        self.bitboards[Color.BLACK, Piece.PAWN]  = u64(0b000001000000010000000100)
-        self.bitboards[Color.BLACK, Piece.QUEEN] = u64(0b00000100000000000000000000000001)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_king_black_takes(self):
-        # used for unit testing
-        # move cardinality should be 8
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # wK .. .. .. .. .. .. ..
-        # bK .. .. .. .. wK .. wK
-        # .. .. .. .. .. wK bK wK
-        # bK .. .. .. .. wK wK wK
-
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b10000000000001010000010100000111)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b100000000000001010000000)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_king_black_moves(self):
-        # used for unit testing
-        # move cardinality should be 14
-
-        # initializes a board with the following configuration:
-        # bK .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. bK .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # wK .. .. .. .. .. .. bK 
-        
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b10000000)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b1000000000000000000000000000000000010000000000000000000000000001)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_enpassante_white(self):
-        # used for unit testing
-        # move cardinality should be 3
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # bP wP bP wP wP .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. .. 
-    
-        # and en-passante bb with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. 1. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-
-        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b01011000_00000000_00000000_00000000_00000000)
-        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b10100000_00000000_00000000_00000000_00000000)
-        self.enpassante = u64(0b00100000_00000000_00000000_00000000_00000000_00000000)
-        self.player_to_move = Color.WHITE
-        self.not_player_to_move = Color.BLACK
-    def init_board_test_enpassante_black(self):
-        # used for unit testing
-        # move cardinality should be 3
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # wP bP wP bP bP .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. .. 
-    
-        # and en-passante bb with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. 1. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-
-        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b10100000_00000000_00000000_00000000)
-        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b01011000_00000000_00000000_00000000)
-        self.enpassante = u64(0b00100000_00000000_00000000)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_stalemate_white(self):
-        # used for unit testing
-        # get_game_status should return 0
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. bP .. .. .. ..
-        # .. .. .. wP bP .. .. ..
-        # .. .. .. .. wP .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. .. 
-
-        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000)
-        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000_00000000)
-        self.player_to_move = Color.WHITE
-        self.not_player_to_move = Color.BLACK
-    def init_board_test_stalemate_black(self):
-        # used for unit testing
-        # get_game_status should return 0
-
-        # initializes a board with the following configuration:
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. bP .. .. .. ..
-        # .. .. .. wP bP .. .. ..
-        # .. .. .. .. wP .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. .. 
-
-        self.bitboards[Color.WHITE, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000)
-        self.bitboards[Color.BLACK, Piece.PAWN] = u64(0b00010000_00001000_00000000_00000000_00000000_00000000)
-        self.player_to_move = Color.BLACK
-        self.not_player_to_move = Color.WHITE
-    def init_board_test_draw_repetition(self):
-        # used for unit testing
-        # is_game_over should return 0
-
-        # initializes a board with the following configuration:
-        # bK .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. wK 
-
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00000001)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000)
-        self.player_to_move = Color.WHITE
-        self.not_player_to_move = Color.BLACK
-    def init_board_test_draw_no_progress(self):
-        # used for unit testing
-        # is_game_over should return 0
-
-        # initializes a board with the following configuration:
-        # bK .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. ..
-        # .. .. .. .. .. .. .. wK 
-
-        self.bitboards[Color.WHITE, Piece.KING] = u64(0b00000001)
-        self.bitboards[Color.BLACK, Piece.KING] = u64(0b10000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000)
-        self.player_to_move = Color.WHITE
-        self.not_player_to_move = Color.BLACK
-        self._update_no_progress()
-
 
 def print_bb(bb:u64):
     mask_bb = u64(pow(2, 63))

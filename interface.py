@@ -256,12 +256,11 @@ class ChessboardGUI(Tk):
 
 class Game():
     def __init__(self):
-        self.state = cb()
+        self.state = cb("8/8/8/pPpPP3/8/8/8/8 w C6 0 1")
         self.GUI   = ChessboardGUI(WINDOW_SIZE, self.state.try_move, self.state.get)
 
 def main():
     game = Game()
-    game.state.init_board_standard()
 
     game.GUI.init_board(game.state.bitboards)
 
