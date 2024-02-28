@@ -301,6 +301,8 @@ class MCTS:
         :return: Tuple (Node, Integer), a tuple representing the leaf node and an integer representing
                  whether the leaf node has any children.
         """
+        # TODO implement how to select nodes based on UCB when it comes to black-white players
+        # with respect to the old tree
         while not current_node.leaf:
             if len(current_node.children) != 0:
                 current_node = max(current_node.children, key=lambda node: ucb(node, self.exploration_constant))
