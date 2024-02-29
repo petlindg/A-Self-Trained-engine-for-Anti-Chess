@@ -1,51 +1,18 @@
+import copy
 import time
 from math import sqrt
-import random
 import numpy as np
 import chess
-from chess import Chessboard
-from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
-import copy
+from Node import Node
+from config import tree_iterations, exploration_constant, output_representation
+from chess import Chessboard, Move, Color
+from keras.models import Model
+
+from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
 
 
-# Function that takes a chessboard as a current state, a reference to the model
-# and then calculates the new possible moves for the current state, gets the model results for
-# the current state and then puts them together as a tuple and returns it.
-def possible_moves(state: Chessboard, model):
-    # translate the board to the input representation
-    input_repr = state.translate_board()
-    # get the valid moves for the current chessboard
-    moves = state.get_moves()
-    # get the model predictions for the current state
-    time_predict_start = time.time()
-    p, v = model.predict(input_repr, verbose = None)
-    time_predict_end = time.time()
-    time_predict = time_predict_end - time_predict_start
-    v = v[0][0]
-    p_array = p.reshape(1,1,8,8,76)
+def fetch_p_from_move(move: Move, model_output: np.array):
 
-    # for every possible move, create a new chessboard based on that state
-    # and append this state, the value p from the model and the move to the return list
-    return_list = []
-    for move in moves:
-        new_state = copy.deepcopy(state)
-        new_state.move(move)
-        p_val = fetch_p_from_move(move, p_array)
-        return_list.append((new_state, move, p_val))
-
-    return ((return_list, v), time_predict)
-
-
-# Function that returns the singular p value for a given move
-# from the model output.
-def fetch_p_from_move(move: chess.Move, model_output):
-    """Function that returns the P value for a specific move
-    from the model output.
-
-    :param move: Move class, The move to fetch the value from
-    :param model_output: array of shape (1x1x8x8x76), The output from the model from which to fetch the P value
-    :return: Float value P, from the model_output
-    """
     src_col = move.src_index % 8
     src_row = move.src_index // 8
 
@@ -53,293 +20,163 @@ def fetch_p_from_move(move: chess.Move, model_output):
     return model_output[0][0][src_row][src_col][move_type]
 
 
-def ucb(node, c):
-    """Calculates the upper confidence bound for trees
+def ucb(node: Node, inverted: bool):
+    if not inverted:
+        return (node.p * exploration_constant * sqrt(node.parent.visits) / (1 + node.visits)
+                + (node.value / node.visits if node.visits > 0 else 0))
 
-    :param node: Node class, The current node to calculate the UCB for.
-    :param c: Float, the exploration constant
-    :return: Float, the UCB score
-    """
-    return (node.p * c * sqrt(node.parent.visits)/(1+node.visits) + (node.value/node.visits if node.visits > 0 else 0))
-
-
-# class defining the contents of a singular node
-class Node:
-    """
-    Class representing a single node in the tree. Includes references to its parent and children
-    and the values for the node itself, such as what move was made to get to this node, the current node's state
-    the value of the current node, how many visits etc.
-    """
-    def __init__(self, p, state, parent_node, player, root_node, move, root = False):
-        self.root_node = root_node
-        self.parent = parent_node
-        self.state = state
-        self.move = move # move that was made to get to this node
-        self.children = []
-        self.value = 0
-        self.visits = 0
-        self.v = 0
-        self.p = p
-        self.leaf = True
-        self.terminal = False
-        self.root = root
-        # player is either white or black
-        # TODO figure out how this will interact with the model when it comes to evaluations
-        # how the player that is currently trying to find the best move will interact with the model
-        self.player = player
-
-    # string method in order to represent the tree from the current node and down
-    # when you try to print a particular node
-    def __str__(self):
-        """Method to return a node as a string.
-
-        :return: String, A string representing the entire subtree from this node.
-        """
-        string_buffer = []
-        self.print_tree(string_buffer, "", "")
-        return "".join(string_buffer)
+    if inverted:
+        return (node.p * exploration_constant * sqrt(node.parent.visits) / (1 + node.visits)
+                + ((1 - node.value) / node.visits if node.visits > 0 else 0))
 
 
-    def select_child(self, move):
-        for child in self.children:
-            if child.move == move:
-                return child
-    # method that can be called on a node which will print it with a given depth
-    # any nodes that exist deeper than this depth will not be printed
-    def print_selectively(self, depth):
-        """Method to print the subtree from the node with a given depth from the current node.
-
-        :param depth: Integer, parameter to define how deeply to print
-        :return: String, string representing the limited subtree from this node
-        """
-        string_buffer = []
-        self.print_tree(string_buffer, "", "", depth)
-        print("".join(string_buffer))
-
-    # method that will iteratively go through the tree and add on objects to the string_buffer
-    # this buffer will then be used to print the entire tree in the terminal
-    # depth parameter determines how deep the tree will print from the node, if depth=None then
-    # all children will be printed
-    def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
-        """Method that will iterate through the nodes and append strings onto the string_buffer list.
-
-        :param string_buffer: List, list of strings that builds up over time
-        :param prefix: String, a prefix string to the current node's values
-        :param child_prefix: String, a prefix string for the new children
-        :param depth: Integer, How deep to go from the current level
-        :return: None
-        """
-        if depth is None or depth > 0:
-            string_buffer.append(prefix)
-            p = round(self.p, 10)
-            v = round(self.value, 10)
-            V = round(self.v, 10)
-            try:
-                U = round(ucb(self, sqrt(2)), 2)
-            except AttributeError:
-                U = "-"
-            visits = self.visits
-
-            info_text = f'(p:{p}|v:{v}|n:{visits}|V:{V}|U:{U})'
-            string_buffer.append(info_text)
-            string_buffer.append('\n')
-
-            for i in range(0, len(self.children)):
-                if i == len(self.children)-1:
-                    self.children[i].print_tree(string_buffer, child_prefix + "└── ", child_prefix + "    ", (depth - 1 if depth else None))
-                else:
-                    self.children[i].print_tree(string_buffer, child_prefix + "├── ", child_prefix + "│   ", (depth - 1 if depth else None))
-
-
-    # expand method which does both the expansion and the backpropagation, using backpropagate
-    def expand(self, model):
-        """Method that attempts to expand the current node in accordance to mcts using the neural network
-
-        :param model: A reference to the neural network object.
-        :return: None
-        """
-        self.leaf = False
-        (new_states, v), time_predict = possible_moves(self.state, model)
-
-        # the initial value v from the model is stored separate from the value variable
-        # so that it can be used in backpropagation when training the actual model.
-        self.v = v
-        # creating the new child nodes, making sure to swap around the player variable
-        if self.player == chess.Color.WHITE:
-            new_player = chess.Color.BLACK
-        else:
-            new_player = chess.Color.WHITE
-
-
-
-        # normalization for the states
-        p_sum = sum([p for (state, move, p) in new_states])
-        for (new_state, move, p) in new_states:
-            self.children.append(Node(p/p_sum, new_state, self, new_player, self.root_node, move))
-
-        # add noise if the current node is a root node
-        if self.root:
-            self.add_noise()
-
-        # backpropagation process
-        self.backpropagate(self, v)
-        return time_predict
-
-    def add_noise(self, dir_a=0.03, frac=0.25):
-        """Adds dirichlet noise to all the p values for the children of the current node
-
-        :param dir_a: Float, dirichlet alpha value. 0.03 is default
-        :param frac: Float, fraction deciding how to weigh the P vs the noise, 0.25 is default
-        :return:None
-        """
-        diri_dist = np.random.dirichlet([dir_a] * (len(self.children)))
-        child_dist = [child.p for child in self.children]
-        new_dist = [(1-frac)*p + frac*d for (p, d) in zip(child_dist, diri_dist)]
-        # re normalizing the p values
-        sum_dist = sum(new_dist)
-        new_dist = [p/sum_dist for p in new_dist]
-        for i, child in enumerate(self.children):
-            child.p = new_dist[i]
-
-    # backpropagation function, node is the current node to backpropagate to
-    # v is the result value from the model and player is the player that performed the move
-    # that resulted in the v value.
-    def backpropagate(self, node, v):
-        """Method that backpropagates the value v for the current node.
-
-        :param node: Node class, the current node to backpropagate from
-        :param v: Float, the value to backpropagate up the tree
-        :param player: Player, the player that performed the move, determines how the value is backpropagated
-                       for the current node
-        :return: None
-        """
-        # if the actor performing the action with result v is the same as the root node
-        # then we increase the value for the node by v
-        if node.player == node.root_node.player:
-            node.value += v
-        # if the actor performing the action with result v is the opposite of the root node
-        # then increase the value by (1-v) to get the oppositions value
-        else:
-            node.value += (1-v)
-
-        node.visits += 1
-        # if the parent is not none we aren't at the root yet and should continue
-        if node.parent is not None:
-            self.backpropagate(node.parent, v)
-
-
-# class defining a singular MCTS search
 class MCTS:
-    """
-    Class representing a single MCTS tree.
-    Contains methods to perform search, selection and expansion and
-    values representing the root node, exploration constant etc.
-    """
-    def __init__(self, root_state, iterations, model, old_tree=None):
-        # defining the root node of the tree
-        if old_tree is None:
-            self.root_node = Node(1, root_state, None, root_state.get_player(), None, None)
-            self.root_node.root_node = self.root_node
-            self.iterations = iterations
-        # if we initialize the MCTS with an old tree instead of completely fresh
+    def __init__(self, root_state: Chessboard,
+                 player: Color, # the player that the tree will try to maximize wins for
+                 model: Model,
+                 swap: bool,
+                 old_tree_root: Node = None):
+        # if the tree is entirely new with no old tree to reuse
+        if old_tree_root is None:
+            self.root_node = Node(
+                p=1,
+                parent=None,
+                player=player,
+                root_node=None,
+                state=root_state
+            )
+            self.remaining_iterations = tree_iterations
+        # if the tree is reusing old data
         else:
-            self.root_node = old_tree
-            self.root_node.root_node = self.root_node
+            self.root_node = old_tree_root
             # add noise to the new root node
             self.root_node.add_noise()
-            self.root_node.parent = None
-            self.root_node.root = True
-            self.iterations = iterations - self.root_node.visits
-        self.exploration_constant = sqrt(2)
+            self.remaining_iterations = tree_iterations - self.root_node.visits
+        # the player that the tree is attempting to fetch the best move for
+        self.tree_player = player
+        self.time_predicted = 0
         self.model = model
-        self.time_prediction = 0
-    # method to perform a single search 'iteration'
-    # goes through the 3 steps of an AlphaZero MCTS loop
-    # selection, expansion, backpropagation,
-    # backpropagation occurs inside the expand() function
+        # a boolean indicating whether to reverse the selection or not, important variable
+        # for keeping the old tree data, to keep it, we need to keep track of who originally created
+        # the data and to keep track of what values belong to what player
+        self.swap = swap
+
+
+    def __str__(self):
+        pass
+
     def search(self):
-        """Method that performs a single search and then tries to expand the found leaf node
 
-        :return: None
-        """
-        leaf_node, w = self.selection(self.root_node)
-        if w == 0:
-            self.time_prediction += leaf_node.expand(self.model)
-        elif w == 1:
-            leaf_node.terminal = True
-            #print(leaf_node.state)
-            status = leaf_node.state.get_game_status()
-            if status == 0:
-                winner = chess.Color.WHITE
-            elif status == 1:
-                winner = chess.Color.BLACK
+        # if the tree's color matches the player of the original root node we perform the search as normal
+        # using the previous v values if they exist
+        if self.swap:
+            leaf_node, game_over = self.selection(False)
+
+        # if the tree's color is not the same as  the original root node, we are reusing an old tree
+        # but from the other player's perspective, we therefore need to invert the v values during the search phase
+        else:
+            leaf_node, game_over = self.selection(True)
+
+        # if there are no possible states from the selected leaf node
+        # then set the node to terminal and fetch the status for the leaf node
+        # and backpropagate accordingly
+
+        # if the selection algorithm hasn't returned an end state, expand the leaf node
+        if not game_over:
+            new_states, v = self.possible_moves(leaf_node.state)
+            leaf_node.expand(new_states, v)
+
+        # if an end state was encountered
+        elif game_over:
+            # if the end state has been encountered before
+            if leaf_node.end_state is not None:
+                # backpropagate 0.5
+                if leaf_node.end_state == 'draw':
+                    leaf_node.backpropagate(leaf_node, 0.5, self.tree_player)
+                # backpropagate 1 to the winning player
+                else:
+                    leaf_node.backpropagate(leaf_node, 1, leaf_node.end_state)
+
+            # if this end state is new
             else:
-                winner = 'draw'
+                status = leaf_node.state.get_game_status()
+                # white winning
+                if status == 0:
+                    leaf_node.end_state = Color.WHITE
+                    leaf_node.backpropagate(leaf_node, 1, Color.WHITE)
 
-            if winner == 'draw':
-                leaf_node.backpropagate(leaf_node, 0)
-            # if the winner is the same as the root node, backpropagate a 100% win value from the leaf node
-            elif winner == self.root_node.player:
-                leaf_node.backpropagate(leaf_node, 1)
-            elif winner != self.root_node.player:
-                leaf_node.backpropagate(leaf_node, -1)
+                # black winning
+                elif status == 1:
+                    leaf_node.end_state = Color.BLACK
+                    leaf_node.backpropagate(leaf_node, 1, Color.BLACK)
+                # draw
+                else:
+                    # player doesn't matter in the backpropagation
+                    leaf_node.end_state = 'draw'
+                    leaf_node.backpropagate(leaf_node, 0.5, self.tree_player)
+                    return
 
-    # selects a child from the current root node and returns it
-    # selection is done by matching the move argument to the child move.
+    def possible_moves(self, state: Chessboard):
+
+        input_repr = state.translate_board()
+        moves = state.get_moves()
+        predict_start = time.time()
+        p, v = self.model.predict(input_repr, verbose=None)
+        predict_end = time.time()
+        self.time_predicted += (predict_end-predict_start)
+        v = v[0][0]
+        p_array = p.reshape(output_representation)
+        return_list = []
+
+        p_sum = 0
+        for move in moves:
+            new_state = copy.deepcopy(state)
+            new_state.move(move)
+            p_val = fetch_p_from_move(move, p_array)
+            p_sum += p_val
+            return_list.append((new_state, move, p_val))
+
+        # normalize the P values in the return list
+        return_list = [(new_state, move, p_val/p_sum) for (new_state, move, p_val) in return_list]
+
+        return return_list, v
+
+    def selection(self, inverted: bool):
+        current_node = self.root_node
+
+        while not current_node.leaf:
+            # if the selection algorithm encounters a terminal node (an end state)
+            # return the node and endstate boolean set to true
+            if current_node.terminal:
+                return current_node, True
+            else:
+                current_node = max(current_node.children,
+                                   key=lambda node: ucb(node, inverted))
+        return current_node, False
+
+    def run(self):
+        for i in range(0, self.remaining_iterations):
+            self.search()
+
     def select_child(self, move):
         for child in self.root_node.children:
             if child.move == move:
                 return child
 
-    # TODO look into how end of game states are handled with alphazero MCTS
-    # method that performs the selection process
-    # goes down the tree based off of UCB until it hits a leaf node.
-    def selection(self, current_node):
-        """Method that moves through the current node until it finds a leaf node
-
-        :param current_node: Node class, the node to run the selection search from.
-        :return: Tuple (Node, Integer), a tuple representing the leaf node and an integer representing
-                 whether the leaf node has any children.
-        """
-        # TODO implement how to select nodes based on UCB when it comes to black-white players
-        # with respect to the old tree
-        while not current_node.leaf:
-            if len(current_node.children) != 0:
-                current_node = max(current_node.children, key=lambda node: ucb(node, self.exploration_constant))
-            else:
-                return (current_node, 1)
-        return (current_node, 0)
-
-    # run method that will continually perform tree searches
-    # until the iterations runs out
-    def run(self):
-        """ Runs the MCTS search for the total number of iterations as defined by the iterations value
-
-        :return: None
-        """
-        for i in range(0, self.iterations):
-            self.search()
 
 
 def main():
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
-    #model.load_weights("checkpoints/checkpoint.ckpt")
     root_state = Chessboard()
     root_state.init_board_standard()
-    tree = MCTS(root_state, 160, model)
-    start = time.time()
+    tree = MCTS(model=model,
+                player=Color.WHITE,
+                root_state=root_state
+                )
     tree.run()
-    end = time.time()
-    print(end-start)
-    # tested it with 800 iterations and it took 50 seconds
-    # 16 iterations per second
-    tree.root_node.print_selectively(5)
+    tree.root_node.print_selectively(4)
 
 
-# performance metrics: 100000 iterations takes about 3.6s on my (liam's) pc
-# comparing that to my java implementation, which takes 0.272s on my pc
-# the java implementation is roughly 13 times faster than the python one
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
