@@ -573,9 +573,6 @@ def main_play():
     game.run()
 
 
-
-
-
 def main_evaluate():
     model_config_1 = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     #model_config_2 = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
