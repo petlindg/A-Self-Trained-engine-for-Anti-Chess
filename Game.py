@@ -19,6 +19,10 @@ class TrainingGame:
         self.game_over = False
         self.game_history = []
         self.swap = False
+        self.p1_tree = MCTS(root_state=self.current_state,
+                            player=Color.WHITE)
+        self.p2_tree = MCTS(root_state=self.current_state,
+                            player=Color.BLACK)
 
     def game_ended(self):
         status = self.current_state.get_game_status()
@@ -28,45 +32,76 @@ class TrainingGame:
         else:
             return True
 
+# TODO fix the way that trees are handled
+
+    def make_move(self, player: Color):
+        if player == Color.WHITE:
+            self.p1_tree.run()
+            self.p1_tree.root_node.print_selectively(2)
+
+            potential_nodes = self.p1_tree.root_node.children
+            max_visits = 0
+            best_move = None
+            mcts_dist = []
+            visit_total = 0
+            for node in potential_nodes:
+                visit_total += node.visits
+                mcts_dist.append((node.visits, node.move))
+                if node.visits > max_visits:
+                    max_visits = node.visits
+                    best_move = node.move
+            # prepare the float distribution of all actions
+            # so that the model can use it for backpropagation
+            mcts_dist = [(n / visit_total, move) for (n, move) in mcts_dist]
+
+            # add values to the game history recording all moves
+            self.game_history.append((self.current_state, mcts_dist, self.current_state.player_to_move))
+            self.current_state.move(best_move)
+            self.p1_tree.update_tree(best_move, self.current_state)
+            self.p2_tree.update_tree(best_move, self.current_state)
+            print(f'player: {player}', best_move)
+            return self.p1_tree.time_predicted
+
+        else:
+            self.p2_tree.run()
+            self.p2_tree.root_node.print_selectively(2)
+
+            potential_nodes = self.p2_tree.root_node.children
+            max_visits = 0
+            best_move = None
+            mcts_dist = []
+            visit_total = 0
+            for node in potential_nodes:
+                visit_total += node.visits
+                mcts_dist.append((node.visits, node.move))
+                if node.visits > max_visits:
+                    max_visits = node.visits
+                    best_move = node.move
+            # prepare the float distribution of all actions
+            # so that the model can use it for backpropagation
+            mcts_dist = [(n / visit_total, move) for (n, move) in mcts_dist]
+
+            # add values to the game history recording all moves
+            self.game_history.append((self.current_state, mcts_dist, self.current_state.player_to_move))
+            self.current_state.move(best_move)
+            self.p1_tree.update_tree(best_move, self.current_state)
+            self.p2_tree.update_tree(best_move, self.current_state)
+            print(f'player: {player}', best_move)
+            return self.p2_tree.time_predicted
 
 
-    def make_move(self, model: Model, player: Color, previous_tree: Node=None, ):
-        tree = MCTS(root_state=self.current_state,
-                    player=player,
-                    model=model,
-                    swap=self.swap,
-                    old_tree_root=previous_tree)
-        tree.run()
-        potential_nodes = tree.root_node.children
-        max_visits = 0
-        best_move = None
-        mcts_dist = []
-        visit_total = 0
-        for node in potential_nodes:
-            visit_total += node.visits
-            mcts_dist.append((node.visits, node.move))
-            if node.visits > max_visits:
-                max_visit = node.visits
-                best_move = node.move
-        # prepare the float distribution of all actions
-        # so that the model can use it for backpropagation
-        mcts_dist = [(n / visit_total, move) for (n, move) in mcts_dist]
 
-        # add values to the game history recording all moves
-        self.game_history.append((self.current_state, mcts_dist, self.current_state.player_to_move))
-        self.current_state.move(best_move)
-        # switch the swap variable
-        self.swap = not self.swap
-        return tree.select_child(best_move), tree.time_predicted
+
+
     def run(self, model):
-        old_node = None
+        self.p1_tree.model = model
+        self.p2_tree.model = model
         start_time = time.time()
         predict_time = 0
         while not self.game_ended():
             print(self.current_state)
-            old_node, time_predicted = self.make_move(model=model,
-                                                      player=self.current_state.player_to_move,
-                                                      previous_tree=old_node)
+            print('player: ', self.current_state.player_to_move)
+            time_predicted = self.make_move(player=self.current_state.player_to_move)
             predict_time += time_predicted
         end_time = time.time()
         total_time = end_time - start_time

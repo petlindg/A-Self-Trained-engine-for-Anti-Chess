@@ -20,38 +20,27 @@ def fetch_p_from_move(move: Move, model_output: np.array):
     return model_output[0][0][src_row][src_col][move_type]
 
 
-def ucb(node: Node, inverted: bool):
-    if not inverted:
-        return (node.p * exploration_constant * sqrt(node.parent.visits) / (1 + node.visits)
-                + (node.value / node.visits if node.visits > 0 else 0))
-
-    if inverted:
-        return (node.p * exploration_constant * sqrt(node.parent.visits) / (1 + node.visits)
-                + ((1 - node.value) / node.visits if node.visits > 0 else 0))
+def ucb(node: Node):
+    return (node.p * exploration_constant * sqrt(node.parent.visits) / (1 + node.visits)
+            + (node.value / node.visits if node.visits > 0 else 0))
 
 
 class MCTS:
     def __init__(self, root_state: Chessboard,
-                 player: Color, # the player that the tree will try to maximize wins for
-                 model: Model,
-                 swap: bool,
-                 old_tree_root: Node = None):
-        # if the tree is entirely new with no old tree to reuse
-        if old_tree_root is None:
-            self.root_node = Node(
+                 player: Color,  # the player that the tree will try to maximize wins for
+                 model: Model = None,
+                 ):
+
+        self.root_node = Node(
                 p=1,
                 parent=None,
                 player=player,
                 root_node=None,
                 state=root_state
             )
-            self.remaining_iterations = tree_iterations
+        self.remaining_iterations = tree_iterations
         # if the tree is reusing old data
-        else:
-            self.root_node = old_tree_root
-            # add noise to the new root node
-            self.root_node.add_noise()
-            self.remaining_iterations = tree_iterations - self.root_node.visits
+
         # the player that the tree is attempting to fetch the best move for
         self.tree_player = player
         self.time_predicted = 0
@@ -59,23 +48,44 @@ class MCTS:
         # a boolean indicating whether to reverse the selection or not, important variable
         # for keeping the old tree data, to keep it, we need to keep track of who originally created
         # the data and to keep track of what values belong to what player
-        self.swap = swap
 
+    def update_tree(self, move: Move, new_state: Chessboard):
+        """Updates the tree based on a certain move (moves down the tree one level)
+
+        :param new_state: New chessboard state, used only if the child doesnt exist yet, in order to create a new node
+        :param move: Move that is being performed
+        :return: None
+        """
+        # select the child that will become the new root node
+        child = self.select_child(move)
+        # resetting the time
+        self.time_predicted = 0
+        # if the child doesn't exist for this tree yet (because the other player made a move that hasn't been explored)
+        if child is None:
+            new_node = Node(
+                p=1,
+                parent=None,
+                player=self.root_node.player,
+                root_node=None,
+                state= new_state
+            )
+            self.root_node = new_node
+            self.root_node.add_noise()
+            self.remaining_iterations = tree_iterations
+        else:
+            self.root_node = child
+            # remove the parent of the root node
+            self.root_node.parent = None
+            # add noise to the root node
+            self.root_node.add_noise()
+            # update the iterations counter to account for the visits of the new root node
+            self.remaining_iterations = tree_iterations - self.root_node.visits
 
     def __str__(self):
         pass
 
     def search(self):
-
-        # if the tree's color matches the player of the original root node we perform the search as normal
-        # using the previous v values if they exist
-        if self.swap:
-            leaf_node, game_over = self.selection(False)
-
-        # if the tree's color is not the same as  the original root node, we are reusing an old tree
-        # but from the other player's perspective, we therefore need to invert the v values during the search phase
-        else:
-            leaf_node, game_over = self.selection(True)
+        leaf_node, game_over = self.selection()
 
         # if there are no possible states from the selected leaf node
         # then set the node to terminal and fetch the status for the leaf node
@@ -141,7 +151,7 @@ class MCTS:
 
         return return_list, v
 
-    def selection(self, inverted: bool):
+    def selection(self):
         current_node = self.root_node
 
         while not current_node.leaf:
@@ -151,7 +161,7 @@ class MCTS:
                 return current_node, True
             else:
                 current_node = max(current_node.children,
-                                   key=lambda node: ucb(node, inverted))
+                                   key=lambda node: ucb(node))
         return current_node, False
 
     def run(self):
