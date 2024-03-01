@@ -9,8 +9,10 @@ from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 def run_training():
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
-    model.load_weights(checkpoint_path)
-
+    try:
+        model.load_weights(checkpoint_path)
+    except:
+        pass
     chessboard = Chessboard()
     chessboard.init_board_test_2()
     training = Train.Training(chessboard, model)
