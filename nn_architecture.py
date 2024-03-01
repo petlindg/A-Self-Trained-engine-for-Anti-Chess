@@ -111,7 +111,7 @@ class NeuralNetwork:
         value_head.add(Flatten())
         value_head.add(Dense(256, activation='relu'))  # Intermediate dense layer for deeper feature extraction
         # Final dense layer outputs a single value with tanh activation for outcome prediction
-        value_head.add(Dense(1, activation='tanh', name='value_output'))
+        value_head.add(Dense(1, activation='sigmoid', name='value_output'))
         return value_head
     
     def build_nn (self) -> Model:
