@@ -34,7 +34,7 @@ class Training:
                 results = game.run(model=self.model)
                 self.buffer.append(results)
                 game_counter += 1
-                self.fit_data()
+            self.fit_data()
             t_counter += 1
 
             self.model.save_weights(checkpoint_path)
