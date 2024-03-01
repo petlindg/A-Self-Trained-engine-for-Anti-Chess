@@ -19,12 +19,18 @@ class TrainingGame:
         self.game_over = False
         self.game_history = []
         self.swap = False
+        # tree for player 1
         self.p1_tree = MCTS(root_state=self.current_state,
                             player=Color.WHITE)
+        # tree for player 2
         self.p2_tree = MCTS(root_state=self.current_state,
                             player=Color.BLACK)
 
     def game_ended(self):
+        """Checks the status of the current TrainingGame
+
+        :return: bool, if the game has ended
+        """
         status = self.current_state.get_game_status()
         # if the game hasn't ended
         if status == 3:
@@ -32,9 +38,15 @@ class TrainingGame:
         else:
             return True
 
-# TODO fix the way that trees are handled
 
     def make_move(self, player: Color):
+        """Method that performes a single move for a player, depending on which player it is
+        it will perform the move by either using the p1_tree or the p2_tree. The game history is shared
+        between the 2 players.
+
+        :param player: Color, Player that performs a move
+        :return: Float, time that the tree spent predicting.
+        """
         if player == Color.WHITE:
             self.p1_tree.run()
             self.p1_tree.root_node.print_selectively(2)
@@ -90,10 +102,12 @@ class TrainingGame:
             return self.p2_tree.time_predicted
 
 
-
-
-
     def run(self, model):
+        """Runs the game until the game ends, performing moves between both players
+
+        :param model: Model, reference to the neural network model for evaluation
+        :return: list[Chessboard, MCTS_distribution, value], the training data generated from the game
+        """
         self.p1_tree.model = model
         self.p2_tree.model = model
         start_time = time.time()

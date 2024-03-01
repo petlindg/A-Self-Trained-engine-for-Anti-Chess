@@ -10,6 +10,7 @@ from Game import TrainingGame
 
 
 class Training:
+    """Class representing the Training process of the neural network"""
     def __init__(self, initial_state, model):
         self.buffer = deque(maxlen=max_buffer_size)
         self.initial_state = initial_state
@@ -17,11 +18,17 @@ class Training:
         self.evaluation_result = []
 
     def train(self):
+        """Method that performs the training in accordance with the config
+
+        :return: None
+        """
         t_counter = 0
         initial_game = TrainingGame(self.initial_state)
 
+        # Outer loop that performs training_iterations
         while t_counter < training_iterations:
             game_counter = 0
+            # inner loop where each training_iteration performs a number of games
             while game_counter < games_per_iteration:
                 game = copy.deepcopy(initial_game)
                 results = game.run(model=self.model)
@@ -48,6 +55,7 @@ class Training:
 
         print(len(self.buffer))
 
+        # split the training and testing data up, making sure to shuffle the data
         X_train, X_test, y_train, y_test = train_test_split(list_states, list_outputs, shuffle=True)
         # transforming the now shuffled list of tuples into two separate lists
         dists_train, vs_train = zip(*y_train)
@@ -59,6 +67,7 @@ class Training:
                        batch_size=batch_size
                        )
 
+        # store the results of the evaluation
         self.evaluation_result.append(self.model.evaluate(np.array(X_test),
                                       [np.array(dists_test), np.array(vs_test)]
                                         ))

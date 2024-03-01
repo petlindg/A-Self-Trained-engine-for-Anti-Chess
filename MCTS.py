@@ -12,7 +12,12 @@ from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
 
 
 def fetch_p_from_move(move: Move, model_output: np.array):
+    """Fetches the P value from the output array of the model
 
+    :param move: Move, move to fetch the P value for
+    :param model_output: np.array, array of the model's policy output
+    :return: Float, the P value for the move
+    """
     src_col = move.src_index % 8
     src_row = move.src_index // 8
 
@@ -26,11 +31,13 @@ def ucb(node: Node):
 
 
 class MCTS:
+    "Class representing a single MCTS tree"
     def __init__(self, root_state: Chessboard,
                  player: Color,  # the player that the tree will try to maximize wins for
                  model: Model = None,
                  ):
 
+        # creating the empty root node
         self.root_node = Node(
                 p=1,
                 parent=None,
@@ -39,20 +46,14 @@ class MCTS:
                 state=root_state
             )
         self.remaining_iterations = tree_iterations
-        # if the tree is reusing old data
-
-        # the player that the tree is attempting to fetch the best move for
         self.tree_player = player
         self.time_predicted = 0
         self.model = model
-        # a boolean indicating whether to reverse the selection or not, important variable
-        # for keeping the old tree data, to keep it, we need to keep track of who originally created
-        # the data and to keep track of what values belong to what player
 
     def update_tree(self, move: Move, new_state: Chessboard):
         """Updates the tree based on a certain move (moves down the tree one level)
 
-        :param new_state: New chessboard state, used only if the child doesnt exist yet, in order to create a new node
+        :param new_state: New chessboard state, used only if the child doesn't exist yet, in order to create a new node
         :param move: Move that is being performed
         :return: None
         """
@@ -60,7 +61,8 @@ class MCTS:
         child = self.select_child(move)
         # resetting the time
         self.time_predicted = 0
-        # if the child doesn't exist for this tree yet (because the other player made a move that hasn't been explored)
+        # if the child doesn't exist for this tree yet
+        # for example if the opponent made a move that hasn't been explored/expanded for this player yet
         if child is None:
             new_node = Node(
                 p=1,
@@ -72,19 +74,28 @@ class MCTS:
             self.root_node = new_node
             self.root_node.add_noise()
             self.remaining_iterations = tree_iterations
+        # if the child exists in the current tree, change the root node to be this child
         else:
             self.root_node = child
             # remove the parent of the root node
             self.root_node.parent = None
-            # add noise to the root node
+            # add noise to the new root node
             self.root_node.add_noise()
             # update the iterations counter to account for the visits of the new root node
+            # (if the new root node has been visited a lot already, we won't need to run the tree search on this
+            # root node as much as we otherwise would)
             self.remaining_iterations = tree_iterations - self.root_node.visits
 
     def __str__(self):
         pass
 
     def search(self):
+        """Search method, will find the leaf_node and check if the leaf is a terminal node
+           if the leaf node is terminal then backpropagate the appropriate values. If it isn't
+           terminal then the leaf node is expanded.
+
+        :return: None
+        """
         leaf_node, game_over = self.selection()
 
         # if there are no possible states from the selected leaf node
@@ -121,15 +132,23 @@ class MCTS:
                     leaf_node.backpropagate(leaf_node, 1, Color.BLACK)
                 # draw
                 else:
-                    # player doesn't matter in the backpropagation
+                    # (player technically doesn't matter in the backpropagation)
                     leaf_node.end_state = 'draw'
                     leaf_node.backpropagate(leaf_node, 0.5, self.tree_player)
                     return
 
     def possible_moves(self, state: Chessboard):
+        """Calculates all possible moves for a given chessboard using the neural network, and returns
+           it as a list of tuples.
 
+        :param state: Chessboard, the input state to calculate moves from
+        :return: (list[Chessboard, Move, float], float), returns a list of new chessboards, the move
+                 that was taken to get there and the float value P for that new state. In addition to this,
+                 it also returns another float which is the value V from the neural network for the input state.
+        """
         input_repr = state.translate_board()
         moves = state.get_moves()
+
         predict_start = time.time()
         p, v = self.model.predict(input_repr, verbose=None)
         predict_end = time.time()
@@ -152,6 +171,10 @@ class MCTS:
         return return_list, v
 
     def selection(self):
+        """Method that is called from the search() method, traverses the tree until it hits a leaf node
+
+        :return: (Node, bool), returns the leaf node that was found and whether that node is terminal or not.
+        """
         current_node = self.root_node
 
         while not current_node.leaf:
@@ -165,6 +188,10 @@ class MCTS:
         return current_node, False
 
     def run(self):
+        """Method to run the MCTS search continually for the remaining iterations
+
+        :return: None
+        """
         for i in range(0, self.remaining_iterations):
             self.search()
 
