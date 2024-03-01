@@ -66,9 +66,9 @@ class Node:
             # v = round(self.v, 10)
             visits = self.visits
             if visits != 0:
-                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{self.ucb(False)})'
+                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{self.ucb(False)}|move:{self.move})'
             else:
-                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb(False)})'
+                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb(False)}|move:{self.move})'
             string_buffer.append(info_text)
             string_buffer.append('\n')
 
