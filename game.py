@@ -1,6 +1,6 @@
 import time
 
-from Node import Node
+from node import Node
 from chess import Chessboard, Move, Color
 from MCTS import MCTS
 from keras.models import Model

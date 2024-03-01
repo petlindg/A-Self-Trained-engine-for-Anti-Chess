@@ -1,5 +1,5 @@
 
-import Train
+from training import Training
 import chess
 from chess import Chessboard
 from config import checkpoint_path
@@ -15,7 +15,7 @@ def run_training():
         pass
     chessboard = Chessboard()
     chessboard.init_board_test_2()
-    training = Train.Training(chessboard, model)
+    training = Training(chessboard, model)
     training.train()
 
 def translate_moves_to_output(mcts_dist):

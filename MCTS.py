@@ -3,7 +3,7 @@ import time
 from math import sqrt
 import numpy as np
 import chess
-from Node import Node
+from node import Node
 from config import tree_iterations, exploration_constant, output_representation
 from chess import Chessboard, Move, Color
 from keras.models import Model
