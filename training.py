@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 from config import max_buffer_size, training_iterations, games_per_iteration, checkpoint_path
 from config import epochs, batch_size, verbosity
-from Game import TrainingGame
+from game import TrainingGame
 
 
 class Training:
