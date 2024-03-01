@@ -1,10 +1,8 @@
 import time
-
 from node import Node
 from chess import Chessboard, Move, Color
 from MCTS import MCTS
 from keras.models import Model
-
 from main import translate_moves_to_output
 
 
@@ -13,7 +11,6 @@ class TrainingGame:
     A class representing one training game of antichess
     uses a single model, playing against itself in order to improve
     """
-
     def __init__(self, initial_state: Chessboard):
         self.current_state = initial_state
         self.game_over = False
@@ -37,7 +34,6 @@ class TrainingGame:
             return False
         else:
             return True
-
 
     def make_move(self, player: Color):
         """Method that performes a single move for a player, depending on which player it is
@@ -100,7 +96,6 @@ class TrainingGame:
             self.p2_tree.update_tree(best_move, self.current_state)
             print(f'player: {player}', best_move)
             return self.p2_tree.time_predicted
-
 
     def run(self, model):
         """Runs the game until the game ends, performing moves between both players

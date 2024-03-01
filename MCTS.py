@@ -31,7 +31,7 @@ def ucb(node: Node):
 
 
 class MCTS:
-    "Class representing a single MCTS tree"
+    """Class representing a single MCTS tree"""
     def __init__(self, root_state: Chessboard,
                  player: Color,  # the player that the tree will try to maximize wins for
                  model: Model = None,
@@ -69,7 +69,7 @@ class MCTS:
                 parent=None,
                 player=self.root_node.player,
                 root_node=None,
-                state= new_state
+                state=new_state
             )
             self.root_node = new_node
             self.root_node.add_noise()
@@ -199,7 +199,6 @@ class MCTS:
         for child in self.root_node.children:
             if child.move == move:
                 return child
-
 
 
 def main():
