@@ -1,4 +1,5 @@
 import time
+from copy import deepcopy
 
 from Game.Utils import translate_moves_to_output
 from chess import Chessboard, Color
@@ -12,7 +13,7 @@ class TrainingGame:
     """
 
     def __init__(self, initial_state: Chessboard, white_model: Model, black_model: Model = None):
-        self.current_state = initial_state
+        self.current_state = deepcopy(initial_state)
         self.game_over = False
         self.game_history = []
         self.swap = False
@@ -20,8 +21,8 @@ class TrainingGame:
         if black_model is None:
             black_model = white_model
 
-        self.white = Player(initial_state, white_model, Color.WHITE)
-        self.black = Player(initial_state, black_model, Color.BLACK)
+        self.white = Player(deepcopy(initial_state), white_model, Color.WHITE)
+        self.black = Player(deepcopy(initial_state), black_model, Color.BLACK)
 
     def game_ended(self):
         """Checks the status of the current Game

@@ -20,7 +20,7 @@ class Testing:
 
         results_as_white = []
         for i in range(games - (games // 2)):
-            game = TrainingGame(initial_state=deepcopy(self.initial_state), white_model=self.model_1, black_model=self.model_2)
+            game = TrainingGame(initial_state=self.initial_state, white_model=self.model_1, black_model=self.model_2)
 
             result = game.run()
 
@@ -33,7 +33,7 @@ class Testing:
 
         results_as_black = []
         for i in range(games // 2):
-            game = TrainingGame(initial_state=deepcopy(self.initial_state), white_model=self.model_2, black_model=self.model_1)
+            game = TrainingGame(initial_state=self.initial_state, white_model=self.model_2, black_model=self.model_1)
             result = game.run()
 
             if result == Color.WHITE:
