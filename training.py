@@ -1,4 +1,3 @@
-import copy
 from collections import deque
 
 import numpy as np
@@ -6,7 +5,7 @@ from sklearn.model_selection import train_test_split
 
 from config import max_buffer_size, training_iterations, games_per_iteration, checkpoint_path
 from config import epochs, batch_size, verbosity
-from game import TrainingGame
+from Game.TrainingGame import TrainingGame
 
 
 class Training:
@@ -23,16 +22,15 @@ class Training:
         :return: None
         """
         t_counter = 0
-        initial_game = TrainingGame(self.initial_state)
 
         # Outer loop that performs training_iterations
         while t_counter < training_iterations:
             game_counter = 0
             # inner loop where each training_iteration performs a number of games
             while game_counter < games_per_iteration:
-                game = copy.deepcopy(initial_game)
-                results = game.run(model=self.model)
-                self.buffer.append(results)
+                game = TrainingGame(initial_state=self.initial_state, white_model=self.model, black_model=self.model)
+                game.run()
+                self.buffer.append(game.get_history())
                 game_counter += 1
             self.fit_data()
             t_counter += 1
@@ -71,9 +69,3 @@ class Training:
         self.evaluation_result.append(self.model.evaluate(np.array(X_test),
                                       [np.array(dists_test), np.array(vs_test)]
                                         ))
-
-
-
-
-
-
