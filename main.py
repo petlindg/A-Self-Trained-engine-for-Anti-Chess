@@ -14,8 +14,7 @@ def run_training():
         model.load_weights(checkpoint_path)
     except:
         pass
-    chessboard = Chessboard()
-    chessboard.init_board_test_2()
+    chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     training = Training(chessboard, model)
     training.train()
 

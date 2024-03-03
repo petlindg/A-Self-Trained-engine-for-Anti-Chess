@@ -248,11 +248,11 @@ def move_to_algebraic(move):
     cols = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
     src = move.src_index
     src_row = str(src//8 + 1)
-    src_col = cols[(src%8)]
+    src_col = cols[int(src%8)]
 
     dst = move.dst_index
     dst_row = str(dst//8 + 1)
-    dst_col = cols[(dst%8)]
+    dst_col = cols[int(dst%8)]
 
     return src_col + src_row + dst_col + dst_row
 

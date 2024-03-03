@@ -18,8 +18,8 @@ def fetch_p_from_move(move: Move, model_output: np.array):
     :param model_output: np.array, array of the model's policy output
     :return: Float, the P value for the move
     """
-    src_col = move.src_index % 8
-    src_row = move.src_index // 8
+    src_col = int(move.src_index % 8)
+    src_row = int(move.src_index // 8)
 
     move_type = chess.calc_move(move.src_index, move.dst_index, move.promotion_type)
     return model_output[0][0][src_row][src_col][move_type]
