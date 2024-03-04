@@ -142,19 +142,24 @@ class Node:
         :param player: Player, the player to backpropagate the value v for
         :return: None
         """
-        # if the actor performing the action with result v is the same as the root node
-        # then we increase the value for the node by v
-        if node.player == player:
-            node.value += v
-        # if the actor performing the action with result v is the opposite of the root node
-        # then increase the value by (1-v) to get the opposition's value
-        else:
-            node.value += (1-v)
-
-        node.visits += 1
-        # if the parent is not none we aren't at the root yet and should continue
+        # if we aren't at the root node yet
         if node.parent is not None:
+            # if the actor performing the action with result v is the same as the root node
+            # then we increase the value for the node by v
+            if node.parent.player == player:
+                node.value += v
+            # if the actor performing the action with result v is the opposite of the root node
+            # then increase the value by (1-v) to get the opposition's value
+            else:
+                node.value += (1-v)
             self.backpropagate(node.parent, v, player)
+
+            node.visits += 1
+        # if there isnt a parent to the current node, we have reached the root node
+        else:
+            node.value += v
+            node.visits += 1
+
 
     def add_noise(self, dir_a=0.03, frac=0.25):
         """Adds dirichlet noise to all the p values for the children of the current node

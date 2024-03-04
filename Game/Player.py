@@ -26,7 +26,7 @@ class Player:
 
     def get_next_move(self):
         self.run_mcts()
-        self.mcts.root_node.print_selectively(2)
+        self.mcts.root_node.print_selectively(3)
 
         potential_nodes = self.mcts.root_node.children
 
