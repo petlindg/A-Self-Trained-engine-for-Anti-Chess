@@ -131,34 +131,27 @@ class Node:
         if self.root:
             self.add_noise()
 
-        self.backpropagate(self, v, self.player)
+        self.backpropagate(self, v)
 
-    def backpropagate(self, node, v: float, player: Color):
+    def backpropagate(self, node, v: float):
         """
         Method that backpropagates the value v for the current node.
 
         :param node: Node class, the current node to backpropagate from
         :param v: Float, the value to backpropagate up the tree, v ranges from 0 to 1 (sigmoid)
-        :param player: Player, the player to backpropagate the value v for
         :return: None
         """
-        # if we aren't at the root node yet
-        if node.parent is not None:
-            # if the actor performing the action with result v is the same as the root node
-            # then we increase the value for the node by v
-            if node.parent.player == player:
-                node.value += v
-            # if the actor performing the action with result v is the opposite of the root node
-            # then increase the value by (1-v) to get the opposition's value
-            else:
-                node.value += (1-v)
-            self.backpropagate(node.parent, v, player)
 
-            node.visits += 1
-        # if there isnt a parent to the current node, we have reached the root node
-        else:
-            node.value += v
-            node.visits += 1
+        node.value += v
+        node.visits += 1
+        
+        # if we are at root node, we're done
+        if node.parent == None:
+            return
+
+        # invert v value to because of color change before backpropagating
+        self.backpropagate(node.parent, 1-v)
+
 
 
     def add_noise(self, dir_a=0.03, frac=0.25):

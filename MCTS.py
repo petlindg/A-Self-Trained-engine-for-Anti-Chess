@@ -106,36 +106,20 @@ class MCTS:
         if not game_over:
             new_states, v = self.possible_moves(leaf_node.state)
             leaf_node.expand(new_states, v)
-
         # if an end state was encountered
-        elif game_over:
-            # if the end state has been encountered before
-            if leaf_node.end_state is not None:
-                # backpropagate 0.5
-                if leaf_node.end_state == 'draw':
-                    leaf_node.backpropagate(leaf_node, 0.5, self.tree_player)
-                # backpropagate 1 to the winning player
-                else:
-                    leaf_node.backpropagate(leaf_node, 1, leaf_node.end_state)
-
-            # if this end state is new
-            else:
-                status = leaf_node.state.get_game_status()
-                # white winning
-                if status == 0:
-                    leaf_node.end_state = Color.WHITE
-                    leaf_node.backpropagate(leaf_node, 1, Color.WHITE)
-
-                # black winning
-                elif status == 1:
-                    leaf_node.end_state = Color.BLACK
-                    leaf_node.backpropagate(leaf_node, 1, Color.BLACK)
-                # draw
-                else:
-                    # (player technically doesn't matter in the backpropagation)
+        else:
+            # if new end_state, set end state
+            if leaf_node.end_state == None:
+                if leaf_node.state.is_draw():
                     leaf_node.end_state = 'draw'
-                    leaf_node.backpropagate(leaf_node, 0.5, self.tree_player)
-                    return
+                else:
+                    leaf_node.end_state = 'end'
+            
+            # if end_state is draw, backpropagate 0.5, else backpropagate winner
+            if leaf_node.end_state == 'draw':
+                leaf_node.backpropagate(leaf_node, 0.5)
+            else:
+                leaf_node.backpropagate(leaf_node, 0)
 
     def possible_moves(self, state: Chessboard):
         """Calculates all possible moves for a given chessboard using the neural network, and returns
