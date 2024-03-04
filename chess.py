@@ -247,11 +247,11 @@ def move_to_algebraic(move):
 
     cols = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
     src = move.src_index
-    src_row = str(src//8 + 1)
+    src_row = str(int(src//8 + 1))
     src_col = cols[int(src%8)]
 
     dst = move.dst_index
-    dst_row = str(dst//8 + 1)
+    dst_row = str(int(dst//8 + 1))
     dst_col = cols[int(dst%8)]
 
     return src_col + src_row + dst_col + dst_row
@@ -261,11 +261,11 @@ def calc_move(source: int, destination: int, promotion_piece: Piece):
     # returns a value from 0 to 72 which is in the form of the output representation for the NN model
     # board size
 
-    src_col = source % 8
-    src_row = source // 8
+    src_col = int(source % 8)
+    src_row = int(source // 8)
 
-    dst_col = destination % 8
-    dst_row = destination // 8
+    dst_col = int(destination % 8)
+    dst_row = int(destination // 8)
 
     # get the differences between the source and destination
     diff_col = src_col - dst_col
