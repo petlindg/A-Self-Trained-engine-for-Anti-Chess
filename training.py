@@ -32,9 +32,9 @@ class Training:
                 game.run()
                 self.buffer.append(game.get_history())
                 game_counter += 1
+            print("Training iteration: " + str(t_counter))
             self.fit_data()
             t_counter += 1
-
             self.model.save_weights(checkpoint_path)
 
     def fit_data(self):
