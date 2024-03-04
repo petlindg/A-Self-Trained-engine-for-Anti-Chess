@@ -1,6 +1,4 @@
-
 from training import Training
-import chess
 from chess import Chessboard
 from config import checkpoint_path
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
@@ -14,7 +12,7 @@ def run_training():
         model.load_weights(checkpoint_path)
     except:
         pass
-    chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
+    chessboard = Chessboard("k7/8/8/8/8/8/8/1R6 b - 0 1")
     training = Training(chessboard, model)
     training.train()
 

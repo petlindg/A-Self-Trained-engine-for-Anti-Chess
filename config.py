@@ -16,7 +16,7 @@ output_representation = (1,1,8,8,76)
 max_buffer_size = 100
 
 'total number of iterations that are performed before the training stops'
-training_iterations = 5
+training_iterations = 500
 
 'total number of games that are performed per training iteration'
 games_per_iteration = 5
