@@ -91,15 +91,15 @@ class TrainingGame:
             winner = 'draw'
 
         finalized_history = []
-        for (state, mcts, player) in (self.player.history):
+        for (state, mcts) in (self.player.history):
             # if nobody won and it's a draw
             if winner == 'draw':
                 finalized_history.append((state.translate_board(), translate_moves_to_output(mcts), 0.5))
             # if winning player
-            elif winner == player:
+            elif winner == state.player_to_move:
                 finalized_history.append((state.translate_board(), translate_moves_to_output(mcts), 1))
             # if losing player
-            elif winner is not player:
+            elif winner is not state.player_to_move:
                 finalized_history.append((state.translate_board(), translate_moves_to_output(mcts), 0))
 
         return finalized_history

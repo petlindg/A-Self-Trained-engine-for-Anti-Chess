@@ -86,7 +86,9 @@ class Node:
         if self.children:
             node = max(self.children, key=lambda n: n.ucb())
             self.state.move(node.move)
-            node.select()
+            return node.select()
+        else:
+            return self
         
     def expand(self):
         status = self.state.get_game_status()
@@ -169,7 +171,7 @@ class Node:
         """
         if depth is None or depth > 0:
             string_buffer.append(prefix)
-            p = round(self.p, 10)
+            p = self.p #p = round(self.p, 10)
             val = round(self.value, 10)
             # v = round(self.v, 10)
             visits = self.visits

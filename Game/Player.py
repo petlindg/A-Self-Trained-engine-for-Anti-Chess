@@ -1,7 +1,7 @@
 from keras import Model
 
+from copy import deepcopy
 from node import Node
-from MCTS import MCTS
 from chess import Chessboard, Color, Move
 
 
@@ -48,6 +48,7 @@ class Player:
         mcts_dist = [(n / visit_total, move) for (n, move) in mcts_dist]
 
         # add values to the game history recording all moves
-        self.history.append((self.current_state, mcts_dist, self.current_state.player_to_move))
+        state_clone = deepcopy(self.current_state)
+        self.history.append((state_clone, mcts_dist))
 
         return best_move
