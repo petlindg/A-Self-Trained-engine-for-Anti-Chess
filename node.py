@@ -73,7 +73,7 @@ class Node:
 
         :return: None
         """
-        for _ in range(iterations):
+        for _ in range(iterations-self.visits):
             self.mcts()
 
 
@@ -171,7 +171,7 @@ class Node:
         """
         if depth is None or depth > 0:
             string_buffer.append(prefix)
-            p = self.p #p = round(self.p, 10)
+            p = round(self.p, 10)
             val = round(self.value, 10)
             # v = round(self.v, 10)
             visits = self.visits
@@ -217,7 +217,7 @@ class Node:
         self.time_predicted = 0
         # if the child doesn't exist for this tree yet
         # for example if the opponent made a move that hasn't been explored/expanded for this player yet
-        child.add_noise()
+        #child.add_noise()
         
         self.state.move(child.move)
         child.parent = None
