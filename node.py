@@ -61,7 +61,7 @@ class Node:
                     + (self.value / self.visits if self.visits > 0 else 0))
         else:
             return ((1-self.p) * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
-                    + (1-(self.value / self.visits) if self.visits > 0 else 0))
+                    + ((self.value / self.visits) if self.visits > 0 else 0))
 
     def __str__(self):
         """Method to return a node as a string.
@@ -77,10 +77,8 @@ class Node:
 
         :return: None
         """
-        print("Running...")
         for _ in range(iterations):
             self.mcts()
-        print("Running complete.")
 
 
     def mcts(self):
@@ -101,7 +99,7 @@ class Node:
         if status == 2:
             return 0.5
         elif status == 0 or status == 1:
-            return 1
+            return 0
         else:
             p_vector, v = self.possible_moves()
             for (move, p) in p_vector:
@@ -181,12 +179,13 @@ class Node:
             val = round(self.value, 10)
             # v = round(self.v, 10)
             visits = self.visits
-            if visits != 0:
-                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{0}|move:{self.move})'
-            else:
-                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{0}|move:{self.move})'
-            string_buffer.append(info_text)
-            string_buffer.append('\n')
+            if self.parent:
+                if visits != 0:
+                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{self.ucb()}|move:{self.move})'
+                else:
+                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
+                string_buffer.append(info_text)
+                string_buffer.append('\n')
 
             for i in range(0, len(self.children)):
                 if i == len(self.children)-1:

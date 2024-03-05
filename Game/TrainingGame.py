@@ -13,12 +13,12 @@ class TrainingGame:
     """
 
     def __init__(self, initial_state: Chessboard, model: Model):
-        self.current_state = initial_state
+        self.current_state = deepcopy(initial_state)
         self.game_over = False
         self.game_history = []
         self.swap = False
 
-        self.player = Player(initial_state, model)
+        self.player = Player(self.current_state, model)
 
     def game_ended(self):
         """Checks the status of the current Game
@@ -76,7 +76,7 @@ class TrainingGame:
             winner = 'draw'
             print('             draw')
         print('===============================')
-        print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / total_time * 100}')
+        print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
 
         return winner
 
