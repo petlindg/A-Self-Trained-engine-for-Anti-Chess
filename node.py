@@ -1,45 +1,67 @@
 from math import sqrt
 
 import numpy as np
+import time
 
 from chess import Chessboard, Move, Color
 from config import exploration_constant
 
+global select_counter
+global backpropagate_counter
+select_counter = 0
+backpropagate_counter = 0
+
+import copy
+from math import sqrt
+import chess
+from config import tree_iterations, exploration_constant, output_representation
+from keras.models import Model
+
+from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
+    
+def fetch_p_from_move(move: Move, model_output: np.array):
+    """Fetches the P value from the output array of the model
+
+    :param move: Move, move to fetch the P value for
+    :param model_output: np.array, array of the model's policy output
+    :return: Float, the P value for the move
+    """
+    src_col = int(move.src_index % 8)
+    src_row = int(move.src_index // 8)
+
+    move_type = chess.calc_move(move.src_index, move.dst_index, move.promotion_type)
+    return model_output[0][0][src_row][src_col][move_type]
 
 class Node:
-    def __init__(self, state: Chessboard,
-                 p: float, player: Color,
-                 parent, root_node,
-                 root: bool = False,
-                 move: Move = False):
+    def __init__(self,
+                 state: Chessboard,
+                 p: float,
+                 parent = None,
+                 move: Move = False,
+                 model: Model = None):
 
         # general tree variables
-        self.root_node: Node = root_node
         self.parent: Node = parent
         self.children: list[Node] = []
-        self.root: bool = root
-        self.leaf: bool = True
-        self.terminal: bool = False
         # node specific variables
-        self.state:  Chessboard = state
+        self.state: Chessboard = state
         self.move: Move = move
-        self.player: Color = player
         self.v = 0
+        self.p: float = p
         self.visits: int = 0
         self.value: float = 0
-        self.p: float = p
-        # if the node is terminal, the end state determines which player won or lost or if it's a draw
-        self.end_state = None
+        # network
+        self.model = model
 
-    def ucb(self, inverted: bool):
-        if self.parent is not None:
-            if not inverted:
-                return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
-                        + (self.value / self.visits if self.visits > 0 else 0))
+        self.time_predicted = 0
 
-            if inverted:
-                return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
-                        + ((1 - self.value) / self.visits if self.visits > 0 else 0))
+    def ucb(self):
+        if self.state.player_to_move == Color.WHITE:
+            return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
+                    + (self.value / self.visits if self.visits > 0 else 0))
+        else:
+            return ((1-self.p) * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
+                    + (1-(self.value / self.visits) if self.visits > 0 else 0))
 
     def __str__(self):
         """Method to return a node as a string.
@@ -49,6 +71,100 @@ class Node:
         string_buffer = []
         self.print_tree(string_buffer, "", "")
         return "".join(string_buffer)
+    
+    def run(self, iterations:int=tree_iterations):
+        """Method to run the MCTS search continually for the remaining iterations
+
+        :return: None
+        """
+        print("Running...")
+        for _ in range(iterations):
+            self.mcts()
+        print("Running complete.")
+
+
+    def mcts(self):
+        node = self.select()
+        v = node.expand()
+        self = node.backpropagate(v)
+
+    def select(self):
+        if self.children:
+            node = max(self.children, key=lambda n: n.ucb())
+            self.state.move(node.move)
+            return node.select()
+        else:
+            return self
+        
+    def expand(self):
+        status = self.state.get_game_status()
+        if status == 2:
+            return 0.5
+        elif status == 0 or status == 1:
+            return 1
+        else:
+            p_vector, v = self.possible_moves()
+            for (move, p) in p_vector:
+                self.children.append(
+                    Node(
+                        state=self.state,
+                        move=move,
+                        p=p,
+                        parent=self,
+                        model=self.model
+                    )
+                )
+            return v
+        
+    def backpropagate(self, v: float):
+        """
+        Method that backpropagates the value v for the current node.
+
+        :param node: Node class, the current node to backpropagate from
+        :param v: Float, the value to backpropagate up the tree, v ranges from 0 to 1 (sigmoid)
+        :return: None
+        """
+
+        self.value += v
+        self.visits += 1
+        # if we aren't at root node, backpropagate
+        if self.parent != None:
+            # invert v value to because of color change before backpropagating
+            self.state.unmove()
+            return self.parent.backpropagate(1-v)
+        else:
+            return self
+
+    def possible_moves(self):
+        """Calculates all possible moves for a given chessboard using the neural network, and returns
+           it as a list of tuples.
+
+        :param state: Chessboard, the input state to calculate moves from
+        :return: (list[Chessboard, Move, float], float), returns a list of new chessboards, the move
+                 that was taken to get there and the float value P for that new state. In addition to this,
+                 it also returns another float which is the value V from the neural network for the input state.
+        """
+        input_repr = self.state.translate_board()
+        moves = self.state.get_moves()
+
+        predict_start = time.time()
+        p, v = self.model.predict(input_repr, verbose=None)
+        predict_end = time.time()
+        self.time_predicted += (predict_end-predict_start)
+        v = v[0][0]
+        p_array = p.reshape(output_representation)
+        return_list = []
+
+        p_sum = 0
+        for move in moves:
+            p_val = fetch_p_from_move(move, p_array)
+            p_sum += p_val
+            return_list.append((move, p_val))
+
+        # normalize the P values in the return list
+        return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
+
+        return return_list, v
 
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
         """Method that will iterate through the nodes and append strings onto the string_buffer list.
@@ -66,9 +182,9 @@ class Node:
             # v = round(self.v, 10)
             visits = self.visits
             if visits != 0:
-                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{self.ucb(False)}|move:{self.move})'
+                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{0}|move:{self.move})'
             else:
-                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb(False)}|move:{self.move})'
+                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{0}|move:{self.move})'
             string_buffer.append(info_text)
             string_buffer.append('\n')
 
@@ -93,66 +209,25 @@ class Node:
         self.print_tree(string_buffer, "", "", depth)
         print("".join(string_buffer))
 
-    def expand(self, new_states: list[(Chessboard, Move, float)], v: float):
-        """
-        Performs an expansion on a leaf node, assigning v to the leaf node
-        and adding children to it
+    def update_tree(self, move:Move):
+        """Updates the tree based on a certain move (moves down the tree one level)
 
-        :param new_states: list[(Chessboard, Move, float)], list of new states/children
-        :param v: float, Neural Network value for this leaf node, indicating how good the network
-        thinks the node is.
-
+        :param new_state: New chessboard state, used only if the child doesn't exist yet, in order to create a new node
+        :param move: Move that is being performed
         :return: None
         """
-
-        self.leaf = False
-        self.v = v
-        if self.player == Color.WHITE:
-            next_player = Color.BLACK
-        else:
-            next_player = Color.WHITE
-
-        for (state, move, p) in new_states:
-            self.children.append(
-                Node(
-                    state=state,
-                    move=move,
-                    p=p,
-                    parent=self,
-                    player=next_player,
-                    root_node=self.root_node
-                )
-            )
-        # if the expansion failed to find any viable children
-        if len(self.children) == 0:
-            self.terminal = True
-
-        # if we are expanding the root node for the first time, we add noise to the children
-        if self.root:
-            self.add_noise()
-
-        self.backpropagate(self, v)
-
-    def backpropagate(self, node, v: float):
-        """
-        Method that backpropagates the value v for the current node.
-
-        :param node: Node class, the current node to backpropagate from
-        :param v: Float, the value to backpropagate up the tree, v ranges from 0 to 1 (sigmoid)
-        :return: None
-        """
-
-        node.value += v
-        node.visits += 1
+        # select the child that will become the new root node
+        child = self.select_child(move)
+        # resetting the time
+        self.time_predicted = 0
+        # if the child doesn't exist for this tree yet
+        # for example if the opponent made a move that hasn't been explored/expanded for this player yet
+        child.add_noise()
         
-        # if we are at root node, we're done
-        if node.parent == None:
-            return
+        self.state.move(child.move)
+        child.parent = None
 
-        # invert v value to because of color change before backpropagating
-        self.backpropagate(node.parent, 1-v)
-
-
+        return child
 
     def add_noise(self, dir_a=0.03, frac=0.25):
         """Adds dirichlet noise to all the p values for the children of the current node
@@ -174,3 +249,4 @@ class Node:
         for child in self.children:
             if child.move == move:
                 return child
+        raise RuntimeError("Child as Move: %s not found." % str(move))
