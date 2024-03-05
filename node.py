@@ -11,7 +11,6 @@ global backpropagate_counter
 select_counter = 0
 backpropagate_counter = 0
 
-import copy
 from math import sqrt
 import chess
 from config import tree_iterations, exploration_constant, output_representation
@@ -146,6 +145,7 @@ class Node:
         predict_end = time.time()
         self.time_predicted += (predict_end-predict_start)
         v = v[0][0]
+        print(f"V = {v}")
         p_array = p.reshape(output_representation)
         return_list = []
 
@@ -173,11 +173,12 @@ class Node:
             string_buffer.append(prefix)
             p = round(self.p, 10)
             val = round(self.value, 10)
-            # v = round(self.v, 10)
             visits = self.visits
+            wr = round(val/visits, 10)
+            # v = round(self.v, 10)
             if self.parent:
                 if visits != 0:
-                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{self.ucb()}|move:{self.move})'
+                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
                 else:
                     info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
                 string_buffer.append(info_text)
