@@ -56,12 +56,8 @@ class Node:
         self.time_predicted = 0
 
     def ucb(self):
-        if self.state.player_to_move == Color.WHITE:
-            return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
-                    + (self.value / self.visits if self.visits > 0 else 0))
-        else:
-            return ((1-self.p) * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
-                    + ((self.value / self.visits) if self.visits > 0 else 0))
+        return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
+                + (self.value / self.visits if self.visits > 0 else 0))
 
     def __str__(self):
         """Method to return a node as a string.
@@ -84,15 +80,13 @@ class Node:
     def mcts(self):
         node = self.select()
         v = node.expand()
-        self = node.backpropagate(v)
+        node.backpropagate(v)
 
     def select(self):
         if self.children:
             node = max(self.children, key=lambda n: n.ucb())
             self.state.move(node.move)
-            return node.select()
-        else:
-            return self
+            node.select()
         
     def expand(self):
         status = self.state.get_game_status()
