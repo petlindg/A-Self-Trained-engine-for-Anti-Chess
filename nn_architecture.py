@@ -66,7 +66,8 @@ class NeuralNetwork:
 
     def convolutional_layer(self, input_x) -> KerasTensor:
         
-        conv_layer = Conv2D(self.convolution_filters, kernel_size=(3,3), strides=(1,1), padding="same", data_format='channels_first',use_bias=False)(input_x)
+        conv_layer = Conv2D(self.convolution_filters, kernel_size=(3,3), strides=(1,1), padding="same", data_format='channels_first',use_bias=False,
+                            kernel_initializer='zeros')(input_x)
         conv_layer = BatchNormalization(axis=1)(conv_layer)
         conv_layer =  Activation('relu')(conv_layer)
 
@@ -75,7 +76,9 @@ class NeuralNetwork:
     def residual_layer(self, input_x) -> KerasTensor:
 
         conv1 = self.convolutional_layer(input_x)
-        conv2 = Conv2D(self.convolution_filters, kernel_size=(3,3), strides=(1,1), padding="same", data_format='channels_first',use_bias=False)(conv1)
+        conv2 = Conv2D(self.convolution_filters, kernel_size=(3,3), strides=(1,1), padding="same", data_format='channels_first',use_bias=False,
+                       kernel_initializer='zeros'
+                       )(conv1)
         conv2 = BatchNormalization(axis=1)(conv2)
     
         #skip connections
@@ -94,24 +97,24 @@ class NeuralNetwork:
 
         policy_head = Sequential()
         policy_head.add(Conv2D(2, (1, 1), strides=1, padding='same', data_format='channels_first',
-                            input_shape=(self.convolution_filters, *self.input_shape[1:])))
+                            input_shape=(self.convolution_filters, *self.input_shape[1:]), kernel_initializer='zeros'))
         policy_head.add(BatchNormalization(axis=1))
         policy_head.add(Activation('relu'))
         policy_head.add(Flatten())
-        policy_head.add(Dense(self.output_shape[0], activation='softmax', name='policy_output'))
+        policy_head.add(Dense(self.output_shape[0], activation='softmax', name='policy_output',kernel_initializer='zeros'))
         
         return policy_head
     
     def value_network(self) -> Model:
         value_head = Sequential()
         value_head.add(Conv2D(1, (1, 1), strides=1, padding='same', data_format='channels_first',
-                            input_shape=(self.convolution_filters, *self.input_shape[1:])))
+                            input_shape=(self.convolution_filters, *self.input_shape[1:]), kernel_initializer='zeros'))
         value_head.add(BatchNormalization(axis=1))
         value_head.add(Activation('relu'))
         value_head.add(Flatten())
-        value_head.add(Dense(256, activation='relu'))  # Intermediate dense layer for deeper feature extraction
+        value_head.add(Dense(256, activation='relu', kernel_initializer='zeros'))  # Intermediate dense layer for deeper feature extraction
         # Final dense layer outputs a single value with tanh activation for outcome prediction
-        value_head.add(Dense(1, activation='sigmoid', name='value_output'))
+        value_head.add(Dense(1, activation='sigmoid', name='value_output',kernel_initializer='zeros'))
         return value_head
     
     def build_nn (self) -> Model:
