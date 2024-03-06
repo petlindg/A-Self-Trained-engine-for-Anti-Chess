@@ -79,7 +79,7 @@ class Node:
     def mcts(self):
         node = self.select()
         v = node.expand()
-        node.backpropagate(v)
+        node.backpropagate(1-v)
 
     def select(self):
         if self.children:
@@ -94,8 +94,22 @@ class Node:
         if status == 2:
             return 0.5
         elif status == 0 or status == 1:
-            return 0
+            return 1
         else:
+            """
+            moves = self.state.get_moves()
+            for m in moves:
+                self.children.append(
+                    Node(
+                        state=self.state,
+                        move=m,
+                        p=1,
+                        parent=self,
+                        model=self.model
+                    )
+                )
+            return 0.5
+            """
             p_vector, v = self.possible_moves()
             for (move, p) in p_vector:
                 self.children.append(
@@ -145,7 +159,6 @@ class Node:
         predict_end = time.time()
         self.time_predicted += (predict_end-predict_start)
         v = v[0][0]
-        print(f"V = {v}")
         p_array = p.reshape(output_representation)
         return_list = []
 
@@ -174,10 +187,10 @@ class Node:
             p = round(self.p, 10)
             val = round(self.value, 10)
             visits = self.visits
-            wr = round(val/visits, 10)
             # v = round(self.v, 10)
             if self.parent:
                 if visits != 0:
+                    wr = round(val/visits, 10)
                     info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
                 else:
                     info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
