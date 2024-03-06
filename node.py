@@ -6,11 +6,6 @@ import time
 from chess import Chessboard, Move, Color
 from config import exploration_constant
 
-global select_counter
-global backpropagate_counter
-select_counter = 0
-backpropagate_counter = 0
-
 from math import sqrt
 import chess
 from config import tree_iterations, exploration_constant, output_representation
