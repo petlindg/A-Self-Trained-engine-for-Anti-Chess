@@ -11,7 +11,6 @@ global backpropagate_counter
 select_counter = 0
 backpropagate_counter = 0
 
-import copy
 from math import sqrt
 import chess
 from config import tree_iterations, exploration_constant, output_representation
@@ -73,14 +72,14 @@ class Node:
 
         :return: None
         """
-        for _ in range(iterations):
+        for _ in range(iterations-self.visits):
             self.mcts()
 
 
     def mcts(self):
         node = self.select()
         v = node.expand()
-        node.backpropagate(v)
+        node.backpropagate(1-v)
 
     def select(self):
         if self.children:
@@ -95,8 +94,22 @@ class Node:
         if status == 2:
             return 0.5
         elif status == 0 or status == 1:
-            return 0
+            return 1
         else:
+            """
+            moves = self.state.get_moves()
+            for m in moves:
+                self.children.append(
+                    Node(
+                        state=self.state,
+                        move=m,
+                        p=1,
+                        parent=self,
+                        model=self.model
+                    )
+                )
+            return 0.5
+            """
             p_vector, v = self.possible_moves()
             for (move, p) in p_vector:
                 self.children.append(
@@ -171,13 +184,14 @@ class Node:
         """
         if depth is None or depth > 0:
             string_buffer.append(prefix)
-            p = self.p #p = round(self.p, 10)
+            p = round(self.p, 10)
             val = round(self.value, 10)
-            # v = round(self.v, 10)
             visits = self.visits
+            # v = round(self.v, 10)
             if self.parent:
                 if visits != 0:
-                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{self.ucb()}|move:{self.move})'
+                    wr = round(val/visits, 10)
+                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
                 else:
                     info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
                 string_buffer.append(info_text)
@@ -217,7 +231,7 @@ class Node:
         self.time_predicted = 0
         # if the child doesn't exist for this tree yet
         # for example if the opponent made a move that hasn't been explored/expanded for this player yet
-        child.add_noise()
+        #child.add_noise()
         
         self.state.move(child.move)
         child.parent = None
