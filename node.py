@@ -55,6 +55,11 @@ class Node:
         self.time_predicted = 0
 
     def ucb(self):
+        """
+        Calculates UCB of self
+
+        :return: UCB:float
+        """
         return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
                 + (self.value / self.visits if self.visits > 0 else 0))
 
@@ -68,8 +73,10 @@ class Node:
         return "".join(string_buffer)
     
     def run(self, iterations:int=tree_iterations):
-        """Method to run the MCTS search continually for the remaining iterations
+        """
+        Method to run the MCTS search continually for the remaining iterations
 
+        :param iterations: Number of iterations to run the tree, given by tree_iterations in config.py by default
         :return: None
         """
         for _ in range(iterations-self.visits):
@@ -82,6 +89,11 @@ class Node:
         node.backpropagate(1-v)
 
     def select(self):
+        """
+        Finds a leaf node and returns it.
+
+        :return: Node, leaf node of tree following selection by UCB
+        """
         if self.children:
             node = max(self.children, key=lambda n: n.ucb())
             self.state.move(node.move)
@@ -90,6 +102,12 @@ class Node:
             return self
         
     def expand(self):
+        """
+        Performs an expansion on a leaf node, returning v of the node by the network
+        and adding children to it
+
+        :return: Value: float of the node expanded, as given by the network model
+        """
         status = self.state.get_game_status()
         if status == 2:
             return 0.5
@@ -125,9 +143,8 @@ class Node:
         
     def backpropagate(self, v: float):
         """
-        Method that backpropagates the value v for the current node.
+        Method that backpropagates the value v from the current node.
 
-        :param node: Node class, the current node to backpropagate from
         :param v: Float, the value to backpropagate up the tree, v ranges from 0 to 1 (sigmoid)
         :return: None
         """
@@ -138,9 +155,7 @@ class Node:
         if self.parent != None:
             # invert v value to because of color change before backpropagating
             self.state.unmove()
-            return self.parent.backpropagate(1-v)
-        else:
-            return self
+            self.parent.backpropagate(1-v)
 
     def possible_moves(self):
         """Calculates all possible moves for a given chessboard using the neural network, and returns
@@ -219,23 +234,24 @@ class Node:
         print("".join(string_buffer))
 
     def update_tree(self, move:Move):
-        """Updates the tree based on a certain move (moves down the tree one level)
+        """
+        Updates the tree based on a certain move (moves down the tree one level),
+        returns new root node and sets parent of that node to None
 
-        :param new_state: New chessboard state, used only if the child doesn't exist yet, in order to create a new node
         :param move: Move that is being performed
-        :return: None
+        :return: New root node
         """
         # select the child that will become the new root node
         child = self.select_child(move)
         # resetting the time
         self.time_predicted = 0
-        # if the child doesn't exist for this tree yet
-        # for example if the opponent made a move that hasn't been explored/expanded for this player yet
+        # adds noise to child
         #child.add_noise()
-        
+        # moves the state
         self.state.move(child.move)
+        # sets parent of child to None, aka sets child as root
         child.parent = None
-
+        # returns child as new root
         return child
 
     def add_noise(self, dir_a=0.03, frac=0.25):
