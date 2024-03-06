@@ -1,3 +1,4 @@
+import numpy as np
 from numpy import uint64 as u64
 from numpy import uint8 as u8
 from numpy import left_shift as ls
@@ -1156,3 +1157,52 @@ def print_byte(byte:u8):
             print("0", end="")
         i >>= u8(1)
     print()
+
+
+def algebraic_to_bitboard(s):
+    """Takes an algebraic representation string s and returns the move representation for this string
+
+    :param s: String
+    :return: Class Move
+    """
+    s = list(s.lower())
+    fst_c = ''
+    fst_d = 0
+    snd_c = ''
+    snd_d = 0
+    counter = 0
+    for character in s:
+        if counter == 4:
+            break
+        if counter == 0 and character.isalpha():
+            fst_c = str(character)
+        if counter == 1 and character.isdigit():
+            fst_d = int(character)
+        if counter == 2 and character.isalpha():
+            snd_c = str(character)
+        if counter == 3 and character.isdigit():
+            snd_d = int(character)
+        counter +=1
+    cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+    # default values in the case that the input is wrong and the characters arent valid
+    if fst_c not in cols:
+        src_col = 1
+    if snd_c not in cols:
+        dst_col = 1
+    if fst_d > 8:
+        fst_d = 0
+    if snd_d > 8:
+        snd_d = 0
+
+    # convert letters to integers
+    for i, c in enumerate(cols):
+        if fst_c == c:
+            src_col = i + 1
+        if snd_c == c:
+            dst_col = i + 1
+
+    src_index = np.uint8(-src_col + 8 * fst_d)
+    dst_index = np.uint8(-dst_col + 8 * snd_d)
+    print(src_index, dst_index)
+    return Move(src_index, dst_index)
