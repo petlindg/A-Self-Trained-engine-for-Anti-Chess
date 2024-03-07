@@ -27,9 +27,12 @@ def fetch_p_from_move(move: Move, model_output: np.array):
     return model_output[0][0][src_row][src_col][move_type]
 
 class Node:
+    """
+    Class for the MCTS tree and nodes of the mcts tree.
+    """
     def __init__(self,
                  state: Chessboard,
-                 p: float,
+                 p: float = 1,
                  parent = None,
                  move: Move = False,
                  model: Model = None):
@@ -109,32 +112,32 @@ class Node:
         elif status == 0 or status == 1:
             return 1
         else:
-            """
-            moves = self.state.get_moves()
-            for m in moves:
-                self.children.append(
-                    Node(
-                        state=self.state,
-                        move=m,
-                        p=1,
-                        parent=self,
-                        model=self.model
+            if self.model:
+                p_vector, v = self.possible_moves()
+                for (move, p) in p_vector:
+                    self.children.append(
+                        Node(
+                            state=self.state,
+                            move=move,
+                            p=p,
+                            parent=self,
+                            model=self.model
+                        )
                     )
-                )
-            return 0.5
-            """
-            p_vector, v = self.possible_moves()
-            for (move, p) in p_vector:
-                self.children.append(
-                    Node(
-                        state=self.state,
-                        move=move,
-                        p=p,
-                        parent=self,
-                        model=self.model
+                return v
+            else:
+                moves = self.state.get_moves()
+                for m in moves:
+                    self.children.append(
+                        Node(
+                            state=self.state,
+                            move=m,
+                            p=1,
+                            parent=self,
+                            model=self.model
+                        )
                     )
-                )
-            return v
+                return 0.5
         
     def backpropagate(self, v: float):
         """
