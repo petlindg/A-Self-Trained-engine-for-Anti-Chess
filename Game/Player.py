@@ -1,6 +1,7 @@
 from keras import Model
 
-from MCTS import MCTS
+from copy import deepcopy
+from node import Node
 from chess import Chessboard, Color, Move
 
 
@@ -9,26 +10,26 @@ class Player:
     A class representing a player
     """
 
-    def __init__(self, initial_state: Chessboard, model: Model, color: Color):
+    def __init__(self, initial_state: Chessboard, model: Model):
         self.current_state = initial_state
-        self.color = color
-        self.mcts = MCTS(root_state=initial_state, player=color, model=model)
+        self.mcts = Node(state=initial_state, p=1, model=model)
         self.history = []
 
     def run_mcts(self):
         self.mcts.run()
 
-    def update_tree(self, move: Move, chessboard: Chessboard):
-        self.mcts.update_tree(move, chessboard)
+    def update_tree(self, move: Move):
+        self.mcts = self.mcts.update_tree(move)
 
     def get_time_predicted(self):
         return self.mcts.time_predicted
 
     def get_next_move(self):
-        self.run_mcts()
-        self.mcts.root_node.print_selectively(2)
 
-        potential_nodes = self.mcts.root_node.children
+        self.run_mcts()
+        self.mcts.print_selectively(2)
+
+        potential_nodes = self.mcts.children
 
         max_visits = 0
         best_move = None
@@ -47,6 +48,7 @@ class Player:
         mcts_dist = [(n / visit_total, move) for (n, move) in mcts_dist]
 
         # add values to the game history recording all moves
-        self.history.append((self.current_state, mcts_dist, self.color))
+        state_clone = deepcopy(self.current_state)
+        self.history.append((state_clone, mcts_dist))
 
         return best_move

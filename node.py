@@ -1,45 +1,65 @@
 from math import sqrt
 
 import numpy as np
+import time
 
 from chess import Chessboard, Move, Color
 from config import exploration_constant
 
+from math import sqrt
+import chess
+from config import tree_iterations, exploration_constant, output_representation
+from keras.models import Model
+
+from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
+    
+def fetch_p_from_move(move: Move, model_output: np.array):
+    """Fetches the P value from the output array of the model
+
+    :param move: Move, move to fetch the P value for
+    :param model_output: np.array, array of the model's policy output
+    :return: Float, the P value for the move
+    """
+    src_col = int(move.src_index % 8)
+    src_row = int(move.src_index // 8)
+
+    move_type = chess.calc_move(move.src_index, move.dst_index, move.promotion_type)
+    return model_output[0][0][src_row][src_col][move_type]
 
 class Node:
-    def __init__(self, state: Chessboard,
-                 p: float, player: Color,
-                 parent, root_node,
-                 root: bool = False,
-                 move: Move = False):
+    """
+    Class for the MCTS tree and nodes of the mcts tree.
+    """
+    def __init__(self,
+                 state: Chessboard,
+                 p: float = 1,
+                 parent = None,
+                 move: Move = False,
+                 model: Model = None):
 
         # general tree variables
-        self.root_node: Node = root_node
         self.parent: Node = parent
         self.children: list[Node] = []
-        self.root: bool = root
-        self.leaf: bool = True
-        self.terminal: bool = False
         # node specific variables
-        self.state:  Chessboard = state
+        self.state: Chessboard = state
         self.move: Move = move
-        self.player: Color = player
         self.v = 0
+        self.p: float = p
         self.visits: int = 0
         self.value: float = 0
-        self.p: float = p
-        # if the node is terminal, the end state determines which player won or lost or if it's a draw
-        self.end_state = None
+        # network
+        self.model = model
 
-    def ucb(self, inverted: bool):
-        if self.parent is not None:
-            if not inverted:
-                return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
-                        + (self.value / self.visits if self.visits > 0 else 0))
+        self.time_predicted = 0
 
-            if inverted:
-                return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
-                        + ((1 - self.value) / self.visits if self.visits > 0 else 0))
+    def ucb(self):
+        """
+        Calculates UCB of self
+
+        :return: UCB:float
+        """
+        return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
+                + (self.value / self.visits if self.visits > 0 else 0))
 
     def __str__(self):
         """Method to return a node as a string.
@@ -49,6 +69,122 @@ class Node:
         string_buffer = []
         self.print_tree(string_buffer, "", "")
         return "".join(string_buffer)
+    
+    def run(self, iterations:int=tree_iterations):
+        """
+        Method to run the MCTS search continually for the remaining iterations
+
+        :param iterations: Number of iterations to run the tree, given by tree_iterations in config.py by default
+        :return: None
+        """
+        for _ in range(iterations-self.visits):
+            self.mcts()
+
+
+    def mcts(self):
+        node = self.select()
+        v = node.expand()
+        node.backpropagate(1-v)
+
+    def select(self):
+        """
+        Finds a leaf node and returns it.
+
+        :return: Node, leaf node of tree following selection by UCB
+        """
+        if self.children:
+            node = max(self.children, key=lambda n: n.ucb())
+            self.state.move(node.move)
+            return node.select()
+        else:
+            return self
+        
+    def expand(self):
+        """
+        Performs an expansion on a leaf node, returning v of the node by the network
+        and adding children to it
+
+        :return: Value: float of the node expanded, as given by the network model
+        """
+        status = self.state.get_game_status()
+        if status == 2:
+            return 0.5
+        elif status == 0 or status == 1:
+            return 1
+        else:
+            if self.model:
+                p_vector, v = self.possible_moves()
+                for (move, p) in p_vector:
+                    self.children.append(
+                        Node(
+                            state=self.state,
+                            move=move,
+                            p=p,
+                            parent=self,
+                            model=self.model
+                        )
+                    )
+                return v
+            else:
+                moves = self.state.get_moves()
+                for m in moves:
+                    self.children.append(
+                        Node(
+                            state=self.state,
+                            move=m,
+                            p=1,
+                            parent=self,
+                            model=self.model
+                        )
+                    )
+                return 0.5
+        
+    def backpropagate(self, v: float):
+        """
+        Method that backpropagates the value v from the current node.
+
+        :param v: Float, the value to backpropagate up the tree, v ranges from 0 to 1 (sigmoid)
+        :return: None
+        """
+
+        self.value += v
+        self.visits += 1
+        # if we aren't at root node, backpropagate
+        if self.parent != None:
+            # invert v value to because of color change before backpropagating
+            self.state.unmove()
+            self.parent.backpropagate(1-v)
+
+    def possible_moves(self):
+        """Calculates all possible moves for a given chessboard using the neural network, and returns
+           it as a list of tuples.
+
+        :param state: Chessboard, the input state to calculate moves from
+        :return: (list[Chessboard, Move, float], float), returns a list of new chessboards, the move
+                 that was taken to get there and the float value P for that new state. In addition to this,
+                 it also returns another float which is the value V from the neural network for the input state.
+        """
+        input_repr = self.state.translate_board()
+        moves = self.state.get_moves()
+
+        predict_start = time.time()
+        p, v = self.model.predict(input_repr, verbose=None)
+        predict_end = time.time()
+        self.time_predicted += (predict_end-predict_start)
+        v = v[0][0]
+        p_array = p.reshape(output_representation)
+        return_list = []
+
+        p_sum = 0
+        for move in moves:
+            p_val = fetch_p_from_move(move, p_array)
+            p_sum += p_val
+            return_list.append((move, p_val))
+
+        # normalize the P values in the return list
+        return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
+
+        return return_list, v
 
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
         """Method that will iterate through the nodes and append strings onto the string_buffer list.
@@ -63,14 +199,16 @@ class Node:
             string_buffer.append(prefix)
             p = round(self.p, 10)
             val = round(self.value, 10)
-            # v = round(self.v, 10)
             visits = self.visits
-            if visits != 0:
-                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{val/visits}|u:{self.ucb(False)}|move:{self.move})'
-            else:
-                info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb(False)}|move:{self.move})'
-            string_buffer.append(info_text)
-            string_buffer.append('\n')
+            # v = round(self.v, 10)
+            if self.parent:
+                if visits != 0:
+                    wr = round(val/visits, 10)
+                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
+                else:
+                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
+                string_buffer.append(info_text)
+                string_buffer.append('\n')
 
             for i in range(0, len(self.children)):
                 if i == len(self.children)-1:
@@ -93,73 +231,26 @@ class Node:
         self.print_tree(string_buffer, "", "", depth)
         print("".join(string_buffer))
 
-    def expand(self, new_states: list[(Chessboard, Move, float)], v: float):
+    def update_tree(self, move:Move):
         """
-        Performs an expansion on a leaf node, assigning v to the leaf node
-        and adding children to it
+        Updates the tree based on a certain move (moves down the tree one level),
+        returns new root node and sets parent of that node to None
 
-        :param new_states: list[(Chessboard, Move, float)], list of new states/children
-        :param v: float, Neural Network value for this leaf node, indicating how good the network
-        thinks the node is.
-
-        :return: None
+        :param move: Move that is being performed
+        :return: New root node
         """
-
-        self.leaf = False
-        self.v = v
-        if self.player == Color.WHITE:
-            next_player = Color.BLACK
-        else:
-            next_player = Color.WHITE
-
-        for (state, move, p) in new_states:
-            self.children.append(
-                Node(
-                    state=state,
-                    move=move,
-                    p=p,
-                    parent=self,
-                    player=next_player,
-                    root_node=self.root_node
-                )
-            )
-        # if the expansion failed to find any viable children
-        if len(self.children) == 0:
-            self.terminal = True
-
-        # if we are expanding the root node for the first time, we add noise to the children
-        if self.root:
-            self.add_noise()
-
-        self.backpropagate(self, v, self.player)
-
-    def backpropagate(self, node, v: float, player: Color):
-        """
-        Method that backpropagates the value v for the current node.
-
-        :param node: Node class, the current node to backpropagate from
-        :param v: Float, the value to backpropagate up the tree, v ranges from 0 to 1 (sigmoid)
-        :param player: Player, the player to backpropagate the value v for
-        :return: None
-        """
-        # if we aren't at the root node yet
-        if node.parent is not None:
-            # if the actor performing the action with result v is the same as the root node
-            # then we increase the value for the node by v
-            if node.parent.player == player:
-                node.value += v
-            # if the actor performing the action with result v is the opposite of the root node
-            # then increase the value by (1-v) to get the opposition's value
-            else:
-                node.value += (1-v)
-            self.backpropagate(node.parent, v, player)
-
-            node.visits += 1
-        # if there isnt a parent to the current node, we have reached the root node
-        else:
-            node.value += v
-            node.visits += 1
-
+        # select the child that will become the new root node
+        child = self.select_child(move)
+        # resetting the time
+        self.time_predicted = 0
+        # adds noise to child
+        #child.add_noise()
+        # moves the state
+        self.state.move(child.move)
+        # sets parent of child to None, aka sets child as root
+        child.parent = None
+        # returns child as new root
+        return child
 
     def add_noise(self, dir_a=0.03, frac=0.25):
         """Adds dirichlet noise to all the p values for the children of the current node
@@ -181,3 +272,4 @@ class Node:
         for child in self.children:
             if child.move == move:
                 return child
+        raise RuntimeError("Child as Move: %s not found." % str(move))

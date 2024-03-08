@@ -237,6 +237,8 @@ class Move():
         # str function for moves
         return str(move_to_algebraic(self))
                #+ "src: " + str(self.src_index) + ", dst: " + str(self.dst_index) + ", pro: " + str(self.promotion_type) + ", take: " + str(self.is_take)
+    def __eq__(self, move):
+        return self.src_index == move.src_index and self.dst_index == move.dst_index and self.promotion_type == move.promotion_type
 
 
 def move_to_algebraic(move):
@@ -256,6 +258,53 @@ def move_to_algebraic(move):
     dst_col = cols[int(dst%8)]
 
     return src_col + src_row + dst_col + dst_row
+
+def algebraic_to_move(s):
+    """Takes an algebraic representation string s and returns the move representation for this string
+
+    :param s: String
+    :return: Class Move
+    """
+    s = list(s.lower())
+    fst_c = ''
+    fst_d = 0
+    snd_c = ''
+    snd_d = 0
+    counter = 0
+    for character in s:
+        if counter == 4:
+            break
+        if counter == 0 and character.isalpha():
+            fst_c = str(character)
+        if counter == 1 and character.isdigit():
+            fst_d = int(character)
+        if counter == 2 and character.isalpha():
+            snd_c = str(character)
+        if counter == 3 and character.isdigit():
+            snd_d = int(character)
+        counter +=1
+    cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+
+    # default values in the case that the input is wrong and the characters arent valid
+    if fst_c not in cols:
+        src_col = 1
+    if snd_c not in cols:
+        dst_col = 1
+    if fst_d > 8:
+        fst_d = 0
+    if snd_d > 8:
+        snd_d = 0
+
+    # convert letters to integers
+    for i, c in enumerate(cols):
+        if fst_c == c:
+            src_col = i + 1
+        if snd_c == c:
+            dst_col = i + 1
+
+    src_index = np.uint8(-src_col + 8 * fst_d)
+    dst_index = np.uint8(-dst_col + 8 * snd_d)
+    return Move(src_index, dst_index)
 
 def calc_move(source: int, destination: int, promotion_piece: Piece):
     # function to calculate what type of move it is based on the source and destination indexes
@@ -1157,52 +1206,3 @@ def print_byte(byte:u8):
             print("0", end="")
         i >>= u8(1)
     print()
-
-
-def algebraic_to_bitboard(s):
-    """Takes an algebraic representation string s and returns the move representation for this string
-
-    :param s: String
-    :return: Class Move
-    """
-    s = list(s.lower())
-    fst_c = ''
-    fst_d = 0
-    snd_c = ''
-    snd_d = 0
-    counter = 0
-    for character in s:
-        if counter == 4:
-            break
-        if counter == 0 and character.isalpha():
-            fst_c = str(character)
-        if counter == 1 and character.isdigit():
-            fst_d = int(character)
-        if counter == 2 and character.isalpha():
-            snd_c = str(character)
-        if counter == 3 and character.isdigit():
-            snd_d = int(character)
-        counter +=1
-    cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-
-    # default values in the case that the input is wrong and the characters arent valid
-    if fst_c not in cols:
-        src_col = 1
-    if snd_c not in cols:
-        dst_col = 1
-    if fst_d > 8:
-        fst_d = 0
-    if snd_d > 8:
-        snd_d = 0
-
-    # convert letters to integers
-    for i, c in enumerate(cols):
-        if fst_c == c:
-            src_col = i + 1
-        if snd_c == c:
-            dst_col = i + 1
-
-    src_index = np.uint8(-src_col + 8 * fst_d)
-    dst_index = np.uint8(-dst_col + 8 * snd_d)
-    print(src_index, dst_index)
-    return Move(src_index, dst_index)

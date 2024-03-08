@@ -12,17 +12,13 @@ class TrainingGame:
     A class representing one game of antichess
     """
 
-    def __init__(self, initial_state: Chessboard, white_model: Model, black_model: Model = None):
+    def __init__(self, initial_state: Chessboard, model: Model):
         self.current_state = deepcopy(initial_state)
         self.game_over = False
         self.game_history = []
         self.swap = False
 
-        if black_model is None:
-            black_model = white_model
-
-        self.white = Player(deepcopy(initial_state), white_model, Color.WHITE)
-        self.black = Player(deepcopy(initial_state), black_model, Color.BLACK)
+        self.player = Player(self.current_state, model)
 
     def game_ended(self):
         """Checks the status of the current Game
@@ -32,7 +28,7 @@ class TrainingGame:
 
         return self.current_state.get_game_status() != 3
 
-    def make_move(self, player: Color):
+    def make_move(self):
         """Method that performs a single move for a player, depending on which player it is
         it will perform the move by either using the p1_tree or the p2_tree. The game history is shared
         between the 2 players.
@@ -41,17 +37,14 @@ class TrainingGame:
         :return: Float, time that the tree spent predicting.
         """
 
-        current_player = self.white if (player == Color.WHITE) else self.black
-        next_move = current_player.get_next_move()
+        next_move = self.player.get_next_move()
 
-        self.current_state.move(next_move)
 
-        self.white.update_tree(next_move, self.current_state)
-        self.black.update_tree(next_move, self.current_state)
+        self.player.update_tree(next_move)
 
-        print(f'player: {player}', next_move)
+        print(f'player: {self.current_state.player_to_move}', next_move)
 
-        return current_player.get_time_predicted()
+        return self.player.get_time_predicted()
 
     def run(self):
         """Plays through a game until the game ends, performing moves between both players
@@ -65,7 +58,7 @@ class TrainingGame:
         while not self.game_ended():
             print(self.current_state)
             print('player: ', self.current_state.player_to_move)
-            time_predicted = self.make_move(player=self.current_state.player_to_move)
+            time_predicted = self.make_move()
             predict_time += time_predicted
 
         end_time = time.time()
@@ -83,7 +76,7 @@ class TrainingGame:
             winner = 'draw'
             print('             draw')
         print('===============================')
-        print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / total_time * 100}')
+        print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
 
         return winner
 
@@ -98,15 +91,15 @@ class TrainingGame:
             winner = 'draw'
 
         finalized_history = []
-        for (state, mcts, player) in (self.white.history + self.black.history):
+        for (state, mcts) in (self.player.history):
             # if nobody won and it's a draw
             if winner == 'draw':
                 finalized_history.append((state.translate_board(), translate_moves_to_output(mcts), 0.5))
             # if winning player
-            elif winner == player:
+            elif winner == state.player_to_move:
                 finalized_history.append((state.translate_board(), translate_moves_to_output(mcts), 1))
             # if losing player
-            elif winner is not player:
+            elif winner is not state.player_to_move:
                 finalized_history.append((state.translate_board(), translate_moves_to_output(mcts), 0))
 
         return finalized_history
