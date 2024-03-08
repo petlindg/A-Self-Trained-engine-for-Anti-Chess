@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 from chess import Chessboard, Move, Color
-from config import exploration_constant
+from config import exploration_constant, evaluation_method
 
 from math import sqrt
 import chess
@@ -127,12 +127,17 @@ class Node:
                 return v
             else:
                 moves = self.state.get_moves()
-                for m in moves:
+                if evaluation_method == 'dirichlet':
+                    p_vals = np.random.dirichlet([1]*(len(moves)))
+                else:
+                    p_vals = [1]*(len(moves))
+
+                for p, m in zip(p_vals, moves):
                     self.children.append(
                         Node(
                             state=self.state,
                             move=m,
-                            p=1,
+                            p=p,
                             parent=self,
                             model=self.model
                         )
