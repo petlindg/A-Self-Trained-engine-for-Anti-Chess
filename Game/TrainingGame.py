@@ -12,7 +12,7 @@ class TrainingGame:
     A class representing one game of antichess
     """
 
-    def __init__(self, initial_state: Chessboard, model: Model):
+    def __init__(self, initial_state: Chessboard, model: Model = None):
         self.current_state = deepcopy(initial_state)
         self.game_over = False
         self.game_history = []
