@@ -6,6 +6,8 @@ from chess import Chessboard, Color
 from Game.Player import Player
 from keras.models import Model
 
+from config import verbosity
+
 
 class TrainingGame:
     """
@@ -42,7 +44,8 @@ class TrainingGame:
 
         self.player.update_tree(next_move)
 
-        print(f'player: {self.current_state.player_to_move}', next_move)
+        if verbosity != 0:
+            print(f'player: {self.current_state.player_to_move}', next_move)
 
         return self.player.get_time_predicted()
 
@@ -56,8 +59,9 @@ class TrainingGame:
         predict_time = 0
 
         while not self.game_ended():
-            print(self.current_state)
-            print('player: ', self.current_state.player_to_move)
+            if verbosity != 0:
+                print(self.current_state)
+                print('player: ', self.current_state.player_to_move)
             time_predicted = self.make_move()
             predict_time += time_predicted
 
