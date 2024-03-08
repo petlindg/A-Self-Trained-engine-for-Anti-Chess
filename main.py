@@ -16,10 +16,21 @@ def run_training():
     training = Training(chessboard, model)
     training.train()
 
+def train_file():
+    model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
+    model = model_config.build_nn()
+    try:
+        pass
+        #model.load_weights(checkpoint_path)
+    except:
+        pass
+    chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
+    training = Training(chessboard, model)
+    training.train_from_file('Game/trainingdata.bz2')
 
 def main():
     run_training()
-
+    #train_file()
 
 if __name__ == '__main__':
     main()
