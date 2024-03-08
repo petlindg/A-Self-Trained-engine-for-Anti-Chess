@@ -6,6 +6,8 @@ from keras.optimizers import Adam
 from keras.layers import Add
 from tensorflow.python.keras.engine.keras_tensor import KerasTensor
 
+import config
+
 # NEURAL NETWORK INPUTS 
 # 12 planes for the pieces (2 players of 6 pieces)
 # 2 planes for repetition
@@ -39,11 +41,11 @@ OUTPUT_SHAPE = (8 * 8 * total_planes, 1)
 
 # NEURAL NETWORK PARAMETERS
 
-LEARNING_RATE = 0.2
+LEARNING_RATE = config.learning_rate
 # filters for the convolutional layers
 CONVOLUTION_FILTERS = 256
 # amount of hidden residual layers according to the alpha zero paper
-RESIDUAL_BLOCKS = 19
+RESIDUAL_BLOCKS = 4
 
 
 class NeuralNetwork:
