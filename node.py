@@ -1,3 +1,4 @@
+import random
 from math import sqrt
 
 import numpy as np
@@ -130,7 +131,7 @@ class Node:
                 if evaluation_method == 'dirichlet':
                     p_vals = np.random.dirichlet([1]*(len(moves)))
                 else:
-                    p_vals = [1]*(len(moves))
+                    p_vals = [1/len(moves)]*(len(moves))
 
                 for p, m in zip(p_vals, moves):
                     self.children.append(
@@ -142,7 +143,7 @@ class Node:
                             model=self.model
                         )
                     )
-                return 0.5
+                return random.random()
         
     def backpropagate(self, v: float):
         """
