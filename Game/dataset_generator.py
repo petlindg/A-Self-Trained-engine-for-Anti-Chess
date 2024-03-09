@@ -7,7 +7,7 @@ import pickle
 import bz2
 from state_generator import generate_random_state
 
-sys.path.append('../..')
+sys.path.append('../')
 
 def run_once(original_fen, random_state=False):
     data = []
