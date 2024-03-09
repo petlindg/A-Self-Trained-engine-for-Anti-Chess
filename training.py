@@ -1,3 +1,5 @@
+import bz2
+import pickle
 from collections import deque
 
 import numpy as np
@@ -33,11 +35,29 @@ class Training:
                 self.buffer.append(game.get_history())
                 game_counter += 1
             print("Training iteration: " + str(t_counter))
-            self.fit_data()
+            self.fit_data(self.buffer)
             t_counter += 1
             self.model.save_weights(checkpoint_path)
 
-    def fit_data(self):
+    def train_from_file(self, filename):
+        """Method that performs model fitting based on a compressed pickle file
+
+        :param filename: String, path to the bz2 pickle file.
+        :return: None
+        """
+        data = None
+        try:
+            with bz2.BZ2File(filename, 'r') as f:
+                data = pickle.load(f)
+        except Exception as e:
+            print(e)
+        if data is not None:
+            self.fit_data(data)
+            self.model.save_weights(checkpoint_path)
+
+
+
+    def fit_data(self, buffer):
         """Method that uses  the data stored in the buffer to fit the model
            and also evaluates the model, using a train test split.
 
@@ -46,12 +66,12 @@ class Training:
         list_states = []
         list_outputs = []
         # flattening out the buffer of games into the input and output data lists
-        for game in self.buffer:
+        for game in buffer:
             for (state, dist, v) in game:
                 list_states.append(state[0])
                 list_outputs.append((np.array(dist).flatten(), v))
 
-        print(len(self.buffer))
+        print(len(buffer))
 
         # split the training and testing data up, making sure to shuffle the data
         X_train, X_test, y_train, y_test = train_test_split(list_states, list_outputs, shuffle=True)
