@@ -1,6 +1,7 @@
 import time
 from copy import deepcopy
 
+import config
 from Game.Utils import translate_moves_to_output
 from chess import Chessboard, Color
 from Game.Player import Player
@@ -69,18 +70,23 @@ class TrainingGame:
         total_time = end_time - start_time
         status = self.current_state.get_game_status()
 
-        print('===============================')
+        if config.verbosity != 0:
+            print('===============================')
         if status == 0:
-            print('           white wins')
+            if config.verbosity != 0:
+                print('           white wins')
             winner = Color.WHITE
         elif status == 1:
             winner = Color.BLACK
-            print('           black wins')
+            if config.verbosity != 0:
+                print('           black wins')
         else:
             winner = 'draw'
-            print('             draw')
-        print('===============================')
-        print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
+            if config.verbosity != 0:
+                print('             draw')
+        if config.verbosity != 0:
+            print('===============================')
+            print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
 
         return winner
 
