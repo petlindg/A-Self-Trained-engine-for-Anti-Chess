@@ -17,7 +17,8 @@ def run_once(original_fen, random_state=False):
     except Exception as e:
         print(e)
 
-    for i in range(0, 100):
+    counter = 0
+    while counter < 10:
         if random_state:
             fen_str = generate_random_state(config.piece_list)
         else:
@@ -25,8 +26,11 @@ def run_once(original_fen, random_state=False):
         state = Chessboard(fen_str)
         game = TrainingGame(initial_state=state,
                             model=None)
-        game.run()
-        data.append(game.get_history())
+        result = game.run()
+        if result != 'draw':
+            data.append(game.get_history())
+            counter += 1
+            print(result)
 
     with bz2.BZ2File('trainingdata.bz2', 'w') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
