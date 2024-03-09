@@ -4,11 +4,11 @@ Global configuration values for the program
 ===========================================
 '''
 from chess import Color, Piece
-
+from math import sqrt
 'constant defining exploration vs exploitation of the tree'
-exploration_constant: float = 4
+exploration_constant: float = sqrt(2)
 'constant defining how many iterations per tree will be performed'
-tree_iterations: int = 800
+tree_iterations: int = 200
 
 'output dimensions for the neural network'
 output_representation = (1,1,8,8,76)
@@ -31,7 +31,7 @@ batch_size = 16
 'Learning rate for the network'
 learning_rate = 0.2
 'verbosity of the training process (how much terminal output is displayed)'
-verbosity = 0
+verbosity = 1
 
 checkpoint_path = "checkpoints/checkpoint.ckpt"
 
