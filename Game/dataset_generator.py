@@ -1,5 +1,5 @@
 import time
-
+import sys
 import config
 from TrainingGame import TrainingGame
 from chess import Chessboard, Color
@@ -7,6 +7,7 @@ import pickle
 import bz2
 from state_generator import generate_random_state
 
+sys.path.append('..')
 
 def run_once(original_fen, random_state=False):
     data = []
