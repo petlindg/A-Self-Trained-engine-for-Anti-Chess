@@ -31,7 +31,7 @@ batch_size = 16
 'Learning rate for the network'
 learning_rate = 0.2
 'verbosity of the training process (how much terminal output is displayed)'
-verbosity = 0
+verbosity = 1
 
 checkpoint_path = "checkpoints/checkpoint.ckpt"
 
