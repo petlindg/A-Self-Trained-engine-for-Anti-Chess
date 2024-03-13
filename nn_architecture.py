@@ -45,7 +45,7 @@ LEARNING_RATE = config.learning_rate
 # filters for the convolutional layers
 CONVOLUTION_FILTERS = 256
 # amount of hidden residual layers according to the alpha zero paper
-RESIDUAL_BLOCKS = 4
+RESIDUAL_BLOCKS = 1
 
 
 class NeuralNetwork:
