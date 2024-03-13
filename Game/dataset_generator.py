@@ -29,7 +29,7 @@ def run_once(original_fen, random_state=False):
         game = TrainingGame(initial_state=state,
                             model=None)
         result = game.run()
-        if result != Color.WHITE:
+        if result == Color.WHITE:
             data.append(game.get_history())
             counter += 1
             print(result)
