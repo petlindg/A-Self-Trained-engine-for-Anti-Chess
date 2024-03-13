@@ -51,5 +51,5 @@ def read_data():
         print(len(data))
 
 if __name__ == '__main__':
-    read_data()
-    #main()
+    #read_data()
+    main()
