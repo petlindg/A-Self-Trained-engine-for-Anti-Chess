@@ -46,10 +46,10 @@ def main():
 
 
 def read_data():
-
-    with open('trainingdata.pkl', 'rb') as inp:
-        data = pickle.load(inp)
-        print(data)
+    with bz2.BZ2File('trainingdata.bz2', 'r') as f:
+        data = pickle.load(f)
+        print(len(data))
 
 if __name__ == '__main__':
-    main()
+    read_data()
+    #main()
