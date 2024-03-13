@@ -20,7 +20,7 @@ def run_once(original_fen, random_state=False):
         print(e)
 
     counter = 0
-    while counter < 10:
+    while counter < 1:
         if random_state:
             fen_str = generate_random_state(config.piece_list)
         else:
@@ -41,8 +41,8 @@ def run_once(original_fen, random_state=False):
 
 def main():
 
-    while True:
-        run_once("k7/8/8/8/8/8/8/7R w - 0 1")
+
+    run_once("k7/8/8/8/8/8/8/7R w - 0 1")
 
 
 def read_data():
