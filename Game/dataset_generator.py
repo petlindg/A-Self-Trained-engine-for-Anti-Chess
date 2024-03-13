@@ -48,9 +48,10 @@ def main():
 def read_data():
     with bz2.BZ2File('trainingdata.bz2', 'r') as f:
         data = pickle.load(f)
-        for (state, mcts, v) in data:
-            print(state)
-            print(v)
+        for game in data:
+            for (state, mcts, v) in game:
+                print(state)
+                print(v)
 
 if __name__ == '__main__':
     read_data()
