@@ -23,7 +23,7 @@ training_iterations = 500
 games_per_iteration = 1
 
 'epochs during the training process'
-epochs = 30
+epochs = 1000
 
 'batch size for the training process'
 batch_size = 16
