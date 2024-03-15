@@ -40,3 +40,6 @@ checkpoint_path = "checkpoints/checkpoint.ckpt"
 evaluation_method = 'dirichlet'
 
 piece_list = [(Color.BLACK, Piece.KING), (Color.WHITE, Piece.ROOK)]
+
+'location to save training data'
+TRAINING_DATA_PATH = "trainingData/"

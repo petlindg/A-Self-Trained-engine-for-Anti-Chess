@@ -115,35 +115,21 @@ class Node:
         else:
             if self.model:
                 p_vector, v = self.possible_moves()
-                for (move, p) in p_vector:
-                    self.children.append(
-                        Node(
-                            state=self.state,
-                            move=move,
-                            p=p,
-                            parent=self,
-                            model=self.model
-                        )
-                    )
-                return v
             else:
                 moves = self.state.get_moves()
-                if evaluation_method == 'dirichlet':
-                    p_vals = np.random.dirichlet([1]*(len(moves)))
-                else:
-                    p_vals = [1/len(moves)]*(len(moves))
-
-                for p, m in zip(p_vals, moves):
-                    self.children.append(
-                        Node(
-                            state=self.state,
-                            move=m,
-                            p=p,
-                            parent=self,
-                            model=self.model
-                        )
+                p_vector = [(move, 1) for move in moves]
+                v = 0.5
+            for (move, p) in p_vector:
+                self.children.append(
+                    Node(
+                        state=self.state,
+                        move=move,
+                        p=p,
+                        parent=self,
+                        model=self.model
                     )
-                return random.random()
+                )
+            return v
         
     def backpropagate(self, v: float):
         """
