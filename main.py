@@ -26,11 +26,11 @@ def train_file():
         pass
     chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     training = Training(chessboard, model)
-    training.train_from_file('Game/trainingdata.bz2')
+    training.train_from_file('trainingdata.bz2')
 
 def main():
-    run_training()
-    #train_file()
+    #run_training()
+    train_file()
 
 if __name__ == '__main__':
     main()

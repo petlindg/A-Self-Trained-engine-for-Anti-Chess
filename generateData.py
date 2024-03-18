@@ -66,10 +66,12 @@ def generate_training_data(fen:Chessboard,
             value = 0
         else:
             value = 0.5
-        data.append((state.translate_board(), translate_moves_to_output(p_list), value)) # 0 here instead of Node, should reconsider get_history from Game
+        training_data.append((state.translate_board(), translate_moves_to_output(p_list), value)) # 0 here instead of Node, should reconsider get_history from Game
         print(state)
         for (p, move) in p_list:
             print(p, move)
+        
+        data = [training_data]
 
     with bz2.BZ2File('trainingdata.bz2', 'w') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
