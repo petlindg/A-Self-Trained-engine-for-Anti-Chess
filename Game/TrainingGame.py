@@ -5,6 +5,8 @@ from Game.Utils import translate_moves_to_output
 from chess import Chessboard, Color
 from Game.Player import Player
 from keras.models import Model
+from logger import Logger
+
 
 
 class TrainingGame:
@@ -13,6 +15,7 @@ class TrainingGame:
     """
 
     def __init__(self, initial_state: Chessboard, model: Model):
+        self.logger = Logger("TrainingGame")
         self.current_state = deepcopy(initial_state)
         self.game_over = False
         self.game_history = []
@@ -25,7 +28,6 @@ class TrainingGame:
 
         :return: bool, true if the game has ended, otherwise false
         """
-
         return self.current_state.get_game_status() != 3
 
     def make_move(self):
@@ -41,9 +43,9 @@ class TrainingGame:
 
 
         self.player.update_tree(next_move)
-
-        print(f'player: {self.current_state.player_to_move}', next_move)
-
+        self.logger.info(f"Player {self.current_state.player_to_move} makes move {next_move}")
+        
+        
         return self.player.get_time_predicted()
 
     def run(self):
@@ -51,11 +53,13 @@ class TrainingGame:
 
         :return: list[Chessboard, MCTS_distribution, value], the training data generated from the game
         """
-
+        self.logger.info("Game start")
         start_time = time.time()
         predict_time = 0
 
         while not self.game_ended():
+            self.logger.info(str(self.current_state))
+            self.logger.info(f'player: {self.current_state.player_to_move}')
             print(self.current_state)
             print('player: ', self.current_state.player_to_move)
             time_predicted = self.make_move()
@@ -67,13 +71,16 @@ class TrainingGame:
 
         print('===============================')
         if status == 0:
+            self.logger.info("White wins")
             print('           white wins')
             winner = Color.WHITE
         elif status == 1:
             winner = Color.BLACK
+            self.logger.info("Black wins")
             print('           black wins')
         else:
             winner = 'draw'
+            self.logger.info("draw")
             print('             draw')
         print('===============================')
         print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
