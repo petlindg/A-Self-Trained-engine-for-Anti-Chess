@@ -41,7 +41,7 @@ def main():
     try:
         model.load_weights(checkpoint_path)
     except:
-        pass
+        raise RuntimeError("No existing weights for model.")
     moves_alg = "h1c1 a8a7 c1c5 a7a8 c5c6 a8b8 c6c7 b8c7"
     moves = [algebraic_to_move(move_alg) for move_alg in moves_alg.split()]
     chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")

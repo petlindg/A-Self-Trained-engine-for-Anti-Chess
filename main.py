@@ -20,9 +20,10 @@ def train_file():
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
     try:
-        #pass
+        print("Training from existing weights...")
         model.load_weights(checkpoint_path)
     except:
+        print("Training with new weights...")
         pass
     chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     training = Training(chessboard, model)
