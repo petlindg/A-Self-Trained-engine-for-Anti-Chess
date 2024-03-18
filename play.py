@@ -39,6 +39,7 @@ def main():
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
     try:
+        print("Loading existing weights...")
         model.load_weights(checkpoint_path)
     except:
         raise RuntimeError("No existing weights for model.")

@@ -45,8 +45,8 @@ def generate_training_data(fen:Chessboard,
 
     while moves:
         tree.run(iterations)
-        p_list = [c.visits/tree.visits for c in tree.children]
-        game_history.append((deepcopy(state), (zip(p_list, tree.state.get_moves()))))
+        p_list = [(c.visits/tree.visits, c.move) for c in tree.children]
+        game_history.append((deepcopy(state), p_list))
         tree = tree.update_tree(moves.pop(0))
 
     status = tree.state.get_game_status()
@@ -71,7 +71,7 @@ def generate_training_data(fen:Chessboard,
         for (p, move) in p_list:
             print(p, move)
         
-        data = [training_data]
+    data = [training_data]
 
     with bz2.BZ2File('trainingdata.bz2', 'w') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
