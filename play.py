@@ -47,7 +47,9 @@ def main():
     moves = [algebraic_to_move(move_alg) for move_alg in moves_alg.split()]
     chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     for move in moves:
-        print_eval(possible_moves(chessboard, model))
+        print(chessboard)
+        p_list, v = possible_moves(chessboard, model)
+        print_eval(p_list, v)
         chessboard.move(move)
 
 

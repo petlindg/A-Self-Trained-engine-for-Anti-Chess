@@ -68,6 +68,7 @@ def generate_training_data(fen:Chessboard,
             value = 0.5
         training_data.append((state.translate_board(), translate_moves_to_output(p_list), value)) # 0 here instead of Node, should reconsider get_history from Game
         print(state)
+        print(f"v: {value}")
         for (p, move) in p_list:
             print(p, move)
         
