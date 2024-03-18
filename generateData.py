@@ -71,6 +71,11 @@ def generate_training_data(fen:Chessboard,
         print(f"v: {value}")
         for (p, move) in p_list:
             print(p, move)
+        print(f"player_to_move: {state.player_to_move}")
+        print(f"not_player_to_move{state.not_player_to_move}")
+        print(f"enpassante:{state.enpassante}")
+        print(f"repetitions_list:{state.repetitions_list}")
+        print(f"no_progress_counter:{state.no_progress_counter}")
         
     data = [training_data]
 

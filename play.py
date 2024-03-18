@@ -50,6 +50,11 @@ def main():
         print(chessboard)
         p_list, v = possible_moves(chessboard, model)
         print_eval(p_list, v)
+        print(f"player_to_move: {chessboard.player_to_move}")
+        print(f"not_player_to_move{chessboard.not_player_to_move}")
+        print(f"enpassante:{chessboard.enpassante}")
+        print(f"repetitions_list:{chessboard.repetitions_list}")
+        print(f"no_progress_counter:{chessboard.no_progress_counter}")
         chessboard.move(move)
 
 
