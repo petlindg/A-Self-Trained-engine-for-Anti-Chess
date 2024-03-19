@@ -573,6 +573,10 @@ class Chessboard():
         :return: True if game is drawed after move is executed, False otherwise
         """
 
+        # update piececount for _update_no_progress()
+        self.piece_count = self._get_piece_count()
+        self.pawns = self._get_pawns()
+
         self._update_repetitions()
         self._update_bitboards(move)
         self._update_no_progress()
