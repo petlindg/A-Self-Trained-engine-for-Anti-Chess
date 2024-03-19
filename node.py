@@ -131,8 +131,10 @@ class Node:
                 moves = self.state.get_moves()
                 if evaluation_method == 'dirichlet':
                     p_vals = np.random.dirichlet([1]*(len(moves)))
+                    return_v = random.random()
                 else:
                     p_vals = [1/len(moves)]*(len(moves))
+                    return_v = 0.5
 
                 for p, m in zip(p_vals, moves):
                     self.children.append(
@@ -144,7 +146,7 @@ class Node:
                             model=self.model
                         )
                     )
-                return random.random(), False
+                return return_v, False
         
     def backpropagate(self, v: float, end_state: bool):
         """
