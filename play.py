@@ -28,7 +28,7 @@ def possible_moves(state:Chessboard, model):
     # normalize the P values in the return list
     return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
 
-    return return_list, v
+    return return_list, v, p_sum-1
 
 def print_eval(return_list, v):
     print(f"v: {v}")
@@ -48,10 +48,11 @@ def main():
     chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     for move in moves:
         print(chessboard)
-        p_list, v = possible_moves(chessboard, model)
+        p_list, v, p_ill= possible_moves(chessboard, model)
         print_eval(p_list, v)
-        print(f"player_to_move: {chessboard.player_to_move}")
-        print(f"not_player_to_move{chessboard.not_player_to_move}")
+        print(f"p_ill:{p_ill}")
+        print(f"player_to_move:{chessboard.player_to_move}")
+        print(f"not_player_to_move:{chessboard.not_player_to_move}")
         print(f"enpassante:{chessboard.enpassante}")
         print(f"repetitions_list:{chessboard.repetitions_list}")
         print(f"no_progress_counter:{chessboard.no_progress_counter}")
