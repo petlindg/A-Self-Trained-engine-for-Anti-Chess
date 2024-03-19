@@ -115,6 +115,7 @@ class Node:
         else:
             if self.model:
                 p_vector, v = self.possible_moves()
+                #print(v)
             else:
                 moves = self.state.get_moves()
                 p_vector = [(move, 1) for move in moves]

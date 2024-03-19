@@ -29,6 +29,13 @@ class Player:
     def get_next_move(self):
 
         self.run_mcts()
+        print(self.mcts.v)
+
+        list_p = []
+        for child in self.mcts.children:
+            list_p.append(child.p)
+        print(list_p)
+
         if verbosity != 0:
             self.mcts.print_selectively(2)
 
