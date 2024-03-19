@@ -28,7 +28,7 @@ def possible_moves(state:Chessboard, model):
     # normalize the P values in the return list
     return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
 
-    return return_list, v, p_sum-1
+    return return_list, v, 1-p_sum
 
 def print_eval(return_list, v):
     print(f"v: {v}")
