@@ -2,18 +2,29 @@ import pickle
 from keras.callbacks import History
 import matplotlib.pyplot as plt
 
-class TrainingPlot:
 
+class TrainingPlot:
+    '''
+    Class containing functionality to collect and plot training metrics
+    '''
     data = [[],[]]
 
     def load_data(self):
-        with open("Stats/training_metrics.p", "rb") as f:
-            while True:
-                try:
-                    model: History = pickle.load(f)
-                    self.process_loaded_data(model)
-                except EOFError:
-                    break
+        '''
+        Takes a pickle file from specific directory and unpickles/loads the data into the class.
+
+        :return: None
+        '''
+        try:
+            with open("Stats/training_metrics.p", "rb") as f:
+                while True:
+                    try:
+                        model: History = pickle.load(f)
+                        self.process_loaded_data(model)
+                    except EOFError:
+                        break
+        except FileNotFoundError:
+            print("Training metrics data has not been saved yet")
     
 
     def store_pickled_data(model: History):
