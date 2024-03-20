@@ -20,10 +20,10 @@ max_buffer_size = 100
 training_iterations = 500
 
 'total number of games that are performed per training iteration'
-games_per_iteration = 1
+games_per_iteration = 20
 
 'epochs during the training process'
-epochs = 50000
+epochs = 10
 
 'batch size for the training process'
 batch_size = 16
@@ -40,3 +40,5 @@ checkpoint_path = "checkpoints/checkpoint.ckpt"
 evaluation_method = 'dirichlet'
 
 piece_list = [(Color.BLACK, Piece.KING), (Color.WHITE, Piece.ROOK)]
+
+RESIDUAL_BLOCKS = 19

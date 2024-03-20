@@ -45,16 +45,20 @@ class Training:
         :param filename: String, path to the bz2 pickle file.
         :return: None
         """
-        data = None
-        try:
-            with bz2.BZ2File(filename, 'r') as f:
-                data = pickle.load(f)
-        except Exception as e:
-            print(e)
-        if data is not None:
-            self.fit_data(data)
-            self.model.save_weights(checkpoint_path)
-
+        counter = 0
+        # 19 loops so far
+        while counter < 200:
+            data = None
+            try:
+                with bz2.BZ2File(filename, 'r') as f:
+                    data = pickle.load(f)
+            except Exception as e:
+                print(e)
+            if data is not None:
+                self.fit_data(data)
+                self.model.save_weights(checkpoint_path)
+            counter += 1
+            print(f'loop:{counter}')
 
 
     def fit_data(self, buffer):
@@ -81,7 +85,7 @@ class Training:
         self.model.fit(np.array(X_train),
                        [np.array(dists_train), np.array(vs_train)],
                        epochs=epochs,
-                       verbose=verbosity,
+                       verbose=0,
                        batch_size=batch_size
                        )
 
@@ -89,3 +93,5 @@ class Training:
         self.evaluation_result.append(self.model.evaluate(np.array(X_test),
                                       [np.array(dists_test), np.array(vs_test)]
                                         ))
+
+
