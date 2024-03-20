@@ -10,8 +10,8 @@ def run_training():
     model = model_config.build_nn()
     try:
         model.load_weights(checkpoint_path)
-    except:
-        pass
+    except Exception as e:
+        print('EXCEPTION, couldnt load weights ', e)
     chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     training = Training(chessboard, model)
     training.load_from_file('Game/trainingdata.bz2')
