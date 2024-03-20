@@ -29,6 +29,9 @@ class Training:
             for game in data:
                 self.buffer.append(game)
 
+    def save_to_file(self, filename, data):
+        with bz2.BZ2File(filename, 'w') as f:
+            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
     def train(self):
         """Method that performs the training in accordance with the config
@@ -50,6 +53,7 @@ class Training:
             self.fit_data(self.buffer)
             t_counter += 1
             self.model.save_weights(checkpoint_path)
+            self.save_to_file('trainingdata.bz2', list(self.buffer))
 
     def train_from_file(self, filename):
         """Method that performs model fitting based on a compressed pickle file
