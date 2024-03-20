@@ -1,7 +1,7 @@
 from colorama import *
 from datetime import datetime
-from platform import system
 from pathlib import Path
+import platform
 from os.path import exists
 import os
 
@@ -66,10 +66,8 @@ class Logger:
 
 
     def get_directory_path(self):
-        if system() == 'Windows':
-            self.directory_path = os.path.join('logs', self.task_name)
-        else:
-            self.directory_path = os.path.join('logs', self.task_name)
+        self.directory_path = Path(f'./logs/{self.task_name}/{platform.system()}')
+        self.directory_path.mkdir(parents=True, exist_ok=True)
 
 
     def get_log_filename(self):
