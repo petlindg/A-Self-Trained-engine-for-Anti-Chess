@@ -31,8 +31,8 @@ def train_file():
     training.train_from_file('Game/trainingdata.bz2')
 
 def main():
-    run_training()
-    #train_file()
+    #run_training()
+    train_file()
 
 if __name__ == '__main__':
     main()
