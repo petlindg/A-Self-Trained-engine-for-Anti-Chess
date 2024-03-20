@@ -53,7 +53,7 @@ class Training:
             self.fit_data(self.buffer)
             t_counter += 1
             self.model.save_weights(checkpoint_path)
-            self.save_to_file('trainingdata.bz2', list(self.buffer))
+            self.save_to_file('Game/trainingdata.bz2', list(self.buffer))
 
     def train_from_file(self, filename):
         """Method that performs model fitting based on a compressed pickle file
