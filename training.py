@@ -18,6 +18,18 @@ class Training:
         self.model = model
         self.evaluation_result = []
 
+    def load_from_file(self, filename):
+        data = None
+        try:
+            with bz2.BZ2File(filename, 'r') as f:
+                data = pickle.load(f)
+        except Exception as e:
+            print(e)
+        if data is not None:
+            for game in data:
+                self.buffer.append(game)
+
+
     def train(self):
         """Method that performs the training in accordance with the config
 
