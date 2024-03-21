@@ -9,6 +9,15 @@ import bz2
 from state_generator import generate_random_state
 
 
+def load_data_file():
+    try:
+        with bz2.BZ2File('trainingdata.bz2', 'r') as f:
+            data = pickle.load(f)
+    except Exception as e:
+        print(e)
+        data = []
+    return data
+
 def run_games(original_fen, random_state=False, load_data=False, games_played=100):
     """A function that takes a fen notation string and runs games of that fen state
     without the neural network, has an additional parameter for whether to randomize the states
@@ -25,11 +34,10 @@ def run_games(original_fen, random_state=False, load_data=False, games_played=10
     start = time.time()
     # if we want to load the old data
     if load_data:
-        try:
-            with bz2.BZ2File('trainingdata.bz2', 'r') as f:
-                data = pickle.load(f)
-        except Exception as e:
-            print(e)
+        data = load_data_file()
+
+    # counter for saving the progress to file, once it reaches 0, it saves the data
+    checkpoint_counter = 50
 
     counter = 0
     # play games until enough games have been performed
@@ -48,9 +56,17 @@ def run_games(original_fen, random_state=False, load_data=False, games_played=10
         if result == Color.WHITE or result == Color.BLACK:
             data.append(game.get_history())
             counter += 1
+            checkpoint_counter -= 1
             print(result)
+            # every 50 games, we store the progress in the trainingdata file
+            if checkpoint_counter == 0:
+                checkpoint_counter = 50
+                with bz2.BZ2File('trainingdata.bz2', 'w') as f:
+                    pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+                print(f'saved data, games total:{len(data)}')
 
-    # save the result
+
+    # save the result one final time
     with bz2.BZ2File('trainingdata.bz2', 'w') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
     end = time.time()
@@ -58,7 +74,7 @@ def run_games(original_fen, random_state=False, load_data=False, games_played=10
 
 
 def main():
-    run_games("k7/8/8/8/8/8/8/7R w - 0 1")
+    run_games("k7/8/8/8/8/8/8/7R w - 0 1", random_state=True, games_played=4000)
 
 
 def read_data():
