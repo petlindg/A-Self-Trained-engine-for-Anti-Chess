@@ -46,9 +46,11 @@ class Training:
             # inner loop where each training_iteration performs a number of games
             while game_counter < games_per_iteration:
                 game = TrainingGame(initial_state=self.initial_state, model=self.model)
-                game.run()
-                self.buffer.append(game.get_history())
-                game_counter += 1
+                result = game.run()
+                if result != 'draw':
+                    self.buffer.append(game.get_history())
+                    game_counter += 1
+
             print("Training iteration: " + str(t_counter))
             self.fit_data(self.buffer)
             t_counter += 1
