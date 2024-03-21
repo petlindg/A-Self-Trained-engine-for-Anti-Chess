@@ -74,7 +74,7 @@ def run_games(original_fen, random_state=False, load_data=False, games_played=10
 
 
 def main():
-    run_games("k7/8/8/8/8/8/8/7R w - 0 1", random_state=True, games_played=4000)
+    run_games("k7/8/8/8/8/8/8/7R w - 0 1", random_state=True, games_played=10000)
 
 
 def read_data():
