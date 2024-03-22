@@ -5,10 +5,10 @@ def translate_moves_to_output(mcts_dist):
     """Translates a list of moves into the output representation for the neural network
 
     :param mcts_dist: list of tuples [(value, move)], value is the visit % for the corresponding move.
-    :return: array of shape (1x1x8x8x76), the shape of the output from the neural network.
+    :return: array of shape (1x1x8x8x79), the shape of the output from the neural network.
     """
     output = [[
-        [[[0 for i in range(76)] for i in range(8)] for i in range(8)]
+        [[[0 for i in range(79)] for i in range(8)] for i in range(8)]
     ]]
     # fetch all the available moves
     # for every move, calculate what type value it has and set

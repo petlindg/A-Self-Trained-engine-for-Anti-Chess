@@ -10,7 +10,7 @@ exploration_constant: float = 4
 tree_iterations: int = 200
 
 'output dimensions for the neural network'
-output_representation = (1,1,8,8,76)
+output_representation = (1,1,8,8,79)
 
 'maximum number of games saved in the FIFO queue that the model uses as a dataset'
 max_buffer_size = 100

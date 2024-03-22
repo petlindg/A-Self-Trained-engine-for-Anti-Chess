@@ -29,12 +29,12 @@ INPUT_SHAPE = (n, n, total_input_planes)
 # Queen-like moves for each of the 64 squares, moving in 8 directions up to 7 squares = 56
 # Knight moves for each of the 64 squares, with 8 possible moves each
 # Underpromotions considering pawn can promote on any of the 64 squares,in 3 directions (forward, capture left, capture right),
-# to 4 possible pieces (knight, bishop, rook, king)
-#   total values: 8*8*(56+8+12) = 4864
+# to 5 possible pieces (knight, bishop, rook, queen, king)
+#   total values: 8*8*(56+8+15) = 5056
 # ouput_shape[1] should be 1: a scalar value (v)
 
-# 76 planes for chess:
-total_planes = 56 + 8 + 12
+# 79 planes for chess:
+total_planes = 56 + 8 + 15
 # the output shape for the vector
 OUTPUT_SHAPE = (8 * 8 * total_planes, 1)
 

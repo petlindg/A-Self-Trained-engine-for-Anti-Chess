@@ -308,7 +308,7 @@ def algebraic_to_move(s):
 
 def calc_move(source: int, destination: int, promotion_piece: Piece):
     # function to calculate what type of move it is based on the source and destination indexes
-    # returns a value from 0 to 72 which is in the form of the output representation for the NN model
+    # returns a value from 0 to 78 which is in the form of the output representation for the NN model
     # board size
 
     src_col = int(source % 8)
@@ -357,34 +357,14 @@ def calc_move(source: int, destination: int, promotion_piece: Piece):
     # go right + knight, go right + bishop, go right + rook, go right + king
 
     if promotion_piece is not None:
-
         if diff_col == -1: # left
-            if promotion_piece == 1: # knight
-                return 64
-            if promotion_piece == 2: # bishop
-                return 65
-            if promotion_piece == 3: # rook
-                return 66
-            if promotion_piece == 5: # king
-                return 67
-        elif diff_col == 0:
-            if promotion_piece == 1: # knight
-                return 68
-            if promotion_piece == 2: # bishop
-                return 69
-            if promotion_piece == 3: # rook
-                return 70
-            if promotion_piece == 5: # king
-                return 71
-        elif diff_col == -1:
-            if promotion_piece == 1: # knight
-                return 72
-            if promotion_piece == 2: # bishop
-                return 73
-            if promotion_piece == 3: # rook
-                return 74
-            if promotion_piece == 5: # king
-                return 75
+            return 63 + promotion_piece
+        elif diff_col == 0: # middle
+            return 68 + promotion_piece
+        elif diff_col == 1: # right
+            return 73 + promotion_piece
+            # max is 73+5=78, as index makes size 79 which matches output size
+
 
     # for the first 64 available move types that aren't underpromotions
     for i in range(0,64):
