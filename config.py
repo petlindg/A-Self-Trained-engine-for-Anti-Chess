@@ -31,3 +31,6 @@ batch_size = 16
 verbosity = 0
 
 checkpoint_path = "checkpoints/checkpoint.ckpt"
+
+'location to save training data'
+TRAINING_DATA_PATH = "trainingData/"
