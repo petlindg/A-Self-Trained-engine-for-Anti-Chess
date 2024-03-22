@@ -165,6 +165,49 @@ class TestTranslations(unittest.TestCase):
         board = cb.Chessboard(fen)
         new_fen = board.get_fen()
         self.assertEqual(fen, new_fen)
+
+    def eq_rep(self, rep1, rep2):
+        """
+        Helper function to assert translate_board() functionality
+        """
+        if len(rep1) != len(rep2):
+            raise RuntimeError("Wrong length in input representations")
+        for x in range(8):
+            for y in range(8):
+                for z in range(17):
+                    if rep1[0][x][y][z] != rep2[0][x][y][z]:
+                        return False
+        return True
+    
+    def test_translate_board_after_unmove_1(self):
+        moves_alg = "e2e4 a7a6 f1a6"
+        board = cb.Chessboard()
+        moves = [cb.algebraic_to_move(move_alg) for move_alg in moves_alg.split()]
+
+        rep1 = board.translate_board()
+        for move in moves:
+            board.move(move)
+        for _ in range(3):
+            board.unmove()
+        rep2 = board.translate_board()
+        
+        self.assertTrue(self.eq_rep(rep1, rep2))
+
+    def test_translate_board_after_unmove_2(self):
+        fen = "k7/8/8/8/8/8/8/7R w - 0 1"
+        moves_alg = "h1c1 a8a7 c1c5 a7a8 c5c6 a8b8 c6c7 b8c7"
+        board = cb.Chessboard(fen)
+        moves = [cb.algebraic_to_move(move_alg) for move_alg in moves_alg.split()]
+
+        rep_list = []
+
+        for move in moves:
+            rep_list.append(board.translate_board())
+            board.move(move)
+        
+        for _ in moves:
+            board.unmove()
+            self.assertTrue(self.eq_rep(rep_list.pop(), board.translate_board()))
  
  
 def main():
