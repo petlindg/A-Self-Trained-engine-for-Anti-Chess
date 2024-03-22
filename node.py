@@ -222,6 +222,8 @@ class Node:
                 string_buffer.append(info_text)
                 string_buffer.append('\n')
 
+            self.children.sort(key=lambda x: x.p, reverse=True)
+
             for i in range(0, len(self.children)):
                 if i == len(self.children)-1:
                     self.children[i].print_tree(string_buffer,
