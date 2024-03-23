@@ -13,6 +13,9 @@ from config import tree_iterations, exploration_constant, output_representation
 from keras.models import Model
 
 from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
+from logger import Logger
+
+logger = Logger("TrainingGame")
     
 def fetch_p_from_move(move: Move, model_output: np.array):
     """Fetches the P value from the output array of the model
@@ -243,7 +246,8 @@ class Node:
         """
         string_buffer = []
         self.print_tree(string_buffer, "", "", depth)
-        print("".join(string_buffer))
+        logger.info(f"\n{''.join(string_buffer)}")
+        #print("".join(string_buffer))
 
     def update_tree(self, move:Move):
         """

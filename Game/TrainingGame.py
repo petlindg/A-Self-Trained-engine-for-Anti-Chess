@@ -70,7 +70,7 @@ class TrainingGame:
         total_time = end_time - start_time
         status = self.current_state.get_game_status()
 
-        print('===============================')
+        self.logger.info('===============================')
         if status == 0:
             self.logger.info("               White wins")
             #print('           white wins')

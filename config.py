@@ -11,7 +11,7 @@ exploration_constant: float = sqrt(2)
 tree_iterations: int = 800
 
 'output dimensions for the neural network'
-output_representation = (1,1,8,8,76)
+output_representation = (1,1,8,8,79)
 
 'maximum number of games saved in the FIFO queue that the model uses as a dataset'
 max_buffer_size = 100
@@ -41,4 +41,9 @@ evaluation_method = 'dirichlet'
 
 piece_list = [(Color.BLACK, Piece.KING), (Color.WHITE, Piece.ROOK)]
 
+
 RESIDUAL_BLOCKS = 19
+
+'location to save training data'
+TRAINING_DATA_PATH = "trainingData/"
+
