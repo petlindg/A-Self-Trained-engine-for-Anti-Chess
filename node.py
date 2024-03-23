@@ -247,7 +247,7 @@ class Node:
         string_buffer = []
         self.print_tree(string_buffer, "", "", depth)
         logger.info(f"\n{''.join(string_buffer)}")
-        #print("".join(string_buffer))
+        print("".join(string_buffer))
 
     def update_tree(self, move:Move):
         """
@@ -262,7 +262,7 @@ class Node:
         # resetting the time
         self.time_predicted = 0
         # adds noise to child
-        #child.add_noise()
+        child.add_noise()
         # moves the state
         self.state.move(child.move)
         # sets parent of child to None, aka sets child as root

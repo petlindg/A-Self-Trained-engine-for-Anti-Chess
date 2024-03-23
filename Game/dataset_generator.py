@@ -114,7 +114,7 @@ def single_play_process(file_lock, random_state, original_fen, start_time):
     :return: None
     """
     # how often the process will acquire the lock and save the newly generated games
-    checkpoint_games = 2
+    checkpoint_games = 10
     # process internal list of newly made games
     internal_data = []
     while True:
@@ -167,6 +167,7 @@ def read_data():
     """
     with bz2.BZ2File('trainingdata.bz2', 'r') as f:
         data = pickle.load(f)
+        print('ok')
         for game in data:
             for (state, mcts, v) in game:
                 print(state)
