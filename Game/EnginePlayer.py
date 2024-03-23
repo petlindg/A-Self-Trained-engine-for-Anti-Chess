@@ -1,7 +1,6 @@
 from chess import Chessboard
 from keras import Model
 from node import Node
-from copy import deepcopy
 
 
 class EnginePlayer:
@@ -9,23 +8,19 @@ class EnginePlayer:
     A class representing a player
     """
 
-    def __init__(self, initial_state: Chessboard, model: Model):
-        self.mcts = Node(state=initial_state, p=1, model=model)
+    def __init__(self, initial_state: Chessboard = None, model: Model = None, mcts: Node = None):
+        if mcts is None:
+            self.mcts = Node(state=initial_state, p=1, model=model)
+        else:
+            self.mcts = mcts
 
     def get_move(self):
-        self.run_mcts()
+        self.mcts.run()
         return max(self.mcts.children, key=lambda node: node.visits).move
 
     def update(self, move):
-        try:
+        if move in map(lambda node: node.move, self.mcts.children):
             self.mcts = self.mcts.update_tree(move)
-        except:
-            # TODO: Lots of bs because mcts might not have children
-            new_state = deepcopy(self.mcts.state)
-            new_state.move(move)
-            self.mcts = Node(state=new_state, p=1, model=self.mcts.model)
-
-
-
-    def run_mcts(self):
-        self.mcts.run()
+        else:
+            self.mcts.state.move(move)
+            self.mcts = Node(state=self.mcts.state, p=1, model=self.mcts.model)
