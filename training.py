@@ -94,7 +94,7 @@ class Training:
 
         counter = 0
         # 19 loops so far
-        while counter < 200:
+        while counter < 3:
             if data is not None:
                 self.fit_data(X_train, X_test, y_train, y_test)
                 self.model.save_weights(checkpoint_path)
