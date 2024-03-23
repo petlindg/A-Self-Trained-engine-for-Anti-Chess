@@ -38,8 +38,11 @@ checkpoint_path = "checkpoints/checkpoint.ckpt"
 'evaluation method is the method by which the MCTS calculates P values for nodes during the expansion phase'
 'if the model is not designated as an argument. Can be one of: ones, dirichlet'
 evaluation_method = 'dirichlet'
-
-piece_list = [(Color.BLACK, Piece.KING), (Color.WHITE, Piece.ROOK)]
+# [(Color.BLACK, Piece.KING), (Color.BLACK, Piece.KING), (Color.BLACK, Piece.KING), (Color.BLACK, Piece.ROOK),
+# (Color.WHITE, Piece.KING), (Color.WHITE, Piece.KING), (Color.WHITE, Piece.KING), (Color.WHITE, Piece.ROOK)]
+# [(Color.BLACK, Piece.KING), (Color.WHITE, Piece.ROOK)]
+piece_list = [(Color.BLACK, Piece.KING), (Color.BLACK, Piece.KING), (Color.BLACK, Piece.KING), (Color.BLACK, Piece.ROOK),
+              (Color.WHITE, Piece.KING), (Color.WHITE, Piece.KING), (Color.WHITE, Piece.KING), (Color.WHITE, Piece.ROOK)]
 
 
 RESIDUAL_BLOCKS = 19

@@ -1,3 +1,4 @@
+import config
 from chess import Chessboard, Piece, Color
 
 
@@ -88,7 +89,7 @@ def add_text(current_txt, value, counter):
 
 
 def main():
-    list_pieces = [(Color.WHITE, Piece.PAWN), (Color.BLACK, Piece.KING), (Color.WHITE, Piece.ROOK)]
+    list_pieces = config.piece_list
     note = generate_random_state(list_pieces)
     print(note)
     board = Chessboard(note)
