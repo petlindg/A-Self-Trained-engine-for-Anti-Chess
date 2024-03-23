@@ -45,7 +45,9 @@ def main():
     chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
 
     game = Game(chessboard, CliPlayer(deepcopy(chessboard)), EnginePlayer(deepcopy(chessboard), model))
-    game.run()
+    result = game.run()
+
+    print(result)
 
 if __name__ == '__main__':
     main()
