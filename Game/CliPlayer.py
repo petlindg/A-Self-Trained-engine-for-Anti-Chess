@@ -18,7 +18,7 @@ class CliPlayer:
             next_move = algebraic_to_move(input("Input next move: "))
             print("\n")
 
-            if True: # chessboard.is_valid(next_move):
+            if self.chessboard.is_valid_move(next_move):
                 return next_move
             else:
                 print(move_to_algebraic(next_move) + " is not a valid move")

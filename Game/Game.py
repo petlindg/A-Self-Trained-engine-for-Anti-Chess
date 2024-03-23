@@ -27,7 +27,7 @@ class Game:
             else:
                 next_move = self.black.get_move()
 
-            if True:
+            if self.chessboard.is_valid_move(next_move):
                 self.chessboard.move(next_move)
                 self.white.update(next_move)
                 self.black.update(next_move)
