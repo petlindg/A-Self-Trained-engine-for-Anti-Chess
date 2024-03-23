@@ -15,7 +15,9 @@ def generate_random_state(list_pieces: list):
     random.shuffle(full_list)
     fen_notation = ''
     empty_counter = 0
+
     print(full_list)
+
     for i, (c, p) in enumerate(full_list):
         # if we reach end of a row
         if i != 0 and i % 8 == 0:

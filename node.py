@@ -1,10 +1,11 @@
+import random
 from math import sqrt
 
 import numpy as np
 import time
 
 from chess import Chessboard, Move, Color
-from config import exploration_constant
+from config import exploration_constant, evaluation_method
 
 from math import sqrt
 import chess
@@ -47,6 +48,7 @@ class Node:
         self.state: Chessboard = state
         self.move: Move = move
         self.v = 0
+        self.true_v = 0
         self.p: float = p
         self.visits: int = 0
         self.value: float = 0
@@ -86,8 +88,8 @@ class Node:
 
     def mcts(self):
         node = self.select()
-        v = node.expand()
-        node.backpropagate(1-v)
+        v, end_state = node.expand()
+        node.backpropagate(1-v, end_state)
 
     def select(self):
         """
@@ -111,9 +113,9 @@ class Node:
         """
         status = self.state.get_game_status()
         if status == 2:
-            return 0.5
+            return 0.5, True
         elif status == 0 or status == 1:
-            return 1
+            return 1, True
         else:
             if self.model:
                 p_vector, v = self.possible_moves()
@@ -127,22 +129,29 @@ class Node:
                             model=self.model
                         )
                     )
-                return v
+                return v, False
             else:
                 moves = self.state.get_moves()
-                for m in moves:
+                if evaluation_method == 'dirichlet':
+                    p_vals = np.random.dirichlet([1]*(len(moves)))
+                    return_v = random.random()
+                else:
+                    p_vals = [1/len(moves)]*(len(moves))
+                    return_v = 0.5
+
+                for p, m in zip(p_vals, moves):
                     self.children.append(
                         Node(
                             state=self.state,
                             move=m,
-                            p=1,
+                            p=p,
                             parent=self,
                             model=self.model
                         )
                     )
-                return 0.5
+                return return_v, False
         
-    def backpropagate(self, v: float):
+    def backpropagate(self, v: float, end_state: bool):
         """
         Method that backpropagates the value v from the current node.
 
@@ -151,12 +160,14 @@ class Node:
         """
 
         self.value += v
+        if end_state:
+            self.true_v += v
         self.visits += 1
         # if we aren't at root node, backpropagate
         if self.parent != None:
             # invert v value to because of color change before backpropagating
             self.state.unmove()
-            self.parent.backpropagate(1-v)
+            self.parent.backpropagate(1-v, end_state)
 
     def possible_moves(self):
         """Calculates all possible moves for a given chessboard using the neural network, and returns
@@ -200,18 +211,21 @@ class Node:
         """
         if depth is None or depth > 0:
             string_buffer.append(prefix)
-            p = round(self.p, 10)
-            val = round(self.value, 10)
+            p = round(self.p, 5)
+            val = round(self.value, 5)
+            tval = round(self.true_v, 5)
             visits = self.visits
             # v = round(self.v, 10)
             if self.parent:
                 if visits != 0:
-                    wr = round(val/visits, 10)
-                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
+                    wr = round(val/visits, 3)
+                    info_text = f'(p:{p}|tv:{tval}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
                 else:
-                    info_text = f'(p:{p}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
+                    info_text = f'(p:{p}|tv:{tval}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
                 string_buffer.append(info_text)
                 string_buffer.append('\n')
+
+            self.children.sort(key=lambda x: x.p, reverse=True)
 
             for i in range(0, len(self.children)):
                 if i == len(self.children)-1:
