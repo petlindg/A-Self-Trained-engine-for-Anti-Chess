@@ -42,9 +42,13 @@ def main():
 
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
-    chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
+    try:
+        model.load_weights(checkpoint_path)
+    except:
+        pass
+    chessboard = Chessboard("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1")
 
-    game = Game(chessboard, CliPlayer(deepcopy(chessboard)), EnginePlayer(deepcopy(chessboard), model))
+    game = Game(chessboard, EnginePlayer(deepcopy(chessboard), model), CliPlayer(deepcopy(chessboard)))
     result = game.run()
 
     print(result)
