@@ -3,6 +3,12 @@ from chess import Chessboard
 from config import checkpoint_path
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 
+from Game.Game import Game
+from Game.CliPlayer import CliPlayer
+from Game.EnginePlayer import EnginePlayer
+from node import Node
+from copy import deepcopy
+
 # TODO change the neural network output to sigmoid
 
 def run_training():
@@ -32,7 +38,14 @@ def train_file():
 
 def main():
     #run_training()
-    train_file()
+    # train_file()
+
+    model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
+    model = model_config.build_nn()
+    chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
+
+    game = Game(chessboard, CliPlayer(deepcopy(chessboard)), EnginePlayer(deepcopy(chessboard), model))
+    game.run()
 
 if __name__ == '__main__':
     main()
