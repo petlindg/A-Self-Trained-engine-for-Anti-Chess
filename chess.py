@@ -564,6 +564,20 @@ class Chessboard():
         self._update_move_counter()
         return self.is_draw()
     
+    def is_valid_move(self, move:Move):
+        """
+        Checks if a move is valid
+
+        :param move: Type Move, move to check legality of
+        :return: True if move is valid, false otherwise
+        """
+        
+        moves = self.get_moves()
+        if move in moves:
+            return True
+        return False
+
+    
     def _init_fen(self, fen:str):
         arr = fen.split()
 
