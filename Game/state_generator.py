@@ -1,7 +1,8 @@
 import config
 from chess import Chessboard, Piece, Color
 
-
+import sys
+sys.path.append('..')
 import random
 
 
