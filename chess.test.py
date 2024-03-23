@@ -108,6 +108,26 @@ class TestMoveGen(unittest.TestCase):
         board = cb.Chessboard("8/8/8/8/PpPpp3/8/8/8 b C3 0 1")
         self.assertEqual(2, len(board.get_moves()))
 
+    def test_move_valid_1(self):
+        board = cb.Chessboard()
+        m = cb.Move(cb.u64(11), cb.u64(27))
+        self.assertTrue(board.move(m))
+
+    def test_move_valid_2(self):
+        board = cb.Chessboard()
+        m = cb.Move(cb.u64(11), cb.u64(19))
+        self.assertTrue(board.move(m))
+    
+    def test_move_invalid_1(self):
+        board = cb.Chessboard()
+        m = cb.Move(cb.u64(11), cb.u64(26))
+        self.assertFalse(board.move(m))
+    
+    def test_move_invalid_2(self):
+        board = cb.Chessboard()
+        m = cb.Move(cb.u64(11), cb.u64(34))
+        self.assertFalse(board.move(m))
+
 class TestGameState(unittest.TestCase):
     # tests that the get_game_status() function works correctly
     def test_stalemate_white(self):
@@ -124,14 +144,22 @@ class TestGameState(unittest.TestCase):
         b_m1 = cb.Move(cb.u64(63), cb.u64(62))
         w_m2 = cb.Move(cb.u64(1), cb.u64(0))
         b_m2 = cb.Move(cb.u64(62), cb.u64(63))
-        self.assertFalse(board.move(w_m1))
-        self.assertFalse(board.move(b_m1))
-        self.assertFalse(board.move(w_m2))
-        self.assertFalse(board.move(b_m2))
-        self.assertFalse(board.move(w_m1))
-        self.assertFalse(board.move(b_m1))
-        self.assertFalse(board.move(w_m2))
-        self.assertTrue(board.move(b_m2))
+        board.move(w_m1)
+        self.assertFalse(board.is_draw())
+        board.move(b_m1)
+        self.assertFalse(board.is_draw())
+        board.move(w_m2)
+        self.assertFalse(board.is_draw())
+        board.move(b_m2)
+        self.assertFalse(board.is_draw())
+        board.move(w_m1)
+        self.assertFalse(board.is_draw())
+        board.move(b_m1)
+        self.assertFalse(board.is_draw())
+        board.move(w_m2)
+        self.assertFalse(board.is_draw())
+        board.move(b_m2)
+        self.assertTrue(board.is_draw())
 
     def test_draw_no_progress(self):
         board = cb.Chessboard("k7/8/8/8/8/8/8/7K w - 0 1")
@@ -150,7 +178,8 @@ class TestGameState(unittest.TestCase):
             self.assertFalse(board._check_no_progress())
         board.move(w_m1)
         self.assertFalse(board._check_no_progress())
-        self.assertTrue(board.move(b_m1))
+        board.move(b_m1)
+        self.assertTrue(board.is_draw())
         self.assertTrue(board._check_no_progress())
             
 class TestTranslations(unittest.TestCase):

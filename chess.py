@@ -395,6 +395,9 @@ class Chessboard():
     pawns : u64
     # keeping track of number of pieces on the board
     piece_count : u8
+    # a list of moves to hold in memory for avoiding generating the same moves twice
+    moves : List[Move]
+    # the normal chess move counter, updates when black moves
     move_counter : u8
     
 
@@ -413,6 +416,7 @@ class Chessboard():
         self._init_fen(fen)
         self.pawns = self._get_pawns()
         self.piece_count = self._get_piece_count()
+        self.moves = []
         
     def __str__(self):
         str_builder = ['a b c d e f g h \n']
@@ -552,17 +556,37 @@ class Chessboard():
         :param move: Type Move, represents the move to be executed
         :return: True if game is drawed after move is executed, False otherwise
         """
+        
+        if self.is_valid_move(move):
+            # update piececount for _update_no_progress()
+            self.piece_count = self._get_piece_count()
+            self.pawns = self._get_pawns()
 
-        # update piececount for _update_no_progress()
-        self.piece_count = self._get_piece_count()
-        self.pawns = self._get_pawns()
+            self._update_repetitions()
+            self._update_bitboards(move)
+            self._update_no_progress()
+            self._update_player()
+            self._update_move_counter()
 
-        self._update_repetitions()
-        self._update_bitboards(move)
-        self._update_no_progress()
-        self._update_player()
-        self._update_move_counter()
-        return self.is_draw()
+            self.moves = []
+
+            return True
+        
+        return False
+    
+    def is_valid_move(self, move:Move):
+        """
+        Checks if a move is valid
+
+        :param move: Type Move, move to check legality of
+        :return: True if move is valid, false otherwise
+        """
+
+        moves = self.get_moves()
+        if move in moves:
+            return True
+        return False
+
     
     def _init_fen(self, fen:str):
         arr = fen.split()
@@ -868,6 +892,16 @@ class Chessboard():
     def get_moves(self):
         """
         Gets the legal moves of the current state
+
+        :return: A List[Move] of legal moves
+        """
+        if self.moves:
+            return self.moves
+        return self._get_moves_new()
+
+    def _get_moves_new(self):
+        """
+        Generates the legal moves of the current state
 
         :return: A List[Move] of legal moves
         """
