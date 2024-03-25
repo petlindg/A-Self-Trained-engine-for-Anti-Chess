@@ -1,4 +1,3 @@
-import numpy as np
 from numpy import uint64 as u64
 from numpy import uint8 as u8
 from numpy import left_shift as ls
@@ -9,368 +8,12 @@ from numpy import bitwise_not as b_not
 from numpy import bitwise_xor as b_xor
 from numpy import zeros, ndarray, uint, array
 
-from enum import IntEnum
 from typing import List
-from itertools import chain
 
-# -----------------------------
-# ----------- TO DO -----------
-# -----------------------------
-
-class LOOKUP_TABLES():
-    """
-    A class to store lookuptables for generating moves and masking parts of a bitboard
-    """
-
-    def __init__(self):
-        # ranks by number
-        self.RANK_8_BB = u64(0b1111111100000000000000000000000000000000000000000000000000000000)
-        self.RANK_7_BB = u64(0b11111111000000000000000000000000000000000000000000000000)
-        self.RANK_6_BB = u64(0b111111110000000000000000000000000000000000000000)
-        self.RANK_5_BB = u64(0b1111111100000000000000000000000000000000)
-        self.RANK_4_BB = u64(0b11111111000000000000000000000000)
-        self.RANK_3_BB = u64(0b111111110000000000000000)
-        self.RANK_2_BB = u64(0b1111111100000000)
-        self.RANK_1_BB = u64(0b11111111)
-
-        self.rank_nr_list: list[u64] = [self.RANK_8_BB, self.RANK_7_BB, self.RANK_6_BB, self.RANK_5_BB, self.RANK_4_BB, self.RANK_3_BB, self.RANK_2_BB, self.RANK_1_BB]
-
-        # ranks by letter
-        self.FILE_A_BB = u64(0b1000000010000000100000001000000010000000100000001000000010000000)
-        self.FILE_B_BB = u64(0b0100000001000000010000000100000001000000010000000100000001000000)
-        self.FILE_C_BB = u64(0b0010000000100000001000000010000000100000001000000010000000100000)
-        self.FILE_D_BB = u64(0b0001000000010000000100000001000000010000000100000001000000010000)
-        self.FILE_E_BB = u64(0b0000100000001000000010000000100000001000000010000000100000001000)
-        self.FILE_F_BB = u64(0b0000010000000100000001000000010000000100000001000000010000000100)
-        self.FILE_G_BB = u64(0b0000001000000010000000100000001000000010000000100000001000000010)
-        self.FILE_H_BB = u64(0b0000000100000001000000010000000100000001000000010000000100000001)
-
-        self.rank_l_list: list[u64] = [self.FILE_A_BB, self.FILE_B_BB, self.FILE_C_BB, self.FILE_D_BB, self.FILE_E_BB, self.FILE_F_BB, self.FILE_G_BB, self.FILE_H_BB]
-
-        self.KNIGHT_BB = zeros(64, dtype=u64)
-        self.KING_BB = zeros(64, dtype=u64)
-
-        self.FIRST_RANK_ATTACKS = self._rank_masks_init()
-        self.FILE_H_ATTACKS = self._file_masks_init()
-        self.DIAG_MASKS = self._diag_masks_init()
-        self.ANTIDIAG_MASKS = self._antidiag_masks_init()
-        self.FIRST_RANK_ATTACKS = self._first_rank_attacks_init()
-        self.FILE_H_ATTACKS = self._file_h_attacks_init()
-        self.KNIGHT_BB = self._knight_bb_init()
-        self.KING_BB = self._king_bb_init()
-
-    def _rank_masks_init(self):
-        arr = zeros(64, dtype=u64)
-        for index in range(64):
-            if not index%8:
-                rank = ls(self.RANK_1_BB, u8(index))
-            arr[index] = rank
-        return arr
-    def _file_masks_init(self):
-        arr = zeros(64, dtype=u64)
-        for index in range(64):
-            if not index%8:
-                file = self.FILE_H_BB
-            else:
-                file = ls(file, u8(1))
-            arr[index] = file
-        return arr
-    def _diag_masks_init(self):
-        arr = zeros(64, dtype=u64)
-        bit = u64(1)
-        for index in range(64):
-            bb = u64(0)
-            sq = ls(bit, u64(index))
-            while(sq):
-                bb = b_or(bb, sq)
-                sq = b_and(ls(sq, uint(7)), b_not(self.FILE_A_BB))
-            sq = ls(bit, u64(index))
-            while(sq):
-                bb = b_or(bb, sq)
-                sq = b_and(rs(sq, uint(7)), b_not(self.FILE_H_BB))
-            arr[index] = bb
-        return arr
-    def _antidiag_masks_init(self):
-        arr = zeros(64, dtype=u64)
-        bit = u64(1)
-        for index in range(64):
-            bb = u64(0)
-            sq = ls(bit, u64(index))
-            while(sq):
-                bb = b_or(bb, sq)
-                sq = b_and(ls(sq, uint(9)), b_not(self.FILE_H_BB))
-            sq = ls(bit, u64(index))
-            while(sq):
-                bb = b_or(bb, sq)
-                sq = b_and(rs(sq, uint(9)), b_not(self.FILE_A_BB))
-            arr[index] = bb
-        return arr
-    def _calc_first_rank_attacks(self, index:u8, occ:u8):
-        attacks = u8(0)
-        bit = u8(1)
-        i = ls(bit, index+bit)
-        while i:
-            current_bit = b_and(i, occ)
-            attacks = b_or(attacks, i)
-            if current_bit:
-                break
-            i = ls(i, bit)
-        i = ls(bit, index-bit)
-        while i:
-            current_bit = b_and(i, occ)
-            attacks = b_or(attacks, i)
-            if current_bit:
-                break
-            i = rs(i, bit)
-        return attacks
-    def _calc_file_h_attacks(self, index:u8, occ:u8):
-
-        index = u64(index)
-        occ = u64(occ)
-
-        attacks = u64(0)
-        bit = u64(1)
-        byte = u64(8)
-        i = ls(bit, index+bit)
-        j = index+bit
-        while i:
-            current_bit = b_and(i, occ)
-            attacks = b_or(attacks, ls(bit, j*byte))
-            if current_bit:
-                break
-            i = ls(i, bit)
-            j += bit
-        i = ls(bit, index-bit)
-        j = index-bit
-        while i:
-            current_bit = b_and(i, occ)
-            attacks = b_or(attacks, ls(bit, j*byte))
-            if current_bit:
-                break
-            i = rs(i, bit)
-            j -= bit
-        return attacks
-    def _first_rank_attacks_init(self):
-        arr = zeros((8, 256), dtype=u8)
-        for index in range(8):
-            for occ in range(256):
-                arr[index, occ] = self._calc_first_rank_attacks(index, occ)
-        return arr
-    def _file_h_attacks_init(self):
-        arr = zeros((8, 256), dtype=u64)
-        for index in range(8):
-            for occ in range(256):
-                arr[index, occ] = self._calc_file_h_attacks(index, occ)
-        return arr
-    def _knight_bb_init(self):
-        # Init of movegeneration bitboards for knights.
-        # The bitboard of bbs[index] represents the bitboard with all possible destinationsquares given a source square = index
-        bbs = zeros(64, dtype=u64)
-        src_bb = u64(1) # source bb to generate moves from
-        for index in range(u64(64)):
-            dst_bb = u64(0) # destination bb to track all possible move destinations
-
-            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(17)), b_not(self.FILE_A_BB)))
-            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(15)), b_not(self.FILE_H_BB)))
-            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(10)), b_not(b_or(self.FILE_A_BB, self.FILE_B_BB))))
-            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(6)),  b_not(b_or(self.FILE_G_BB, self.FILE_H_BB))))
-            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(6)),  b_not(b_or(self.FILE_A_BB, self.FILE_B_BB))))
-            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(10)), b_not(b_or(self.FILE_G_BB, self.FILE_H_BB))))
-            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(15)), b_not(self.FILE_A_BB)))
-            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(17)), b_not(self.FILE_H_BB)))
-
-            bbs[index] = dst_bb
-            src_bb = ls(src_bb, u8(1)) # shift src_bb to match index
-        return bbs
-    def _king_bb_init(self):
-        # Init of movegeneration bitboards for kings.
-        # The bitboard of bbs[index] represents the bitboard with all possible destinationsquares given a source square = index
-        bbs = zeros(64, dtype=u64)
-        src_bb = u64(1) # source bb to generate moves from
-        for index in range(u64(64)):
-            dst_bb = u64(0) # destination bb to track all possible move destinations
-
-            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(9)), b_not(self.FILE_A_BB)))
-            dst_bb = b_or(dst_bb,                rs(src_bb, u8(8)))
-            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(7)), b_not(self.FILE_H_BB)))
-            dst_bb = b_or(dst_bb, b_and(rs(src_bb, u8(1)), b_not(self.FILE_A_BB)))
-            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(1)),  b_not(self.FILE_H_BB)))
-            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(7)),  b_not(self.FILE_A_BB)))
-            dst_bb = b_or(dst_bb,                ls(src_bb, u8(8)))
-            dst_bb = b_or(dst_bb, b_and(ls(src_bb, u8(9)),  b_not(self.FILE_H_BB)))
-
-            bbs[index] = dst_bb
-            src_bb = ls(src_bb, u8(1)) # shift src_bb to match index
-        return bbs
-
-LOOKUP = LOOKUP_TABLES()
-
-class Color(IntEnum):
-    WHITE = 0
-    BLACK = 1
-
-class Piece(IntEnum):
-    PAWN   = 0
-    KNIGHT = 1
-    BISHOP = 2
-    ROOK   = 3
-    QUEEN  = 4
-    KING   = 5
-
-class Move():
-    """
-    Class for representing a move, used for functions within the Chessboard class
-    """
-
-    src_index      : u8
-    dst_index      : u8
-    promotion_type : Piece
-    is_take        : bool
-
-    def __init__(self, src_index:u8, dst_index:u8, promotion_type=None, is_take=False):
-        self.src_index      = src_index
-        self.dst_index      = dst_index
-        self.promotion_type = promotion_type
-        self.is_take        = is_take
-
-    def __str__(self):
-        # str function for moves
-        return str(move_to_algebraic(self))
-               #+ "src: " + str(self.src_index) + ", dst: " + str(self.dst_index) + ", pro: " + str(self.promotion_type) + ", take: " + str(self.is_take)
-    def __eq__(self, move):
-        return self.src_index == move.src_index and self.dst_index == move.dst_index and self.promotion_type == move.promotion_type
-
-
-def move_to_algebraic(move):
-    """Function for translating a move into a string in algebraic notation
-
-    :param move: Move Class
-    :return: String
-    """
-
-    cols = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
-    src = move.src_index
-    src_row = str(int(src//8 + 1))
-    src_col = cols[int(src%8)]
-
-    dst = move.dst_index
-    dst_row = str(int(dst//8 + 1))
-    dst_col = cols[int(dst%8)]
-
-    return src_col + src_row + dst_col + dst_row
-
-def algebraic_to_move(s):
-    """Takes an algebraic representation string s and returns the move representation for this string
-
-    :param s: String
-    :return: Class Move
-    """
-    s = list(s.lower())
-    fst_c = ''
-    fst_d = 0
-    snd_c = ''
-    snd_d = 0
-    counter = 0
-    for character in s:
-        if counter == 4:
-            break
-        if counter == 0 and character.isalpha():
-            fst_c = str(character)
-        if counter == 1 and character.isdigit():
-            fst_d = int(character)
-        if counter == 2 and character.isalpha():
-            snd_c = str(character)
-        if counter == 3 and character.isdigit():
-            snd_d = int(character)
-        counter +=1
-    cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-
-    # default values in the case that the input is wrong and the characters arent valid
-    if fst_c not in cols:
-        src_col = 1
-    if snd_c not in cols:
-        dst_col = 1
-    if fst_d > 8:
-        fst_d = 0
-    if snd_d > 8:
-        snd_d = 0
-
-    # convert letters to integers
-    for i, c in enumerate(cols):
-        if fst_c == c:
-            src_col = i + 1
-        if snd_c == c:
-            dst_col = i + 1
-
-    src_index = np.uint8(-src_col + 8 * fst_d)
-    dst_index = np.uint8(-dst_col + 8 * snd_d)
-    return Move(src_index, dst_index)
-
-def calc_move(source: int, destination: int, promotion_piece: Piece):
-    # function to calculate what type of move it is based on the source and destination indexes
-    # returns a value from 0 to 78 which is in the form of the output representation for the NN model
-    # board size
-
-    src_col = int(source % 8)
-    src_row = int(source // 8)
-
-    dst_col = int(destination % 8)
-    dst_row = int(destination // 8)
-
-    # get the differences between the source and destination
-    diff_col = src_col - dst_col
-    diff_row = src_row - dst_row
-
-    # iterate through all
-    # and check if they match the given src/dst
-    # list of tuples in form (col, row)
-    # list is all viable moves for the output representation
-    # knight moves in clockwise rotation starting from north
-
-    # creating a list of test moves which will be iterated through
-    # the first 56 moves are queen like moves in a clockwise pattern
-    # the final 8 moves are knight like moves in a clockwise pattern
-    # list(chain(*)) is used to flatten the list of lists to one list
-    # the queen like moves are generated with list comprehension to increase readability
-    tests = list(chain(*[
-        # queen like moves
-        [(0, a) for a in range(1, 8)],
-        [(a, a) for a in range(1, 8)],
-        [(a, 0) for a in range(1, 8)],
-        [(a, -a) for a in range(1, 8)],
-        [(0, -a) for a in range(1, 8)],
-        [(-a, -a) for a in range(1, 8)],
-        [(-a, 0) for a in range(1, 8)],
-        [(-a, a) for a in range(1, 8)],
-
-        # knight moves clockwise
-        [(1, 2), (2, 1),
-        (2, -1), (1, -2),
-        (-1, -2), (-2, -1),
-        (-2, 1), (-1, 2)]
-                        ]))
-
-    # testing for the 12 kinds of under promotions
-    # in the following order:
-    # go left + knight, go left + bishop, go left + rook, go left + king //
-    # go up + knight, go up + bishop, go up + rook, go up + king //
-    # go right + knight, go right + bishop, go right + rook, go right + king
-
-    if promotion_piece is not None:
-        if diff_col == -1: # left
-            return 63 + promotion_piece
-        elif diff_col == 0: # middle
-            return 68 + promotion_piece
-        elif diff_col == 1: # right
-            return 73 + promotion_piece
-            # max is 73+5=78, as index makes size 79 which matches output size
-
-
-    # for the first 64 available move types that aren't underpromotions
-    for i in range(0,64):
-        (t_col, t_row) = tests[i]
-        if diff_col == t_col and diff_row == t_row:
-            return i
+from utils import Color
+from utils import Piece
+from move import Move
+import lookup
 
 
 class Chessboard():
@@ -995,11 +638,11 @@ class Chessboard():
         rank_index = rs(b_and(src_index, u8(0b111_000)), u8(3))
 
         occ = rs(self.combined[2], shift)
-        occ = b_and(occ, LOOKUP.FILE_H_BB)
-        occ *= LOOKUP.DIAG_MASKS[7]
+        occ = b_and(occ, lookup.FILE_H_BB)
+        occ *= lookup.DIAG_MASKS[7]
         occ = rs(occ, u8(0b111_000))
 
-        dst_bb = LOOKUP.FILE_H_ATTACKS[rank_index, occ]
+        dst_bb = lookup.FILE_H_ATTACKS[rank_index, occ]
         dst_bb = ls(dst_bb, shift)
 
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
@@ -1016,7 +659,7 @@ class Chessboard():
 
         occ = u8(rs(self.combined[2], shift))
 
-        dst_bb = u64(LOOKUP.FIRST_RANK_ATTACKS[rank_index, occ])
+        dst_bb = u64(lookup.FIRST_RANK_ATTACKS[rank_index, occ])
         dst_bb = ls(dst_bb, shift)
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
@@ -1029,13 +672,13 @@ class Chessboard():
         moves:List[Move] = []
         rank_index = b_and(src_index, u8(0b000_111))
 
-        occ = b_and(self.combined[2], LOOKUP.DIAG_MASKS[src_index])
-        occ *= LOOKUP.FILE_H_BB
+        occ = b_and(self.combined[2], lookup.DIAG_MASKS[src_index])
+        occ *= lookup.FILE_H_BB
         occ = rs(occ, u8(0b111_000))
 
-        dst_bb = LOOKUP.FIRST_RANK_ATTACKS[rank_index, occ]
-        dst_bb *= LOOKUP.FILE_H_BB
-        dst_bb = b_and(dst_bb, LOOKUP.DIAG_MASKS[src_index])
+        dst_bb = lookup.FIRST_RANK_ATTACKS[rank_index, occ]
+        dst_bb *= lookup.FILE_H_BB
+        dst_bb = b_and(dst_bb, lookup.DIAG_MASKS[src_index])
 
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
@@ -1048,13 +691,13 @@ class Chessboard():
         moves:List[Move] = []
         rank_index = b_and(src_index, u8(0b000_111))
 
-        occ = b_and(self.combined[2], LOOKUP.ANTIDIAG_MASKS[src_index])
-        occ *= LOOKUP.FILE_H_BB
+        occ = b_and(self.combined[2], lookup.ANTIDIAG_MASKS[src_index])
+        occ *= lookup.FILE_H_BB
         occ = rs(occ, u8(0b111_000))
 
-        dst_bb = LOOKUP.FIRST_RANK_ATTACKS[rank_index, occ]
-        dst_bb *= LOOKUP.FILE_H_BB
-        dst_bb = b_and(dst_bb, LOOKUP.ANTIDIAG_MASKS[src_index])
+        dst_bb = lookup.FIRST_RANK_ATTACKS[rank_index, occ]
+        dst_bb *= lookup.FILE_H_BB
+        dst_bb = b_and(dst_bb, lookup.ANTIDIAG_MASKS[src_index])
 
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
@@ -1067,8 +710,8 @@ class Chessboard():
         # given a src_index, generate moves and returns them as [Move]
         src_bb = ls(u64(1), src_index)
 
-        takes_bb = b_and(ls(src_bb, u8(9)), b_not(LOOKUP.FILE_H_BB))
-        takes_bb = b_or(takes_bb, b_and(ls(src_bb, u8(7)), b_not(LOOKUP.FILE_A_BB)))
+        takes_bb = b_and(ls(src_bb, u8(9)), b_not(lookup.FILE_H_BB))
+        takes_bb = b_or(takes_bb, b_and(ls(src_bb, u8(7)), b_not(lookup.FILE_A_BB)))
         takes_bb = b_and(takes_bb, b_or(self.combined[Color.BLACK], self.enpassante))
 
         if takes_bb: # if takes avaiable, no need to find non-takes
@@ -1087,8 +730,8 @@ class Chessboard():
         # given a src_index, generate moves and returns them as [Move]
         src_bb = ls(u64(1), src_index)
 
-        takes_bb = b_and(rs(src_bb, u8(7)), b_not(LOOKUP.FILE_H_BB))
-        takes_bb = b_or(takes_bb, b_and(rs(src_bb, u8(9)), b_not(LOOKUP.FILE_A_BB)))
+        takes_bb = b_and(rs(src_bb, u8(7)), b_not(lookup.FILE_H_BB))
+        takes_bb = b_or(takes_bb, b_and(rs(src_bb, u8(9)), b_not(lookup.FILE_A_BB)))
         takes_bb = b_and(takes_bb, b_or(self.combined[Color.WHITE], self.enpassante))
 
         if takes_bb: # if takes avaiable, no need to find non-takes
@@ -1106,7 +749,7 @@ class Chessboard():
     def _get_moves_knight(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
         moves:List[Move] = []
-        dst_bb = LOOKUP.KNIGHT_BB[src_index]
+        dst_bb = lookup.KNIGHT_BB[src_index]
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
         moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
@@ -1136,7 +779,7 @@ class Chessboard():
     def _get_moves_king(self, src_index:u8):
         # given a src_index, generate moves and returns them as [Move]
         moves:List[Move] = []
-        dst_bb = LOOKUP.KING_BB[src_index]
+        dst_bb = lookup.KING_BB[src_index]
         takes_bb = b_and(dst_bb, self.combined[self.not_player_to_move])
         moves_bb = b_and(dst_bb, b_not(self.combined[2]))
         moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
@@ -1170,7 +813,7 @@ class Chessboard():
             for piece_type in player:
                 for i in range(0, 8):
                     for l in range(0, 8):
-                        position = b_and(LOOKUP.rank_nr_list[i], LOOKUP.rank_l_list[l])
+                        position = b_and(lookup.rank_nr_list[i], lookup.rank_l_list[l])
                         if b_and(piece_type, position) != 0:
                             representation[0][i][l].append(1)
                         else:
@@ -1193,7 +836,7 @@ class Chessboard():
                 representation[0][i][l].append(repetitions_b)
                 representation[0][i][l].append(color)
                 representation[0][i][l].append(no_progress)
-                position = b_and(LOOKUP.rank_nr_list[i], LOOKUP.rank_l_list[l])
+                position = b_and(lookup.rank_nr_list[i], lookup.rank_l_list[l])
                 if b_and(en_passant, position) != 0:
                     representation[0][i][l].append(1)
                 else:
@@ -1202,25 +845,3 @@ class Chessboard():
         #for row in range(0,8):
             #print(representation[0][row])
         return array(representation)
-
-def print_bb(bb:u64):
-    mask_bb = u64(pow(2, 63))
-    for i in range(64):
-        if not(i%8):
-            print()
-        if b_and(bb, mask_bb):
-            print("1 ", end="")
-        else:
-            print(". ", end="")
-        mask_bb = rs(mask_bb, u8(1))
-    print()
-
-def print_byte(byte:u8):
-    i = u8(0b10000000)
-    while i:
-        if byte & i:
-            print("1", end="")
-        else:
-            print("0", end="")
-        i >>= u8(1)
-    print()
