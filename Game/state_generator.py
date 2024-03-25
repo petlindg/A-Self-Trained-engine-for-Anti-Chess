@@ -1,4 +1,5 @@
-from chess import Chessboard, Piece, Color
+from chess.chessboard import Chessboard
+from chess.utils import Color, Piece
 
 
 import random

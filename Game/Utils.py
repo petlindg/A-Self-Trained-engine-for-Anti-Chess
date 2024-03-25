@@ -1,4 +1,4 @@
-from chess import calc_move
+from chess.move import calc_move
 
 
 def translate_moves_to_output(mcts_dist):

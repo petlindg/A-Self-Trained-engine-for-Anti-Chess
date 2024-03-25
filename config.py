@@ -3,7 +3,7 @@
 Global configuration values for the program
 ===========================================
 '''
-from chess import Color, Piece
+from chess.utils import Color, Piece
 from math import sqrt
 'constant defining exploration vs exploitation of the tree'
 exploration_constant: float = sqrt(2)

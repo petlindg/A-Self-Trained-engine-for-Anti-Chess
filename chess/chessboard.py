@@ -9,11 +9,12 @@ from numpy import bitwise_xor as b_xor
 from numpy import zeros, ndarray, uint, array
 
 from typing import List
+import sys
+sys.path.append('..')
 
-from utils import Color
-from utils import Piece
-from move import Move
-import lookup
+from chess.utils import Color, Piece, alg_sq_to_index
+from chess.move import Move
+import chess.lookup as lookup
 
 
 class Chessboard():
@@ -118,6 +119,21 @@ class Chessboard():
 
         return ''.join(str_builder)
 
+    def get_moves(self):
+        """
+        Gets the legal moves of the current state
+
+        :return: A List[Move] of legal moves
+        """
+        if self.moves:
+            return self.moves
+        return self._get_moves_new()
+
+    def unmove(self):
+        self._update_player()
+        self._reverse_move_counter()
+        self.bitboards = self.repetitions_list.pop()
+        self.no_progress_counter.pop()
 
     def get(self):
         """
@@ -259,7 +275,7 @@ class Chessboard():
         if enpassante == '-':
             self.enpassante = u64(0)
         else:
-            self.enpassante = ls(bit, u8(self._alg_sq_to_index(enpassante)))
+            self.enpassante = ls(bit, u8(alg_sq_to_index(enpassante)))
 
         no_progress = arr[3]
         self.no_progress_counter.append(u8(no_progress))
@@ -267,10 +283,6 @@ class Chessboard():
         move_counter = arr[4]
         self.move_counter = u8(move_counter)
 
-    def _alg_sq_to_index(self, alg:str):
-        file_char = alg[0]
-        rank_char = alg[1]
-        return 72-ord(file_char) + (int(rank_char)-1)*8
     def _char_to_player(self, c:str):
         if c=='w':
             return Color.WHITE
@@ -476,12 +488,6 @@ class Chessboard():
     def _get_pawns(self):
         return b_or(self.bitboards[Color.WHITE, Piece.PAWN], self.bitboards[Color.BLACK, Piece.PAWN])
     
-    def unmove(self):
-        self._update_player()
-        self._reverse_move_counter()
-        self.bitboards = self.repetitions_list.pop()
-        self.no_progress_counter.pop()
-
     def _update_player(self):
         tmp = self.player_to_move
         self.player_to_move = self.not_player_to_move
@@ -531,16 +537,6 @@ class Chessboard():
             index += 1
 
         self.combined[2] = b_or(self.combined[Color.WHITE], self.combined[Color.BLACK])
-
-    def get_moves(self):
-        """
-        Gets the legal moves of the current state
-
-        :return: A List[Move] of legal moves
-        """
-        if self.moves:
-            return self.moves
-        return self._get_moves_new()
 
     def _get_moves_new(self):
         """

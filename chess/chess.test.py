@@ -1,22 +1,11 @@
 from numpy import uint64 as u64
-from numpy import uint8 as u8
-from numpy import left_shift as ls
-from numpy import right_shift as rs
-from numpy import bitwise_or as b_or
-from numpy import bitwise_and as b_and
-from numpy import bitwise_not as b_not
-from numpy import bitwise_xor as b_xor
-from numpy import zeros, ndarray, uint, array
 
 import unittest
+import sys
+sys.path.append('..')
 
-from chessboard import Chessboard
-from move import Move
-from move import algebraic_to_move
-
-from utils import Color
-from utils import Piece
-
+from chess.chessboard import Chessboard
+from chess.move import Move, algebraic_to_move
 
 class TestMoveGen(unittest.TestCase):
     # class tests cardinality of generated legal moves in different board states

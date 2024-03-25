@@ -1,8 +1,7 @@
 import bz2
 import pickle
 
-from chess import Piece
-from chess import Color
+from chess.utils import Color, Piece
 from config import *
 
 # TODO

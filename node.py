@@ -4,7 +4,9 @@ from math import sqrt
 import numpy as np
 import time
 
-from chess import Chessboard, Move, Color
+from chess.chessboard import Chessboard
+from chess.move import Move
+from chess.utils import Color
 from config import exploration_constant, evaluation_method
 
 from math import sqrt

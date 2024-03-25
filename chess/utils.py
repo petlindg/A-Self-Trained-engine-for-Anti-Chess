@@ -1,12 +1,7 @@
 from numpy import uint64 as u64
 from numpy import uint8 as u8
-from numpy import left_shift as ls
 from numpy import right_shift as rs
-from numpy import bitwise_or as b_or
 from numpy import bitwise_and as b_and
-from numpy import bitwise_not as b_not
-from numpy import bitwise_xor as b_xor
-from numpy import zeros, ndarray, uint, array
 
 from enum import IntEnum
 
@@ -21,6 +16,11 @@ class Piece(IntEnum):
     ROOK   = 3
     QUEEN  = 4
     KING   = 5
+
+def alg_sq_to_index(alg:str):
+        file_char = alg[0]
+        rank_char = alg[1]
+        return 72-ord(file_char) + (int(rank_char)-1)*8
 
 def print_bb(bb:u64):
     mask_bb = u64(pow(2, 63))

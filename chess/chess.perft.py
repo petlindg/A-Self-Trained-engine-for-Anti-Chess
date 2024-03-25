@@ -3,8 +3,11 @@ Module for testing performance of move generation.
 """
 
 import timeit as t
+import sys
+sys.path.append('..')
 
-from chessboard import Chessboard
+
+from chess.chessboard import Chessboard
 
 DEPTH = 3
 

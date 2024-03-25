@@ -1,17 +1,10 @@
-from numpy import uint64 as u64
 from numpy import uint8 as u8
-from numpy import left_shift as ls
-from numpy import right_shift as rs
-from numpy import bitwise_or as b_or
-from numpy import bitwise_and as b_and
-from numpy import bitwise_not as b_not
-from numpy import bitwise_xor as b_xor
-from numpy import zeros, ndarray, uint, array
 
 from itertools import chain
+import sys
+sys.path.append('..')
 
-from utils import Color
-from utils import Piece
+from chess.utils import Piece
 
 def calc_move(source: int, destination: int, promotion_piece: Piece):
     # function to calculate what type of move it is based on the source and destination indexes
@@ -155,8 +148,8 @@ class Move():
     is_take        : bool
 
     def __init__(self, src_index:u8, dst_index:u8, promotion_type=None, is_take=False):
-        self.src_index      = src_index
-        self.dst_index      = dst_index
+        self.src_index      = u8(src_index)
+        self.dst_index      = u8(dst_index)
         self.promotion_type = promotion_type
         self.is_take        = is_take
 

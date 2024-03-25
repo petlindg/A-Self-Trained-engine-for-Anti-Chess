@@ -5,8 +5,7 @@ from numpy import right_shift as rs
 from numpy import bitwise_or as b_or
 from numpy import bitwise_and as b_and
 from numpy import bitwise_not as b_not
-from numpy import bitwise_xor as b_xor
-from numpy import zeros, ndarray, uint, array
+from numpy import zeros, uint
 
 RANK_1_BB = u64(0b11111111)
 RANK_2_BB = u64(0b11111111_00000000)
