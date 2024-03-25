@@ -129,85 +129,6 @@ class Chessboard():
             return self.moves
         return self._get_moves_new()
 
-    def unmove(self):
-        self._update_player()
-        self._reverse_move_counter()
-        self.bitboards = self.repetitions_list.pop()
-        self.no_progress_counter.pop()
-
-    def get(self):
-        """
-        :return: shape (2,6) dtype=u64 ndarray where [i,j] represents the bitboard of Color i and Piece j
-        """
-        return self.bitboards
-
-    def try_move(self, src_index:int, dst_index:int, promotion_type:Piece=None):
-        """
-        Given input parameters, makes a move on the board if it's legal
-
-        :param src_index: Index of the source square of a move in range 0-63
-        :param dst_iondex: Index of the destination square of a move in range 0-63
-        :param promotion_type: Optional promotion type of a move reprenented as Piece (range 1-5)
-        :return: True if move was legal, False otherwise
-        """
-
-        move = Move(u8(src_index), u8(dst_index), promotion_type) # create function parameters into a Move()
-        moves = self.get_moves() # get legal moves
-        for m in moves:
-            # checks if input move is in legal moves
-            if move.src_index == m.src_index and move.dst_index == m.dst_index and move.promotion_type != Piece.PAWN:
-                self.move(move)
-                return True
-        return False
-
-    def get_game_status(self):
-        """
-        Gets the status of the game in the current state
-
-        :return: 0 if white wins, 1 if black wins, 2 if game is draw, 3 if game is ongoing
-        """
-    
-        moves = self.get_moves()
-        if not len(moves):
-            return self.player_to_move
-        if self._check_repetitions():
-            return 2
-        if self._check_no_progress():
-            return 2
-        return 3
-    
-    def get_player(self):
-        """
-        Gets current player
-
-        :return: Color of current player to move
-        """
-
-        return self.player_to_move
-    
-    def is_draw(self):
-        """
-        Checks if the game is a draw or not based on repetitions and no-progress
-
-        :return: True if game is draw, False otherwise
-        """
-
-        if self._check_repetitions():
-            return True
-        if self._check_no_progress():
-            return True
-        return False
-
-    def _check_repetitions(self):
-        if self._get_repetitions() == 2:
-            return True
-        return False
-    
-    def _check_no_progress(self):
-        if self.no_progress_counter[-1] == 50:
-            return True
-        return False
-
     def move(self, move:Move):
         """
         Executes a move and updates all the parameters of the Chessboard
@@ -242,83 +163,48 @@ class Chessboard():
         """
 
         moves = self.get_moves()
-        if move in moves:
+        return move in moves
+
+    def unmove(self):
+        self._update_player()
+        self._reverse_move_counter()
+        self.bitboards = self.repetitions_list.pop()
+        self.no_progress_counter.pop()
+
+    def get(self):
+        """
+        :return: shape (2,6) dtype=u64 ndarray where [i,j] represents the bitboard of Color i and Piece j
+        """
+        return self.bitboards
+
+    def get_game_status(self):
+        """
+        Gets the status of the game in the current state
+
+        :return: 0 if white wins, 1 if black wins, 2 if game is draw, 3 if game is ongoing
+        """
+    
+        moves = self.get_moves()
+        if not len(moves):
+            return self.player_to_move
+        if self._check_repetitions():
+            return 2
+        if self._check_no_progress():
+            return 2
+        return 3
+
+    def is_draw(self):
+        """
+        Checks if the game is a draw or not based on repetitions and no-progress
+
+        :return: True if game is draw, False otherwise
+        """
+
+        if self._check_repetitions():
+            return True
+        if self._check_no_progress():
             return True
         return False
-
-    
-    def _init_fen(self, fen:str):
-        arr = fen.split()
-
-        board = arr[0].split('/')
-        numbers = "12345678"
-        bit = u64(1)
-
-        index = u64(63)
-        for rank in board:
-            for c in rank:
-                if c in numbers:
-                    index -= u64(c)
-                else:
-                    bb_indexes = self._char_to_bb_indexes(c)
-                    self.bitboards[bb_indexes] = b_or(self.bitboards[bb_indexes], ls(bit, index))
-                    index -= bit
-
-        player = arr[1]
-        self.player_to_move = self._char_to_player(player)
-        if self.player_to_move == Color.WHITE:
-            self.not_player_to_move = Color.BLACK
-        else:
-            self.not_player_to_move = Color.WHITE
-
-        enpassante = arr[2]
-        if enpassante == '-':
-            self.enpassante = u64(0)
-        else:
-            self.enpassante = ls(bit, u8(alg_sq_to_index(enpassante)))
-
-        no_progress = arr[3]
-        self.no_progress_counter.append(u8(no_progress))
-
-        move_counter = arr[4]
-        self.move_counter = u8(move_counter)
-
-    def _char_to_player(self, c:str):
-        if c=='w':
-            return Color.WHITE
-        elif c=='b':
-            return Color.BLACK
-        else:
-            raise RuntimeError("Invalid character as player color, %s" % c)
-        
-
-    def _char_to_bb_indexes(self, c:str):
-        if c == 'P':
-            return (Color.WHITE, Piece.PAWN)
-        elif c == 'N':
-            return (Color.WHITE, Piece.KNIGHT)
-        elif c == 'B':
-            return (Color.WHITE, Piece.BISHOP)
-        elif c == 'R':
-            return (Color.WHITE, Piece.ROOK)
-        elif c == 'Q':
-            return (Color.WHITE, Piece.QUEEN)
-        elif c == 'K':
-            return (Color.WHITE, Piece.KING)
-        elif c == 'p':
-            return (Color.BLACK, Piece.PAWN)
-        elif c == 'n':
-            return (Color.BLACK, Piece.KNIGHT)
-        elif c == 'b':
-            return (Color.BLACK, Piece.BISHOP)
-        elif c == 'r':
-            return (Color.BLACK, Piece.ROOK)
-        elif c == 'q':
-            return (Color.BLACK, Piece.QUEEN)
-        elif c == 'k':
-            return (Color.BLACK, Piece.KING)
-        else:
-            raise RuntimeError("Invalid character as Color and Piece, %s" % c)
 
     def get_fen(self):
         """
@@ -374,6 +260,147 @@ class Chessboard():
         fen += move_counter
 
         return fen
+
+    def translate_board(self):
+        # The outer structure is an 8 by 8 grid representing 'squares' of the board
+        # the innermost list is meant to be represented as followed: (the 17 planes of the input repr.)
+        # [If W pawn, If W knight, If W bishop, If W rook, If W queen, If W king, ...
+        #  If B pawn, If B knight, If B bishop, If B rook, If B queen, If B king, ...
+        #  Repetition Count for W as Integer, Repetition Count for B as Integer, ...
+        #  1 If White, 0 If black (color), ...
+        #  No Progress Count as Integer, ...
+        #  1 if the grid square is an en passant square, 0 if not
+        representation = [[
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []],
+            [[], [], [], [], [], [], [], []]
+        ]]
+        # the full shape of the array is in the form of (1, 8, 8, 17)
+        # technically not that efficient with these 4 nested for loops, however
+        # the total looping is only around 750 loops (2*6*8*8) which is mostly fine
+        for player in self.bitboards:
+            for piece_type in player:
+                for i in range(0, 8):
+                    for l in range(0, 8):
+                        position = b_and(lookup.rank_nr_list[i], lookup.rank_l_list[l])
+                        if b_and(piece_type, position) != 0:
+                            representation[0][i][l].append(1)
+                        else:
+                            representation[0][i][l].append(0)
+
+        # TODO represent repetitions in some shape or form for the Chessboard class
+        repetitions_w = 0
+        repetitions_b = 0
+
+        if self.player_to_move == Color.WHITE:
+            color = 0
+        else:
+            color = 1
+
+        no_progress = self.no_progress_counter[-1]
+        en_passant = self.enpassante
+        for i in range(0, 8):
+            for l in range(0, 8):
+                representation[0][i][l].append(repetitions_w)
+                representation[0][i][l].append(repetitions_b)
+                representation[0][i][l].append(color)
+                representation[0][i][l].append(no_progress)
+                position = b_and(lookup.rank_nr_list[i], lookup.rank_l_list[l])
+                if b_and(en_passant, position) != 0:
+                    representation[0][i][l].append(1)
+                else:
+                    representation[0][i][l].append(0)
+
+        #for row in range(0,8):
+            #print(representation[0][row])
+        return array(representation)
+
+    def _check_repetitions(self):
+        if self._get_repetitions() == 2:
+            return True
+        return False
+    
+    def _check_no_progress(self):
+        if self.no_progress_counter[-1] == 50:
+            return True
+        return False
+
+    def _init_fen(self, fen:str):
+        arr = fen.split()
+
+        board = arr[0].split('/')
+        numbers = "12345678"
+        bit = u64(1)
+
+        index = u64(63)
+        for rank in board:
+            for c in rank:
+                if c in numbers:
+                    index -= u64(c)
+                else:
+                    bb_indexes = self._char_to_bb_indexes(c)
+                    self.bitboards[bb_indexes] = b_or(self.bitboards[bb_indexes], ls(bit, index))
+                    index -= bit
+
+        player = arr[1]
+        self.player_to_move = self._char_to_player(player)
+        if self.player_to_move == Color.WHITE:
+            self.not_player_to_move = Color.BLACK
+        else:
+            self.not_player_to_move = Color.WHITE
+
+        enpassante = arr[2]
+        if enpassante == '-':
+            self.enpassante = u64(0)
+        else:
+            self.enpassante = ls(bit, u8(alg_sq_to_index(enpassante)))
+
+        no_progress = arr[3]
+        self.no_progress_counter.append(u8(no_progress))
+
+        move_counter = arr[4]
+        self.move_counter = u8(move_counter)
+
+    def _char_to_player(self, c:str):
+        if c=='w':
+            return Color.WHITE
+        elif c=='b':
+            return Color.BLACK
+        else:
+            raise RuntimeError("Invalid character as player color, %s" % c)
+        
+    def _char_to_bb_indexes(self, c:str):
+        if c == 'P':
+            return (Color.WHITE, Piece.PAWN)
+        elif c == 'N':
+            return (Color.WHITE, Piece.KNIGHT)
+        elif c == 'B':
+            return (Color.WHITE, Piece.BISHOP)
+        elif c == 'R':
+            return (Color.WHITE, Piece.ROOK)
+        elif c == 'Q':
+            return (Color.WHITE, Piece.QUEEN)
+        elif c == 'K':
+            return (Color.WHITE, Piece.KING)
+        elif c == 'p':
+            return (Color.BLACK, Piece.PAWN)
+        elif c == 'n':
+            return (Color.BLACK, Piece.KNIGHT)
+        elif c == 'b':
+            return (Color.BLACK, Piece.BISHOP)
+        elif c == 'r':
+            return (Color.BLACK, Piece.ROOK)
+        elif c == 'q':
+            return (Color.BLACK, Piece.QUEEN)
+        elif c == 'k':
+            return (Color.BLACK, Piece.KING)
+        else:
+            raise RuntimeError("Invalid character as Color and Piece, %s" % c)
 
     def _index_to_alg_sq(self, index:u8):
         rank = str(rs(index, u8(3))+1)
@@ -781,63 +808,3 @@ class Chessboard():
         moves += self._get_moves_by_bb(src_index, takes_bb, takes=True)
         moves += self._get_moves_by_bb(src_index, moves_bb)
         return moves
-
-
-    def translate_board(self):
-        # The outer structure is an 8 by 8 grid representing 'squares' of the board
-        # the innermost list is meant to be represented as followed: (the 17 planes of the input repr.)
-        # [If W pawn, If W knight, If W bishop, If W rook, If W queen, If W king, ...
-        #  If B pawn, If B knight, If B bishop, If B rook, If B queen, If B king, ...
-        #  Repetition Count for W as Integer, Repetition Count for B as Integer, ...
-        #  1 If White, 0 If black (color), ...
-        #  No Progress Count as Integer, ...
-        #  1 if the grid square is an en passant square, 0 if not
-        representation = [[
-            [[], [], [], [], [], [], [], []],
-            [[], [], [], [], [], [], [], []],
-            [[], [], [], [], [], [], [], []],
-            [[], [], [], [], [], [], [], []],
-            [[], [], [], [], [], [], [], []],
-            [[], [], [], [], [], [], [], []],
-            [[], [], [], [], [], [], [], []],
-            [[], [], [], [], [], [], [], []]
-        ]]
-        # the full shape of the array is in the form of (1, 8, 8, 17)
-        # technically not that efficient with these 4 nested for loops, however
-        # the total looping is only around 750 loops (2*6*8*8) which is mostly fine
-        for player in self.bitboards:
-            for piece_type in player:
-                for i in range(0, 8):
-                    for l in range(0, 8):
-                        position = b_and(lookup.rank_nr_list[i], lookup.rank_l_list[l])
-                        if b_and(piece_type, position) != 0:
-                            representation[0][i][l].append(1)
-                        else:
-                            representation[0][i][l].append(0)
-
-        # TODO represent repetitions in some shape or form for the Chessboard class
-        repetitions_w = 0
-        repetitions_b = 0
-
-        if self.player_to_move == Color.WHITE:
-            color = 0
-        else:
-            color = 1
-
-        no_progress = self.no_progress_counter[-1]
-        en_passant = self.enpassante
-        for i in range(0, 8):
-            for l in range(0, 8):
-                representation[0][i][l].append(repetitions_w)
-                representation[0][i][l].append(repetitions_b)
-                representation[0][i][l].append(color)
-                representation[0][i][l].append(no_progress)
-                position = b_and(lookup.rank_nr_list[i], lookup.rank_l_list[l])
-                if b_and(en_passant, position) != 0:
-                    representation[0][i][l].append(1)
-                else:
-                    representation[0][i][l].append(0)
-
-        #for row in range(0,8):
-            #print(representation[0][row])
-        return array(representation)
