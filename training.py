@@ -146,8 +146,8 @@ def main():
     fen1 = "K7/8/8/8/8/8/8/7r w - 0 1"
     fen2 = "K7/8/8/8/8/8/8/7r b - 0 1"
     t = Training(Chessboard(fen1), model)
-    #t.test_train(fen1, fen2)
-    t.test_trained(fen2)
+    t.test_train(fen1, fen2)
+    #t.test_trained(fen2)
 
 """
  using only one state to train the network:
