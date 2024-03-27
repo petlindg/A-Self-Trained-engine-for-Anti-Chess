@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from config import max_buffer_size, training_iterations, games_per_iteration, checkpoint_path
 from config import epochs, batch_size, verbosity
 from Game.TrainingGame import TrainingGame
-
+from Stats.training_stats_plotter import TrainingPlot
 
 class Training:
     """Class representing the Training process of the neural network"""
@@ -15,6 +15,7 @@ class Training:
         self.initial_state = initial_state
         self.model = model
         self.evaluation_result = []
+        self.statistics = TrainingPlot()
 
     def train(self):
         """Method that performs the training in accordance with the config
@@ -58,12 +59,13 @@ class Training:
         # transforming the now shuffled list of tuples into two separate lists
         dists_train, vs_train = zip(*y_train)
         dists_test, vs_test = zip(*y_test)
-        self.model.fit(np.array(X_train),
+        history = self.model.fit(np.array(X_train),
                        [np.array(dists_train), np.array(vs_train)],
                        epochs=epochs,
                        verbose=verbosity,
                        batch_size=batch_size
                        )
+        self.statistics.store_pickled_data(history)
 
         # store the results of the evaluation
         self.evaluation_result.append(self.model.evaluate(np.array(X_test),

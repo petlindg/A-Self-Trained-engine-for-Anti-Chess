@@ -51,3 +51,8 @@ class TrainingPlot:
         plt.ylabel("Final Accuracy Value")
         plt.show()
 
+
+    def show_statistics(self):
+        self.load_data()
+        self.plot_loss()
+        self.plot_accuracy()
