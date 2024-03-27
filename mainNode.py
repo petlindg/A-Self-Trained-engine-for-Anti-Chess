@@ -15,7 +15,7 @@ from keras.models import Model
 from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
 from logger import Logger
 
-from mainNode import MainNode
+from node import Node
 
 logger = Logger("TrainingGame")
     
@@ -32,16 +32,16 @@ def fetch_p_from_move(move: Move, model_output: np.array):
     move_type = calc_move(move.src_index, move.dst_index, move.promotion_type)
     return model_output[0][0][src_row][src_col][move_type]
 
-class Node:
+class MainNode:
     """
     Class for the MCTS tree and nodes of the mcts tree.
     """
     def __init__(self,
                  state: Chessboard,
-                 main_node: MainNode,
+                 v: float,
                  p: float = 1,
                  parent = None,
-                 move: Move = False,
+                 move: Move = None,
                  model: Model = None):
 
         # general tree variables
@@ -50,17 +50,10 @@ class Node:
         # node specific variables
         self.state: Chessboard = state
         self.move: Move = move
-        self.v = 0
-        self.true_v = 0
+        self.v = v
         self.p: float = p
-        self.visits: int = 0
-        self.value: float = 0
         # network
         self.model = model
-        # main tree
-        self.main_node = main_node
-
-        self.time_predicted = 0
 
     def ucb(self):
         """
@@ -79,62 +72,102 @@ class Node:
         string_buffer = []
         self.print_tree(string_buffer, "", "")
         return "".join(string_buffer)
-    
-    def run(self, iterations:int=tree_iterations):
-        """
-        Method to run the MCTS search continually for the remaining iterations
 
-        :param iterations: Number of iterations to run the tree, given by tree_iterations in config.py by default
-        :return: None
-        """
-        for _ in range(iterations-self.visits):
-            self.mcts()
-
-
-    def mcts(self):
-        node = self.select()
-        v, end_state = node.expand()
-        node.backpropagate(1-v, end_state)
-
-    def select(self):
-        """
-        Finds a leaf node and returns it.
-
-        :return: Node, leaf node of tree following selection by UCB
-        """
+    def expand(self, node:Node):
         if self.children:
-            node = max(self.children, key=lambda n: n.ucb())
-            self.state.move(node.move)
-            return node.select()
+            return self.expand_old(node)
         else:
-            return self
+            v, b = self.expand_self()
+            self.expand_old(node)
+            return v, b
         
-    def expand(self):
+    def expand_old(self, node:Node):
+        for c in self.children:
+            node.children.append(   
+                Node(
+                    c.state, c, c.p, node, c.move
+                )
+            )
+        return self.v, False
+
+    def expand_self(self):
         """
         Performs an expansion on a leaf node, returning v of the node by the network
         and adding children to it
 
         :return: Value: float of the node expanded, as given by the network model
         """
-        return self.main_node.expand(self)
-        
-    def backpropagate(self, v: float, end_state: bool):
-        """
-        Method that backpropagates the value v from the current node.
+        status = self.state.get_game_status()
+        if status == 2:
+            return 0.5, True
+        elif status == 0 or status == 1:
+            return 1, True
+        else:
+            if self.model:
+                p_vector, v = self.possible_moves()
+                for (move, p) in p_vector:
+                    self.children.append(
+                        MainNode(
+                            state=self.state,
+                            p=p,
+                            parent=self,
+                            move=move,
+                            model=self.model
+                        )
+                    )
+                self.v = v
+                return v, False
+            else:
+                moves = self.state.get_moves()
+                if evaluation_method == 'dirichlet':
+                    p_vals = np.random.dirichlet([1]*(len(moves)))
+                    return_v = random.random()
+                else:
+                    p_vals = [1/len(moves)]*(len(moves))
+                    return_v = 0.5
 
-        :param v: Float, the value to backpropagate up the tree, v ranges from 0 to 1 (sigmoid)
-        :return: None
-        """
+                for p, m in zip(p_vals, moves):
+                    self.children.append(
+                        Node(
+                            state=self.state,
+                            move=m,
+                            p=p,
+                            parent=self,
+                            model=self.model
+                        )
+                    )
+                return return_v, False
 
-        self.value += v
-        if end_state:
-            self.true_v += v
-        self.visits += 1
-        # if we aren't at root node, backpropagate
-        if self.parent != None:
-            # invert v value to because of color change before backpropagating
-            self.state.unmove()
-            self.parent.backpropagate(1-v, end_state)
+    def possible_moves(self):
+        """Calculates all possible moves for a given chessboard using the neural network, and returns
+           it as a list of tuples.
+
+        :param state: Chessboard, the input state to calculate moves from
+        :return: (list[Chessboard, Move, float], float), returns a list of new chessboards, the move
+                 that was taken to get there and the float value P for that new state. In addition to this,
+                 it also returns another float which is the value V from the neural network for the input state.
+        """
+        input_repr = self.state.translate_board()
+        moves = self.state.get_moves()
+
+        predict_start = time.time()
+        p, v = self.model.predict(input_repr, verbose=None)
+        predict_end = time.time()
+        self.time_predicted += (predict_end-predict_start)
+        v = v[0][0]
+        p_array = p.reshape(output_representation)
+        return_list = []
+
+        p_sum = 0
+        for move in moves:
+            p_val = fetch_p_from_move(move, p_array)
+            p_sum += p_val
+            return_list.append((move, p_val))
+
+        # normalize the P values in the return list
+        return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
+
+        return return_list, v
 
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
         """Method that will iterate through the nodes and append strings onto the string_buffer list.
@@ -183,47 +216,3 @@ class Node:
         string_buffer = []
         self.print_tree(string_buffer, "", "", depth)
         logger.info(f"\n{''.join(string_buffer)}")
-        #print("".join(string_buffer))
-
-    def update_tree(self, move:Move):
-        """
-        Updates the tree based on a certain move (moves down the tree one level),
-        returns new root node and sets parent of that node to None
-
-        :param move: Move that is being performed
-        :return: New root node
-        """
-        # select the child that will become the new root node
-        child = self.select_child(move)
-        # resetting the time
-        self.time_predicted = 0
-        # adds noise to child
-        #child.add_noise()
-        # moves the state
-        self.state.move(child.move)
-        # sets parent of child to None, aka sets child as root
-        child.parent = None
-        # returns child as new root
-        return child
-
-    def add_noise(self, dir_a=0.03, frac=0.25):
-        """Adds dirichlet noise to all the p values for the children of the current node
-
-        :param dir_a: Float, dirichlet alpha value. 0.03 is default
-        :param frac: Float, fraction deciding how to weigh the P vs the noise, 0.25 is default
-        :return:None
-        """
-        diri_dist = np.random.dirichlet([dir_a] * (len(self.children)))
-        child_dist = [child.p for child in self.children]
-        new_dist = [(1-frac)*p + frac*d for (p, d) in zip(child_dist, diri_dist)]
-        # re normalizing the p values
-        sum_dist = sum(new_dist)
-        new_dist = [p/sum_dist for p in new_dist]
-        for i, child in enumerate(self.children):
-            child.p = new_dist[i]
-
-    def select_child(self, move):
-        for child in self.children:
-            if child.move == move:
-                return child
-        raise RuntimeError("Child as Move: %s not found." % str(move))
