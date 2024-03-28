@@ -86,11 +86,12 @@ def run_multi_games(original_fen, random_state=False, load_data=False):
     file_lock = Semaphore(1)
     start_time = time.time()
     list_processes = []
+    list_data = []
     # start processes in accordance to the number of logical cpu cores.
     for i in range(cpu_count()):
         print(i)
         p = Process(target=single_play_process, args=(file_lock,
-                             random_state, original_fen, start_time,))
+                             random_state, original_fen, start_time, list_data))
         p.daemon = True
         p.start()
         list_processes.append(p)
@@ -99,11 +100,11 @@ def run_multi_games(original_fen, random_state=False, load_data=False):
     # once the main process ends, the child processes also end due to daemon = True
     while True:
         time.sleep(2)
+        print(len(list_data))
 
 
 
-
-def single_play_process(file_lock, random_state, original_fen, start_time):
+def single_play_process(file_lock, random_state, original_fen, start_time, list_data):
     """Function that is used to run a single process, will continually run until the parent process
     ends.
 
@@ -138,6 +139,7 @@ def single_play_process(file_lock, random_state, original_fen, start_time):
             if games % checkpoint_games == 0:
 
                 file_lock.acquire()
+                list_data = list_data + internal_data
                 total_data = load_data_file()
                 total_data = total_data + internal_data
                 with bz2.BZ2File('trainingdata.bz2', 'w') as f:
