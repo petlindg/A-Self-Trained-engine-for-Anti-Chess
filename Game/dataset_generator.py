@@ -139,7 +139,9 @@ def single_play_process(file_lock, random_state, original_fen, start_time, list_
             if games % checkpoint_games == 0:
 
                 file_lock.acquire()
-                list_data = list_data + internal_data
+                for state in internal_data:
+                    list_data.append(state)
+
                 total_data = load_data_file()
                 total_data = total_data + internal_data
                 with bz2.BZ2File('trainingdata.bz2', 'w') as f:
