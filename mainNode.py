@@ -146,10 +146,7 @@ class MainNode:
         input_repr = self.state.translate_board()
         moves = self.state.get_moves()
 
-        predict_start = time.time()
         p, v = self.model.predict(input_repr, verbose=None)
-        predict_end = time.time()
-        self.time_predicted += (predict_end-predict_start)
         v = v[0][0]
         p_array = p.reshape(output_representation)
         return_list = []
