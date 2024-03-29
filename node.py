@@ -15,8 +15,6 @@ from keras.models import Model
 from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
 from logger import Logger
 
-from mainNode import MainNode
-
 logger = Logger("TrainingGame")
     
 def fetch_p_from_move(move: Move, model_output: np.array):
@@ -38,11 +36,10 @@ class Node:
     """
     def __init__(self,
                  state: Chessboard,
-                 main_node: MainNode,
+                 main_node,
                  p: float = 1,
                  parent = None,
-                 move: Move = False,
-                 model: Model = None):
+                 move: Move = None):
 
         # general tree variables
         self.parent: Node = parent
@@ -50,13 +47,9 @@ class Node:
         # node specific variables
         self.state: Chessboard = state
         self.move: Move = move
-        self.v = 0
-        self.true_v = 0
         self.p: float = p
         self.visits: int = 0
         self.value: float = 0
-        # network
-        self.model = model
         # main tree
         self.main_node = main_node
 
@@ -90,11 +83,10 @@ class Node:
         for _ in range(iterations-self.visits):
             self.mcts()
 
-
     def mcts(self):
         node = self.select()
-        v, end_state = node.expand()
-        node.backpropagate(1-v, end_state)
+        v = node.expand()
+        node.backpropagate(1-v)
 
     def select(self):
         """
@@ -104,7 +96,8 @@ class Node:
         """
         if self.children:
             node = max(self.children, key=lambda n: n.ucb())
-            self.state.move(node.move)
+            if not self.state.move(node.move):
+                raise RuntimeError(f"Illegal move {node.move} in state {self.state}")
             return node.select()
         else:
             return self
@@ -117,8 +110,8 @@ class Node:
         :return: Value: float of the node expanded, as given by the network model
         """
         return self.main_node.expand(self)
-        
-    def backpropagate(self, v: float, end_state: bool):
+    
+    def backpropagate(self, v: float):
         """
         Method that backpropagates the value v from the current node.
 
@@ -127,14 +120,12 @@ class Node:
         """
 
         self.value += v
-        if end_state:
-            self.true_v += v
         self.visits += 1
         # if we aren't at root node, backpropagate
-        if self.parent != None:
+        if self.parent:
             # invert v value to because of color change before backpropagating
             self.state.unmove()
-            self.parent.backpropagate(1-v, end_state)
+            self.parent.backpropagate(1-v)
 
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
         """Method that will iterate through the nodes and append strings onto the string_buffer list.
@@ -149,7 +140,7 @@ class Node:
             string_buffer.append(prefix)
             p = round(self.p, 5)
             val = round(self.value, 5)
-            tval = round(self.true_v, 5)
+            tval = 0#round(self.true_v, 5)
             visits = self.visits
             # v = round(self.v, 10)
             if self.parent:
@@ -198,13 +189,11 @@ class Node:
         # resetting the time
         self.time_predicted = 0
         # adds noise to child
-        #child.add_noise()
+        child.add_noise()
         # moves the state
         self.state.move(child.move)
-        # sets parent of child to None, aka sets child as root
-        child.parent = None
         # returns child as new root
-        return child
+        return child.main_node
 
     def add_noise(self, dir_a=0.03, frac=0.25):
         """Adds dirichlet noise to all the p values for the children of the current node

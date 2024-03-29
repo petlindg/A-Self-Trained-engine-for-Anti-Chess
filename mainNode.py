@@ -1,3 +1,4 @@
+from copy import deepcopy
 import random
 from math import sqrt
 
@@ -16,6 +17,9 @@ from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
 from logger import Logger
 
 from node import Node
+
+c_hit = 0
+c_miss = 0
 
 logger = Logger("TrainingGame")
     
@@ -38,14 +42,12 @@ class MainNode:
     """
     def __init__(self,
                  state: Chessboard,
-                 v: float,
+                 v: float = None,
                  p: float = 1,
-                 parent = None,
                  move: Move = None,
                  model: Model = None):
 
         # general tree variables
-        self.parent: Node = parent
         self.children: list[Node] = []
         # node specific variables
         self.state: Chessboard = state
@@ -54,15 +56,6 @@ class MainNode:
         self.p: float = p
         # network
         self.model = model
-
-    def ucb(self):
-        """
-        Calculates UCB of self
-
-        :return: UCB:float
-        """
-        return (self.p * exploration_constant * sqrt(self.parent.visits) / (1 + self.visits)
-                + (self.value / self.visits if self.visits > 0 else 0))
 
     def __str__(self):
         """Method to return a node as a string.
@@ -75,20 +68,28 @@ class MainNode:
 
     def expand(self, node:Node):
         if self.children:
-            return self.expand_old(node)
-        else:
-            v, b = self.expand_self()
+            global c_hit
+            c_hit+=1
             self.expand_old(node)
-            return v, b
+            return self.v
+        else:
+            global c_miss
+            c_miss+=1
+            self.expand_self()
+            self.expand_old(node)
+            return self.v
         
     def expand_old(self, node:Node):
         for c in self.children:
             node.children.append(   
                 Node(
-                    c.state, c, c.p, node, c.move
+                    state=c.state,
+                    main_node=c,
+                    p=c.p,
+                    parent=node,
+                    move=c.move
                 )
             )
-        return self.v, False
 
     def expand_self(self):
         """
@@ -99,44 +100,39 @@ class MainNode:
         """
         status = self.state.get_game_status()
         if status == 2:
-            return 0.5, True
+            self.v = 0.5
         elif status == 0 or status == 1:
-            return 1, True
+            self.v = 1
         else:
             if self.model:
-                p_vector, v = self.possible_moves()
+                p_vector, self.v = self.possible_moves()
                 for (move, p) in p_vector:
                     self.children.append(
                         MainNode(
                             state=self.state,
                             p=p,
-                            parent=self,
                             move=move,
                             model=self.model
                         )
                     )
-                self.v = v
-                return v, False
             else:
                 moves = self.state.get_moves()
                 if evaluation_method == 'dirichlet':
                     p_vals = np.random.dirichlet([1]*(len(moves)))
-                    return_v = random.random()
+                    self.v = random.random()
                 else:
                     p_vals = [1/len(moves)]*(len(moves))
-                    return_v = 0.5
+                    self.v = 0.5
 
                 for p, m in zip(p_vals, moves):
                     self.children.append(
-                        Node(
+                        MainNode(
                             state=self.state,
-                            move=m,
                             p=p,
-                            parent=self,
+                            move=m,
                             model=self.model
                         )
                     )
-                return return_v, False
 
     def possible_moves(self):
         """Calculates all possible moves for a given chessboard using the neural network, and returns
@@ -181,18 +177,11 @@ class MainNode:
         if depth is None or depth > 0:
             string_buffer.append(prefix)
             p = round(self.p, 5)
-            val = round(self.value, 5)
-            tval = round(self.true_v, 5)
-            visits = self.visits
-            # v = round(self.v, 10)
-            if self.parent:
-                if visits != 0:
-                    wr = round(val/visits, 3)
-                    info_text = f'(p:{p}|tv:{tval}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
-                else:
-                    info_text = f'(p:{p}|tv:{tval}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
-                string_buffer.append(info_text)
-                string_buffer.append('\n')
+            val = self.v
+
+            info_text = f'(p:{p}|v:{val}|move:{self.move})'
+            string_buffer.append(info_text)
+            string_buffer.append('\n')
 
             self.children.sort(key=lambda x: x.p, reverse=True)
 
