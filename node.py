@@ -188,8 +188,6 @@ class Node:
         child = self.select_child(move)
         # resetting the time
         self.time_predicted = 0
-        # adds noise to child
-        child.add_noise()
         # moves the state
         self.state.move(child.move)
         # returns child as new root

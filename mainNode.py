@@ -44,6 +44,7 @@ class MainNode:
                  state: Chessboard,
                  v: float = None,
                  p: float = 1,
+                 parent = None,
                  move: Move = None,
                  model: Model = None):
 
@@ -54,6 +55,7 @@ class MainNode:
         self.move: Move = move
         self.v = v
         self.p: float = p
+        self.parent = parent
         # network
         self.model = model
 
@@ -130,6 +132,7 @@ class MainNode:
                             state=self.state,
                             p=p,
                             move=m,
+                            parent=self,
                             model=self.model
                         )
                     )

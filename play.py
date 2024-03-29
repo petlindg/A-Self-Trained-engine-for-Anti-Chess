@@ -8,6 +8,14 @@ from nn_architecture import INPUT_SHAPE, OUTPUT_SHAPE, NeuralNetwork
 from node import Node
 
 
+def tree_eq(n1:MainNode, n2:MainNode):
+    for c1, c2 in zip(n1.children, n2.children):
+        if c1.move==c2.move:
+            return tree_eq(c1, c2)
+        else:
+            return False
+    return True
+
 def play(fen:str):
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
@@ -17,23 +25,26 @@ def play(fen:str):
         print('EXCEPTION, couldnt load weights ', e)
     
     state = Chessboard(fen)
-    mcts_parent = MainNode(state=state, model=model)
+    mcts_main = MainNode(state=state, model=None)
 
     game_counter = 0
     time_start = time.time()
     while game_counter < games_per_iteration:
         print(f"game_counter:{game_counter}")
-        state = mcts_parent.state = Chessboard(fen)
-        mcts_parent_current = MainNode(state, model=model)
-        [mcts_parent_current.children.append(c) for c in mcts_parent.children]
+        state.__init__(fen)
+        while mcts_main.parent:
+            mcts_main = mcts_main.parent
         while state.get_game_status() == 3:
             print(state)
-            mcts_child = Node(
-                state=mcts_parent.state,
-                main_node=mcts_parent_current)
-            mcts_child.run()
-            best_move = max(mcts_child.children, key=lambda c: c.visits).move
-            mcts_parent_current=mcts_child.update_tree(best_move)
+            mcts = Node(
+                state=mcts_main.state,
+                main_node=mcts_main)
+            mcts.expand()
+            mcts.add_noise()
+            mcts.run()
+            mcts.print_selectively(2)
+            best_move = max(mcts.children, key=lambda c: c.visits).move
+            mcts_main=mcts.update_tree(best_move)
         game_counter+=1
         print("Game Complete!")
         print(f"c_hit:{mainNode.c_hit}, c_miss:{mainNode.c_miss}, hitrate:{100*mainNode.c_hit/(mainNode.c_hit+mainNode.c_miss)}%")
