@@ -14,9 +14,10 @@ from keras.models import Model
 
 from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
 from logger import Logger
+from multiprocessing import Queue
 
 logger = Logger("TrainingGame")
-    
+
 def fetch_p_from_move(move: Move, model_output: np.array):
     """Fetches the P value from the output array of the model
 
@@ -36,10 +37,13 @@ class Node:
     """
     def __init__(self,
                  state: Chessboard,
+                 outgoing_queue: Queue,
+                 incoming_queue: Queue,
+                 uid: int,
                  p: float = 1,
                  parent = None,
-                 move: Move = False,
-                 model: Model = None):
+                 move: Move = False
+                 ):
 
         # general tree variables
         self.parent: Node = parent
@@ -52,9 +56,11 @@ class Node:
         self.p: float = p
         self.visits: int = 0
         self.value: float = 0
-        # network
-        self.model = model
-
+        # network queue for communicating with the model process
+        self.outgoing_queue = outgoing_queue
+        self.incoming_queue = incoming_queue
+        # process uid for use with the model queue
+        self.uid = uid
         self.time_predicted = 0
 
     def ucb(self):
@@ -117,39 +123,22 @@ class Node:
         elif status == 0 or status == 1:
             return 1, True
         else:
-            if self.model:
-                p_vector, v = self.possible_moves()
-                for (move, p) in p_vector:
-                    self.children.append(
-                        Node(
-                            state=self.state,
-                            move=move,
-                            p=p,
-                            parent=self,
-                            model=self.model
-                        )
-                    )
-                return v, False
-            else:
-                moves = self.state.get_moves()
-                if evaluation_method == 'dirichlet':
-                    p_vals = np.random.dirichlet([1]*(len(moves)))
-                    return_v = random.random()
-                else:
-                    p_vals = [1/len(moves)]*(len(moves))
-                    return_v = 0.5
 
-                for p, m in zip(p_vals, moves):
-                    self.children.append(
-                        Node(
-                            state=self.state,
-                            move=m,
-                            p=p,
-                            parent=self,
-                            model=self.model
-                        )
+            p_vector, v = self.possible_moves()
+            for (move, p) in p_vector:
+                self.children.append(
+                    Node(
+                        state=self.state,
+                        move=move,
+                        p=p,
+                        parent=self,
+                        outgoing_queue=self.outgoing_queue,
+                        incoming_queue=self.incoming_queue,
+                        uid=self.uid
                     )
-                return return_v, False
+                )
+            return v, False
+
         
     def backpropagate(self, v: float, end_state: bool):
         """
@@ -182,10 +171,13 @@ class Node:
         moves = self.state.get_moves()
 
         predict_start = time.time()
-        p, v = self.model.predict(input_repr, verbose=None)
+        # send an evaluation request and wait for the response
+        self.outgoing_queue.put(('eval', self.uid, input_repr))
+        p, v = self.incoming_queue.get()
+
         predict_end = time.time()
         self.time_predicted += (predict_end-predict_start)
-        v = v[0][0]
+        v = v[0]
         p_array = p.reshape(output_representation)
         return_list = []
 
