@@ -17,10 +17,12 @@ from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 
 class TrainingData:
     def __init__(self):
-        self.X_train = deque(maxlen=int(train_split*max_buffer_size))
-        self.X_test = deque(maxlen=int((1-train_split)*max_buffer_size))
-        self.y_train = deque(maxlen=int(train_split*max_buffer_size))
-        self.y_test = deque(maxlen=int((1-train_split)*max_buffer_size))
+        train_size = int(train_split*max_buffer_size)
+        test_size = int((1-train_split)*max_buffer_size)
+        self.X_train = deque(maxlen= train_size)
+        self.X_test = deque(maxlen= test_size)
+        self.y_train = deque(maxlen= train_size)
+        self.y_test = deque(maxlen= test_size)
 
     def add(self, X_train, X_test, y_train, y_test):
         self.X_train += X_train
