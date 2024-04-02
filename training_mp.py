@@ -154,6 +154,8 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 # eval8_loss [1.4593110084533691, 1.3918009996414185, 0.06750993430614471]
 
 
+
+                # 13 * 150 took 10000s a total of 10 million states explored
     def _load_past_data(self):
         data = TrainingData()
         try:
