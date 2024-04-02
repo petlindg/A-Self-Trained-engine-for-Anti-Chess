@@ -54,8 +54,8 @@ class NeuralNetworkProcess(multiprocessing.Process):
         model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
         self.model = model_config.build_nn()
         try:
-            pass
-            #self.model.load_weights(checkpoint_path)
+            #pass
+            self.model.load_weights(checkpoint_path)
         except Exception as e:
             print('EXCEPTION, couldnt load weights ', e)
 
@@ -143,6 +143,11 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 # loop 7 == ==
                 # 420 games took 9000+7800, 90% hitrate
                 # eval7_loss [1.4593110084533691, 1.3918009996414185, 0.06750993430614471]
+
+                # loop 7
+                # 480 games took 9000+11000s, 82% hitrate
+                # eval8_loss [1.4593110084533691, 1.3918009996414185, 0.06750993430614471]
+
 
     def _load_past_data(self):
         data = TrainingData()
