@@ -27,9 +27,9 @@ class TrainingPlot:
             print("Training metrics data has not been saved yet")
     
 
-    def pickle_history(model: History):
+    def pickle_history(self, model: History):
         with open("Stats/training_metrics.p", "ab") as f:
-            pickle.dumps(model, f)
+            pickle.dump(model, f)
     
     def process_loaded_data(self, model_history: History):
         final_loss = model_history.history["loss"][-1]
