@@ -204,18 +204,22 @@ class NeuralNetworkProcess(multiprocessing.Process):
         dists_train, vs_train = zip(*self.training_data.y_train)
         dists_test, vs_test = zip(*self.training_data.y_test)
 
-        self.model.fit(np.array(self.training_data.X_train),
+        result = self.model.fit(np.array(self.training_data.X_train),
                        [np.array(dists_train), np.array(vs_train)],
                        epochs=epochs,
                        verbose=1,
-                       batch_size=batch_size
+                       batch_size=batch_size,
+                       validation_data=(np.array(self.training_data.X_test),[np.array(dists_test), np.array(vs_test)]),
                        )
 
-        eval = self.model.evaluate(np.array(self.training_data.X_test),
-                            [np.array(dists_test), np.array(vs_test)]
-                            )
-        print(eval)
-        self.eval_result.append(eval)
+        print(type(result))
+        print(result)
+
+        #eval = self.model.evaluate(np.array(self.training_data.X_test),
+        #                    [np.array(dists_test), np.array(vs_test)]
+        #                    )
+        #print(eval)
+        #self.eval_result.append(eval)
 
         self.model.save_weights(checkpoint_path)
         save_to_file('Game/training_data_class.bz2', self.training_data)
