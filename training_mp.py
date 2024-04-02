@@ -20,7 +20,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.output_queues = output_queues # dict of queues to send back, has UID as key and queue as value
         self.list_uid = []
         self.list_states = []
-        self.max_size = 30
+        self.batch_size = 30 # number of states to process in a single batch
         self.buffer = deque(maxlen=max_buffer_size)
         self.games_counter = 0
         self.model = None
@@ -69,7 +69,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
 
             # if the list of pending evaluation states is large enough
             # perform the model evaluation on the list
-            if len(self.list_states) >= self.max_size:
+            if len(self.list_states) >= self.batch_size:
                 self._process_requests()
 
             # if the accumulated game results reaches appropriate size, train the model

@@ -171,7 +171,7 @@ class Node:
         moves = self.state.get_moves()
 
         predict_start = time.time()
-        # send an evaluation request and wait for the response
+        # send an evaluation request and wait for the response from the NN process
         self.outgoing_queue.put(('eval', self.uid, input_repr))
         p, v = self.incoming_queue.get()
 
