@@ -19,8 +19,8 @@ class TrainingData:
     def __init__(self):
         self.X_train = deque(maxlen=int(train_split*max_buffer_size))
         self.X_test = deque(maxlen=int((1-train_split)*max_buffer_size))
-        self.y_train = []
-        self.y_test = []
+        self.y_train = deque(maxlen=int(train_split*max_buffer_size))
+        self.y_test = deque(maxlen=int((1-train_split)*max_buffer_size))
 
     def add(self, X_train, X_test, y_train, y_test):
         self.X_train += X_train
