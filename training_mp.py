@@ -51,12 +51,14 @@ class NeuralNetworkProcess(multiprocessing.Process):
             if request_type == 'eval':
                 dict_vals = self.evaluations.get(data.data.tobytes())
                 if dict_vals is not None:
+                    self.evaluations['hits'] += 1
                     p, v = dict_vals
                     output_queue = self.output_queues[uid]
                     output_queue.put((p, v))
                 # if the data doesn't exist in the dictionary, add it to the internal storage for evaluation
                 # the internal data is split into two parts so that it can later be sent back to the correct worker
                 else:
+                    self.evaluations['misses'] += 1
                     self.list_uid.append(uid)
                     self.list_states.append(data)
 
@@ -76,9 +78,16 @@ class NeuralNetworkProcess(multiprocessing.Process):
             if self.games_counter >= games_per_iteration:
                 self._train_network()
                 print(f'{time.time() - start_time} s')
+                hits = self.evaluations['hits']
+                misses= self.evaluations['misses']
+                sum = hits+misses
+                print(f'hits: {hits} | {misses} | hitrate: {hits/sum} | total: {sum}')
                 time.sleep(30)
                 # 30 games in 83 seconds, 2.7s per game
 
+                # 120 games in 185s, 1.5s
+                # 85% hitrate, 108356 state evaluations
+                # 92516 hits, 15840 misses
     def _process_requests(self):
         """Method to process the requested evaluations and return the results to all the linked processes.
 
