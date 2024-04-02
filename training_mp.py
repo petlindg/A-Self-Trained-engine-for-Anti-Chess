@@ -145,7 +145,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 # eval7_loss [1.4593110084533691, 1.3918009996414185, 0.06750993430614471]
 
     def _load_past_data(self):
-        data = None
+        data = TrainingData()
         try:
             with bz2.BZ2File('Game/training_data_class.bz2', 'r') as f:
                 data = pickle.load(f)
