@@ -56,3 +56,7 @@ class TrainingPlot:
         self.load_data()
         self.plot_loss()
         self.plot_accuracy()
+
+if __name__ == '__main__':
+    train = TrainingPlot()
+    train.show_statistics()
