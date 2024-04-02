@@ -186,9 +186,9 @@ class Node:
             p_val = fetch_p_from_move(move, p_array)
             p_sum += p_val
             return_list.append((move, p_val))
-
-        # normalize the P values in the return list
-        return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
+        if p_sum > 0:
+            # normalize the P values in the return list
+            return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
 
         return return_list, v
 
@@ -254,7 +254,7 @@ class Node:
         # resetting the time
         self.time_predicted = 0
         # adds noise to child
-        #child.add_noise()
+        child.add_noise()
         # moves the state
         self.state.move(child.move)
         # sets parent of child to None, aka sets child as root
