@@ -60,7 +60,7 @@ def train_file():
 
 def main():
     #run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", 1)
-    run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", 50)
+    run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", 60)
     #train_file()
 
 if __name__ == '__main__':
