@@ -14,6 +14,7 @@ from config import max_buffer_size, training_iterations, games_per_iteration, ch
 from config import epochs, batch_size, verbosity, train_split
 from Game.TrainingGame import TrainingGame
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
+from Stats.training_stats_plotter import TrainingPlot
 
 class TrainingData:
     def __init__(self):
@@ -45,6 +46,8 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.model = None
         self.evaluations = {'hits': 0, 'misses': 0}
         self.eval_result = []
+        self.statistics = TrainingPlot()
+
     def run(self):
         """Start the neural network process allowing it to process data
 
@@ -204,7 +207,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         dists_train, vs_train = zip(*self.training_data.y_train)
         dists_test, vs_test = zip(*self.training_data.y_test)
 
-        result = self.model.fit(np.array(self.training_data.X_train),
+        history = self.model.fit(np.array(self.training_data.X_train),
                        [np.array(dists_train), np.array(vs_train)],
                        epochs=epochs,
                        verbose=1,
@@ -212,8 +215,8 @@ class NeuralNetworkProcess(multiprocessing.Process):
                        validation_data=(np.array(self.training_data.X_test),[np.array(dists_test), np.array(vs_test)]),
                        )
 
-        print(type(result))
-        print(result)
+        self.statistics.pickle_history(history)
+
 
         #eval = self.model.evaluate(np.array(self.training_data.X_test),
         #                    [np.array(dists_test), np.array(vs_test)]
