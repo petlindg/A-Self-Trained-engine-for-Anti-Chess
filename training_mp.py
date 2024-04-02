@@ -136,6 +136,14 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 # 300 games took 9000s, 1187k states, 77% hitrate
                 # eval5_loss [1.5922825336456299, 1.5150401592254639, 0.07724227011203766]
 
+                # loop 6 == ==
+                # 360 games took 9000+4500s, 90% hitrate
+                # eval6_loss [1.5357917547225952, 1.4594144821166992, 0.07637675106525421]
+
+                # loop 7 == ==
+                # 420 games took 9000+7800, 90% hitrate
+                # eval7_loss [1.4593110084533691, 1.3918009996414185, 0.06750993430614471]
+
     def _load_past_data(self):
         data = None
         try:
