@@ -54,8 +54,8 @@ class NeuralNetworkProcess(multiprocessing.Process):
         model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
         self.model = model_config.build_nn()
         try:
-            #pass
-            self.model.load_weights(checkpoint_path)
+            pass
+            #self.model.load_weights(checkpoint_path)
         except Exception as e:
             print('EXCEPTION, couldnt load weights ', e)
 
