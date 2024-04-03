@@ -238,9 +238,10 @@ class GameProcess(multiprocessing.Process):
         self.uid = uid
 
     def run(self):
-        chessboard = Chessboard(self.initial_state)
+
         # while the process is running, keep running training games
         while True:
+            chessboard = Chessboard(self.initial_state)
             random_state = generate_random_state(config.piece_list)
             if config.random_state_generation:
                 game = TrainingGame(initial_state=Chessboard(random_state), outgoing_queue=self.outgoing_queue,
