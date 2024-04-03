@@ -1,7 +1,7 @@
 import pickle
 from keras.callbacks import History
 import matplotlib.pyplot as plt
-
+import bz2
 
 class TrainingPlot:
     '''
@@ -16,24 +16,30 @@ class TrainingPlot:
         :return: None
         '''
         try:
-            with open("Stats/training_metrics.p", "rb") as f:
+            with bz2.BZ2File("./training_metrics.bz2", "rb") as f:
                 while True:
                     try:
-                        model: History = pickle.load(f)
+                        model: dict = pickle.load(f)
                         self.process_loaded_data(model)
                     except EOFError:
                         break
         except FileNotFoundError:
             print("Training metrics data has not been saved yet")
     
+    # def compress(self):
+    #     with open("./training_metrics.p", "rb") as f:
+    #         pickled = pickle.load(f)
+    #         compressed = bz2.compress(pickled)
+    #         with bz2.open("./training_metrics.bz2", "wb") as f:
+    #             f.write(compressed)
 
-    def pickle_history(model: History):
-        with open("Stats/training_metrics.p", "ab") as f:
-            pickle.dumps(model, f)
+    def pickle_history(history: dict):
+        with open("./training_metrics.p", "ab") as f:
+            pickle.dumps(history, f, pickle.HIGHEST_PROTOCOL)
     
-    def process_loaded_data(self, model_history: History):
-        final_loss = model_history.history["loss"][-1]
-        final_acc = model_history.history["accuracy"][-1]
+    def process_loaded_data(self, model_history: dict):
+        final_loss = model_history["loss"][-1]
+        final_acc = model_history["accuracy"][-1]
         self.data[0].append(final_loss)
         self.data[1].append(final_acc)
 
