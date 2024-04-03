@@ -249,7 +249,7 @@ class GameProcess(multiprocessing.Process):
             chessboard = Chessboard(self.initial_state)
             print('=========================================')
             print('=========================================')
-            print('ID: ', id(self), ' ', self.uid)
+            print('ID: ', id(self.uid), ' ', self.uid)
             print('=========================================')
             print('=========================================')
             random_state = generate_random_state(config.piece_list)
