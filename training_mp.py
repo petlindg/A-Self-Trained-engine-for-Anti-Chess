@@ -10,10 +10,11 @@ from sklearn.model_selection import train_test_split
 
 import config
 from Game.state_generator import generate_random_state
-from chess import Chessboard
+
 from config import max_buffer_size, training_iterations, games_per_iteration, checkpoint_path
 from config import epochs, batch_size, verbosity, train_split
-from Game.TrainingGame import TrainingGame
+
+
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 from Stats.training_stats_plotter import TrainingPlot
 
@@ -240,6 +241,8 @@ class GameProcess(multiprocessing.Process):
         self.uid = uid
 
     def run(self):
+        from chess import Chessboard
+        from Game.TrainingGame import TrainingGame
         random.seed(self.uid)
         # while the process is running, keep running training games
         while True:
