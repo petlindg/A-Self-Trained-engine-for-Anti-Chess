@@ -1,6 +1,7 @@
 import bz2
 import multiprocessing
 import pickle
+import random
 import time
 from collections import deque
 
@@ -54,6 +55,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         :return: None
         """
         # if the past game data should be loaded or not
+        random.seed()
         self._load_past_data()
         start_time = time.time()
         model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
