@@ -30,5 +30,5 @@ class GameProcess(multiprocessing.Process):
                 game = TrainingGame(initial_state=self.chessboard, outgoing_queue=self.outgoing_queue,
                                     incoming_queue=self.incoming_queue, uid=self.uid)
             result = game.run()
-            print(result)
-            self.outgoing_queue.put(('finished', self.uid, game.get_history()))
+
+            self.outgoing_queue.put(('finished', self.uid, (game.get_history(), result)))

@@ -89,9 +89,10 @@ class NeuralNetworkProcess(multiprocessing.Process):
             # if the request is a finished game, data will be the final result from the game
             # therefore append it to our data buffer and increment our counter
             elif request_type == 'finished':
-                self.buffer.append(data)
+                game_data, result = data
+                self.buffer.append(game_data)
                 self.games_counter += 1
-                print(f'game finished uid:{uid} | c: {self.games_counter}')
+                print(f'{result}| game finished uid:{uid} | c: {self.games_counter}')
 
             # if the list of pending evaluation states is large enough
             # perform the model evaluation on the list
