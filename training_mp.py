@@ -240,8 +240,7 @@ class GameProcess(multiprocessing.Process):
         self.uid = uid
 
     def run(self):
-        #random.seed(self.uid)
-        print(f'uid: {self.uid} | random value: {random.random}')
+        random.seed(self.uid)
         # while the process is running, keep running training games
         while True:
             chessboard = Chessboard(self.initial_state)
