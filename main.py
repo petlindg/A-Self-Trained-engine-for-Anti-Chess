@@ -7,10 +7,11 @@ from config import checkpoint_path
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 from nn_process import NeuralNetworkProcess
 from game_process import GameProcess
-from multiprocessing import Queue
+from multiprocessing import Queue, set_start_method
+
 
 def run_training(fen, workers=1):
-
+    set_start_method('spawn')
     #chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     #chessboard = Chessboard(fen)
     nr_workers = workers
@@ -36,7 +37,7 @@ def run_training(fen, workers=1):
 
     for worker in worker_list:
         worker.daemon = True
-        worker.start()
+        worker.spawn()
     for worker in worker_list:
         print('id: ',id(worker))
 
