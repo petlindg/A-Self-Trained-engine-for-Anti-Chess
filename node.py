@@ -52,7 +52,7 @@ class Node:
         # node specific variables
         self.state: Chessboard = state
         self.move: Move = move
-        self.v = 0
+        #self.v = 0
         self.true_v = 0
         self.p: float = p
         self.visits: int = 0
@@ -209,7 +209,6 @@ class Node:
             val = round(self.value, 5)
             tval = round(self.true_v, 5)
             v_original = round(self.v, 5)
-            print(self.v)
             visits = self.visits
             # v = round(self.v, 10)
             if self.parent:
