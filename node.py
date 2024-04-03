@@ -258,7 +258,9 @@ class Node:
         # resetting the time
         self.time_predicted = 0
         # adds noise to child
+        child.print_selectively(2)
         child.add_noise()
+        child.print_selectively(2)
         # moves the state
         self.state.move(child.move)
         # sets parent of child to None, aka sets child as root
