@@ -96,8 +96,8 @@ class Node:
     def mcts(self):
         node = self.select()
         v, end_state = node.expand()
-        print(v)
         self.v = v
+        print(self.v)
         node.backpropagate(1-v, end_state)
 
     def select(self):
