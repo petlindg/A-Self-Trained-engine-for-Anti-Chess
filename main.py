@@ -37,6 +37,8 @@ def run_training(fen, workers=1):
     for worker in worker_list:
         worker.daemon = True
         worker.start()
+    for worker in worker_list:
+        print('id: ',id(worker))
 
     while True:
         time.sleep(20)
