@@ -34,7 +34,7 @@ class TrainingPlot:
     #             f.write(compressed)
 
     def pickle_history(self, history: dict):
-        with open("./training_metrics.p", "ab") as f:
+        with bz2.BZ2File('training_metrics.bz2', 'ab') as f:
             pickle.dump(history, f, pickle.HIGHEST_PROTOCOL)
     
     def process_loaded_data(self, model_history: dict):
