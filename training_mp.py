@@ -247,10 +247,9 @@ class GameProcess(multiprocessing.Process):
         # while the process is running, keep running training games
         while True:
             chessboard = Chessboard(self.initial_state)
-            val = 5
             print('=========================================')
             print('=========================================')
-            print('ID: ', id(val), ' ', self.uid)
+            print('ID: ', id(self), ' ', self.uid)
             print('=========================================')
             print('=========================================')
             random_state = generate_random_state(config.piece_list)
