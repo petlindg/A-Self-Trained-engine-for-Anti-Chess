@@ -16,7 +16,7 @@ class GameProcess(multiprocessing.Process):
         from Game.TrainingGame import TrainingGame
         from Game.state_generator import generate_random_state
 
-        random.seed(self.uid)
+        random.seed()
         # while the process is running, keep running training games
         while True:
             self.chessboard = Chessboard(self.initial_state)
