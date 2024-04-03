@@ -96,6 +96,7 @@ class Node:
     def mcts(self):
         node = self.select()
         v, end_state = node.expand()
+        print(v)
         self.v = v
         node.backpropagate(1-v, end_state)
 
@@ -208,6 +209,7 @@ class Node:
             p = round(self.p, 5)
             val = round(self.value, 5)
             tval = round(self.true_v, 5)
+            v_original = round(self.v, 2)
             visits = self.visits
             # v = round(self.v, 10)
             if self.parent:
