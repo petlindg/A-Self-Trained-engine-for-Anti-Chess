@@ -154,6 +154,8 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 # eval8_loss [1.4593110084533691, 1.3918009996414185, 0.06750993430614471]
 
 
+
+                # 13 * 150 took 10000s a total of 10 million states explored
     def _load_past_data(self):
         data = TrainingData()
         try:
@@ -177,7 +179,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
 
         # go through the result list and send each individual result back to the corresponding process
         for input_repr, key, (p, v) in zip(model_input, self.list_uid, result_zip):
-            self.evaluations[input_repr.data.tobytes()] = (p, v)
+            #self.evaluations[input_repr.data.tobytes()] = (p, v)
             out_queue = self.output_queues[key]
             out_queue.put((p, v))
 
@@ -211,16 +213,18 @@ class NeuralNetworkProcess(multiprocessing.Process):
                        [np.array(dists_train), np.array(vs_train)],
                        epochs=epochs,
                        verbose=1,
-                       batch_size=batch_size
+                       batch_size=batch_size,
+                       validation_data=(np.array(self.training_data.X_test),[np.array(dists_test), np.array(vs_test)]),
                        )
-        
+
         self.statistics.pickle_history(history)
 
-        eval = self.model.evaluate(np.array(self.training_data.X_test),
-                            [np.array(dists_test), np.array(vs_test)]
-                            )
-        print(eval)
-        self.eval_result.append(eval)
+
+        #eval = self.model.evaluate(np.array(self.training_data.X_test),
+        #                    [np.array(dists_test), np.array(vs_test)]
+        #                    )
+        #print(eval)
+        #self.eval_result.append(eval)
 
         self.model.save_weights(checkpoint_path)
         save_to_file('Game/training_data_class.bz2', self.training_data)
@@ -234,14 +238,16 @@ class GameProcess(multiprocessing.Process):
         self.uid = uid
 
     def run(self):
+
         # while the process is running, keep running training games
         while True:
+            chessboard = Chessboard(self.initial_state)
             random_state = generate_random_state(config.piece_list)
             if config.random_state_generation:
                 game = TrainingGame(initial_state=Chessboard(random_state), outgoing_queue=self.outgoing_queue,
                                     incoming_queue=self.incoming_queue, uid=self.uid)
             else:
-                game = TrainingGame(initial_state=self.initial_state, outgoing_queue=self.outgoing_queue,
+                game = TrainingGame(initial_state=chessboard, outgoing_queue=self.outgoing_queue,
                                     incoming_queue=self.incoming_queue, uid=self.uid)
             result = game.run()
             print(result)
