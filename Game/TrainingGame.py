@@ -1,6 +1,7 @@
 import time
 from copy import deepcopy
 
+import config
 from Game.Utils import translate_moves_to_output
 from chess import Chessboard, Color
 from Game.Player import Player
@@ -62,8 +63,9 @@ class TrainingGame:
         while not self.game_ended():
             self.logger.info(str(self.current_state))
             self.logger.info(f'player: {self.current_state.player_to_move}')
-            #print(self.current_state)
-            #print('player: ', self.current_state.player_to_move)
+            if config.evaluation:
+                print(self.current_state)
+                print('player: ', self.current_state.player_to_move)
             time_predicted = self.make_move()
             predict_time += time_predicted
 

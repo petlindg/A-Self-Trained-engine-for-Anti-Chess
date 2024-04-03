@@ -4,6 +4,7 @@ from math import sqrt
 import numpy as np
 import time
 
+import config
 from chess import Chessboard, Move, Color
 from config import exploration_constant, evaluation_method
 
@@ -95,6 +96,7 @@ class Node:
     def mcts(self):
         node = self.select()
         v, end_state = node.expand()
+        self.v = v
         node.backpropagate(1-v, end_state)
 
     def select(self):
@@ -211,9 +213,9 @@ class Node:
             if self.parent:
                 if visits != 0:
                     wr = round(val/visits, 3)
-                    info_text = f'(p:{p}|tv:{tval}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
+                    info_text = f'(p:{p}|V:{self.v}|tv:{tval}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
                 else:
-                    info_text = f'(p:{p}|tv:{tval}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
+                    info_text = f'(p:{p}|V:{self.v}|tv:{tval}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
                 string_buffer.append(info_text)
                 string_buffer.append('\n')
 
@@ -239,7 +241,8 @@ class Node:
         string_buffer = []
         self.print_tree(string_buffer, "", "", depth)
         logger.info(f"\n{''.join(string_buffer)}")
-        #print("".join(string_buffer))
+        if config.evaluation:
+            print("".join(string_buffer))
 
     def update_tree(self, move:Move):
         """

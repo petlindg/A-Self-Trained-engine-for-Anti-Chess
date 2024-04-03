@@ -53,3 +53,5 @@ TRAINING_DATA_PATH = "trainingData/"
 'proportion of the training data that will be in the training data set'
 train_split = 0.8
 
+'evaluation is a boolean for if the program will run with a single thread and print out all debugging output'
+evaluation = True
