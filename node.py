@@ -208,7 +208,7 @@ class Node:
             p = round(self.p, 5)
             val = round(self.value, 5)
             tval = round(self.true_v, 5)
-            v_original = round(self.original_v, 5)
+            v_original = round(self.original_v, 3)
             visits = self.visits
             # v = round(self.v, 10)
             if self.parent:
