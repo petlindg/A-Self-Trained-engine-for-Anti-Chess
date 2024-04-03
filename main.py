@@ -66,7 +66,7 @@ def train_file():
 
 def main():
 
-    threads = 60
+    threads = 70
     if config.evaluation:
         threads = 1
     run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", threads)
