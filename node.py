@@ -52,7 +52,7 @@ class Node:
         # node specific variables
         self.state: Chessboard = state
         self.move: Move = move
-        #self.v = 0
+        self.original_v = 0
         self.true_v = 0
         self.p: float = p
         self.visits: int = 0
@@ -96,7 +96,6 @@ class Node:
     def mcts(self):
         node = self.select()
         v, end_state = node.expand()
-        self.v = v
         node.backpropagate(1-v, end_state)
 
     def select(self):
@@ -127,6 +126,7 @@ class Node:
         else:
 
             p_vector, v = self.possible_moves()
+            self.original_v = v
             for (move, p) in p_vector:
                 self.children.append(
                     Node(
@@ -208,7 +208,7 @@ class Node:
             p = round(self.p, 5)
             val = round(self.value, 5)
             tval = round(self.true_v, 5)
-            v_original = round(self.v, 5)
+            v_original = round(self.original_v, 5)
             visits = self.visits
             # v = round(self.v, 10)
             if self.parent:
