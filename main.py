@@ -5,7 +5,8 @@ from training import Training
 from chess import Chessboard
 from config import checkpoint_path
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
-from training_mp import NeuralNetworkProcess, GameProcess
+from nn_process import NeuralNetworkProcess
+from game_process import GameProcess
 from multiprocessing import Queue
 
 def run_training(fen, workers=1):
@@ -24,6 +25,7 @@ def run_training(fen, workers=1):
                              output_queue=output_queues[i],
                              uid=i)
         worker_list.append(worker)
+
 
     nn_process = NeuralNetworkProcess(input_queue=input_queue,
                                       output_queues=output_queues

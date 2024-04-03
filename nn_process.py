@@ -8,9 +8,6 @@ from collections import deque
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-import config
-from Game.state_generator import generate_random_state
-
 from config import max_buffer_size, training_iterations, games_per_iteration, checkpoint_path
 from config import epochs, batch_size, verbosity, train_split
 
@@ -232,37 +229,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.model.save_weights(checkpoint_path)
         save_to_file('Game/training_data_class.bz2', self.training_data)
 
-class GameProcess(multiprocessing.Process):
-    def __init__(self, input_queue, output_queue, initial_state, uid):
-        super(GameProcess, self).__init__()
-        self.outgoing_queue = input_queue
-        self.incoming_queue = output_queue
-        self.initial_state = initial_state
-        self.uid = uid
 
-    def run(self):
-        from chess import Chessboard
-        from Game.TrainingGame import TrainingGame
-        random.seed(self.uid)
-        # while the process is running, keep running training games
-        while True:
-            self.chessboard = Chessboard(self.initial_state)
-            self.value = 5
-            print('=========================================')
-            print('=========================================')
-            print('ID: ', id(self.value), ' ', self.uid)
-            print('=========================================')
-            print('=========================================')
-            random_state = generate_random_state(config.piece_list)
-            if config.random_state_generation:
-                game = TrainingGame(initial_state=Chessboard(random_state), outgoing_queue=self.outgoing_queue,
-                                    incoming_queue=self.incoming_queue, uid=self.uid)
-            else:
-                game = TrainingGame(initial_state=self.chessboard, outgoing_queue=self.outgoing_queue,
-                                    incoming_queue=self.incoming_queue, uid=self.uid)
-            result = game.run()
-            print(result)
-            self.outgoing_queue.put(('finished', self.uid, game.get_history()))
 def save_to_file(filename, data):
     with bz2.BZ2File(filename, 'w') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
