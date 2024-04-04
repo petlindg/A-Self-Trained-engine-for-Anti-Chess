@@ -33,9 +33,9 @@ class TrainingPlot:
     #         with bz2.open("./training_metrics.bz2", "wb") as f:
     #             f.write(compressed)
 
-    def pickle_history(history: dict):
+    def pickle_history(self, history: dict):
         with open("./training_metrics.p", "ab") as f:
-            pickle.dumps(history, f, pickle.HIGHEST_PROTOCOL)
+            pickle.dump(history, f, pickle.HIGHEST_PROTOCOL)
     
     def process_loaded_data(self, model_history: dict):
         final_loss = model_history["loss"][-1]
