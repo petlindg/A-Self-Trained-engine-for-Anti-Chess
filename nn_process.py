@@ -164,6 +164,8 @@ class NeuralNetworkProcess(multiprocessing.Process):
 
 
                 # 13 * 150 took 10000s a total of 10 million states explored
+            self.statistics.save_history_to_json()
+
     def _load_past_data(self):
         data = TrainingData()
         try:
@@ -225,7 +227,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
                        validation_data=(np.array(self.training_data.X_test),[np.array(dists_test), np.array(vs_test)]),
                        )
 
-        self.statistics.pickle_history(history)
+        self.statistics.save_history_to_instance(history)
 
 
         #eval = self.model.evaluate(np.array(self.training_data.X_test),
