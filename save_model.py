@@ -9,7 +9,7 @@ def main():
         model.load_weights(checkpoint_path)
     except Exception as e:
         print('EXCEPTION, couldnt load weights ', e)
-    model.save('model.keras')
+    model.save('saved_model/model')
 
 
 
