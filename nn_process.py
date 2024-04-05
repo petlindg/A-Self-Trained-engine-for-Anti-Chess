@@ -6,6 +6,7 @@ import time
 from collections import deque
 
 import numpy as np
+import tensorflow
 from sklearn.model_selection import train_test_split
 
 from config import max_buffer_size, training_iterations, games_per_iteration, checkpoint_path
@@ -31,7 +32,7 @@ class TrainingData:
         self.y_test += y_test
 
 class NeuralNetworkProcess(multiprocessing.Process):
-    def __init__(self, input_queue, output_queues):
+    def __init__(self, input_queue, output_queues, model=None):
         super(NeuralNetworkProcess, self).__init__()
         self.input_queue = input_queue # shared queue for the input
         self.output_queues = output_queues # dict of queues to send back, has UID as key and queue as value
@@ -42,7 +43,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.buffer = []
         self.training_data = TrainingData()
         self.games_counter = 0
-        self.model = None
+        self.model = model
         self.evaluations = {'hits': 0, 'misses': 0}
         self.eval_result = []
         self.statistics = TrainingPlot()
@@ -52,17 +53,23 @@ class NeuralNetworkProcess(multiprocessing.Process):
 
         :return: None
         """
+        load_model = True
         # if the past game data should be loaded or not
         random.seed()
-        self._load_past_data()
-        start_time = time.time()
-        model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
-        self.model = model_config.build_nn()
-        try:
-            #pass
-            self.model.load_weights(checkpoint_path)
-        except Exception as e:
-            print('EXCEPTION, couldnt load weights ', e)
+        if load_model:
+            pass
+        else:
+            self._load_past_data()
+            start_time = time.time()
+            model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
+            self.model = model_config.build_nn()
+            try:
+                #pass
+                self.model.load_weights(checkpoint_path)
+            except Exception as e:
+                print('EXCEPTION, couldnt load weights ', e)
+
+
 
         while True:
             # get the latest request from the queue

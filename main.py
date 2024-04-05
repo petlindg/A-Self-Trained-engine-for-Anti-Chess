@@ -1,4 +1,7 @@
+import os
 import time
+
+import tensorflow
 
 import config
 from training import Training
@@ -12,6 +15,7 @@ from multiprocessing import Queue, set_start_method
 
 def run_training(fen, workers=1):
     set_start_method('spawn')
+    model = tensorflow.keras.models.load_model('\model.keras')
     #chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     #chessboard = Chessboard(fen)
     nr_workers = workers
@@ -29,7 +33,8 @@ def run_training(fen, workers=1):
 
 
     nn_process = NeuralNetworkProcess(input_queue=input_queue,
-                                      output_queues=output_queues
+                                      output_queues=output_queues,
+                                      model=model
                                       )
 
     nn_process.daemon = True
