@@ -1,5 +1,5 @@
 from training import Training
-from chess import Chessboard
+from chess.chessboard import Chessboard
 from config import checkpoint_path
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 

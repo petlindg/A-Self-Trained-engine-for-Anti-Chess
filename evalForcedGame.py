@@ -1,7 +1,7 @@
 
-from chess import Chessboard
-from chess import Move
-from chess import algebraic_to_move
+from chess.chessboard import Chessboard
+from chess.move import Move
+from chess.move import algebraic_to_move
 from config import *
 from nn_architecture import INPUT_SHAPE, OUTPUT_SHAPE, NeuralNetwork
 from node import fetch_p_from_move

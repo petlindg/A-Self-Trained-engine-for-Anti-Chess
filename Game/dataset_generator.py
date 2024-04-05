@@ -3,7 +3,8 @@ import sys
 sys.path.append('..')
 import config
 from TrainingGame import TrainingGame
-from chess import Chessboard, Color
+from chess.chessboard import Chessboard
+from chess.utils import Color
 import pickle
 import bz2
 from state_generator import generate_random_state
