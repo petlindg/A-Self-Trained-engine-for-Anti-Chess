@@ -1,18 +1,17 @@
 import bz2
 import multiprocessing
 import pickle
+import random
 import time
 from collections import deque
 
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-import config
-from Game.state_generator import generate_random_state
-from chess import Chessboard
 from config import max_buffer_size, training_iterations, games_per_iteration, checkpoint_path
 from config import epochs, batch_size, verbosity, train_split
-from Game.TrainingGame import TrainingGame
+
+
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 from Stats.training_stats_plotter import TrainingPlot
 
@@ -54,6 +53,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         :return: None
         """
         # if the past game data should be loaded or not
+        random.seed()
         self._load_past_data()
         start_time = time.time()
         model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
@@ -89,9 +89,10 @@ class NeuralNetworkProcess(multiprocessing.Process):
             # if the request is a finished game, data will be the final result from the game
             # therefore append it to our data buffer and increment our counter
             elif request_type == 'finished':
-                self.buffer.append(data)
+                game_data, result = data
+                self.buffer.append(game_data)
                 self.games_counter += 1
-                print(f'game finished uid:{uid} | c: {self.games_counter}')
+                print(f'{result}| game finished uid:{uid} | c: {self.games_counter}')
 
             # if the list of pending evaluation states is large enough
             # perform the model evaluation on the list
@@ -179,7 +180,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
 
         # go through the result list and send each individual result back to the corresponding process
         for input_repr, key, (p, v) in zip(model_input, self.list_uid, result_zip):
-            #self.evaluations[input_repr.data.tobytes()] = (p, v)
+            self.evaluations[input_repr.data.tobytes()] = (p, v)
             out_queue = self.output_queues[key]
             out_queue.put((p, v))
 
@@ -229,29 +230,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.model.save_weights(checkpoint_path)
         save_to_file('Game/training_data_class.bz2', self.training_data)
 
-class GameProcess(multiprocessing.Process):
-    def __init__(self, input_queue, output_queue, initial_state, uid):
-        super(GameProcess, self).__init__()
-        self.outgoing_queue = input_queue
-        self.incoming_queue = output_queue
-        self.initial_state = initial_state
-        self.uid = uid
 
-    def run(self):
-
-        # while the process is running, keep running training games
-        while True:
-            chessboard = Chessboard(self.initial_state)
-            random_state = generate_random_state(config.piece_list)
-            if config.random_state_generation:
-                game = TrainingGame(initial_state=Chessboard(random_state), outgoing_queue=self.outgoing_queue,
-                                    incoming_queue=self.incoming_queue, uid=self.uid)
-            else:
-                game = TrainingGame(initial_state=chessboard, outgoing_queue=self.outgoing_queue,
-                                    incoming_queue=self.incoming_queue, uid=self.uid)
-            result = game.run()
-            print(result)
-            self.outgoing_queue.put(('finished', self.uid, game.get_history()))
 def save_to_file(filename, data):
     with bz2.BZ2File(filename, 'w') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)

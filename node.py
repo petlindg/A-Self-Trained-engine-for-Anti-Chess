@@ -139,6 +139,9 @@ class Node:
                         uid=self.uid
                     )
                 )
+            if self.parent is None:
+                self.add_noise()
+
             return v, False
 
         

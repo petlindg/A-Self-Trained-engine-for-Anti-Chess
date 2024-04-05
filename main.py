@@ -5,11 +5,13 @@ from training import Training
 from chess import Chessboard
 from config import checkpoint_path
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
-from training_mp import NeuralNetworkProcess, GameProcess
-from multiprocessing import Queue
+from nn_process import NeuralNetworkProcess
+from game_process import GameProcess
+from multiprocessing import Queue, set_start_method
+
 
 def run_training(fen, workers=1):
-
+    set_start_method('spawn')
     #chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     #chessboard = Chessboard(fen)
     nr_workers = workers
@@ -25,6 +27,7 @@ def run_training(fen, workers=1):
                              uid=i)
         worker_list.append(worker)
 
+
     nn_process = NeuralNetworkProcess(input_queue=input_queue,
                                       output_queues=output_queues
                                       )
@@ -35,6 +38,8 @@ def run_training(fen, workers=1):
     for worker in worker_list:
         worker.daemon = True
         worker.start()
+    for worker in worker_list:
+        print('id: ',id(worker))
 
     while True:
         time.sleep(20)
@@ -61,7 +66,7 @@ def train_file():
 
 def main():
 
-    threads = 60
+    threads = 100
     if config.evaluation:
         threads = 1
     run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", threads)
