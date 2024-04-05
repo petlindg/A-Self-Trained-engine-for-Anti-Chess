@@ -15,7 +15,8 @@ from multiprocessing import Queue, set_start_method
 
 def run_training(fen, workers=1):
     set_start_method('spawn')
-    model = tensorflow.keras.models.load_model('\model.keras')
+    model = tensorflow.keras.models.load_model('saved_model/model', compile=False)
+    model.compile()
     #chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
     #chessboard = Chessboard(fen)
     nr_workers = workers
@@ -71,7 +72,7 @@ def train_file():
 
 def main():
 
-    threads = 100
+    threads = 1
     if config.evaluation:
         threads = 1
     run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", threads)

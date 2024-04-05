@@ -9,7 +9,7 @@ def main():
         model.load_weights(checkpoint_path)
     except Exception as e:
         print('EXCEPTION, couldnt load weights ', e)
-    model.save('saved_model/model')
+    model.save('saved_model/model.h5')
 
 
 
