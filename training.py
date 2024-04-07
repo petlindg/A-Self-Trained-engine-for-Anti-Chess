@@ -50,6 +50,7 @@ class Training:
                 if result != 'draw':
                     self.buffer.append(game.get_history())
                     game_counter += 1
+                    print(game_counter)
 
             print("Training iteration: " + str(t_counter))
             list_states = []
