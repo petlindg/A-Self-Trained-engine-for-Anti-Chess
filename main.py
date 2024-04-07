@@ -1,7 +1,7 @@
 from training import Training
 from chess import Chessboard
 from config import checkpoint_path
-from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
+from nn_revised import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 
 # TODO change the neural network output to sigmoid
 
@@ -31,8 +31,8 @@ def train_file():
     training.train_from_file('Game/trainingdata.bz2')
 
 def main():
-    #run_training()
-    train_file()
+    run_training()
+    #train_file()
 
 if __name__ == '__main__':
     main()
