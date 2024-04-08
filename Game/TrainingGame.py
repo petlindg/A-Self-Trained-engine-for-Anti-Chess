@@ -61,8 +61,8 @@ class TrainingGame:
         while not self.game_ended():
             self.logger.info(str(self.current_state))
             self.logger.info(f'player: {self.current_state.player_to_move}')
-            #print(self.current_state)
-            #print('player: ', self.current_state.player_to_move)
+            print(self.current_state)
+            print('player: ', self.current_state.player_to_move)
             time_predicted = self.make_move()
             predict_time += time_predicted
 
@@ -73,19 +73,19 @@ class TrainingGame:
         self.logger.info('===============================')
         if status == 0:
             self.logger.info("               White wins")
-            #print('           white wins')
+            print('           white wins')
             winner = Color.WHITE
         elif status == 1:
             winner = Color.BLACK
             self.logger.info("Black wins")
-            #print('           black wins')
+            print('           black wins')
         else:
             winner = 'draw'
             self.logger.info("draw")
-            #print('             draw')
+            print('             draw')
         self.logger.info("=========================")
-        #print('===============================')
-        #print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
+        print('===============================')
+        print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
         self.logger.info(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
 
         return winner
