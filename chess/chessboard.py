@@ -73,45 +73,45 @@ class Chessboard():
                     n = n - 1
             # if white pawn
             if b_and(self.bitboards[0][0], mask_bb):
-                str_builder.append('P')
+                str_builder.append('P ')
             # if black pawn
             elif b_and(self.bitboards[1][0], mask_bb):
-                str_builder.append('p')
+                str_builder.append('p ')
 
             # if white knight
             elif b_and(self.bitboards[0][1], mask_bb):
-                str_builder.append('N')
+                str_builder.append('N ')
             # if black knight
             elif b_and(self.bitboards[1][1], mask_bb):
-                str_builder.append('n')
+                str_builder.append('n ')
 
             # if white bishop
             elif b_and(self.bitboards[0][2], mask_bb):
-                str_builder.append('B')
+                str_builder.append('B ')
             # if black bishop
             elif b_and(self.bitboards[1][2], mask_bb):
-                str_builder.append('b')
+                str_builder.append('b ')
 
             # if white rook
             elif b_and(self.bitboards[0][3], mask_bb):
                 str_builder.append('R')
             # if black rook
             elif b_and(self.bitboards[1][3], mask_bb):
-                str_builder.append('r')
+                str_builder.append('r ')
 
             # if white queen
             elif b_and(self.bitboards[0][4], mask_bb):
-                str_builder.append('Q')
+                str_builder.append('Q ')
             # if black queen
             elif b_and(self.bitboards[1][4], mask_bb):
-                str_builder.append('q')
+                str_builder.append('q ')
 
             # if white king
             elif b_and(self.bitboards[0][5], mask_bb):
-                str_builder.append('K')
+                str_builder.append('K ')
             # if black king
             elif b_and(self.bitboards[1][5], mask_bb):
-                str_builder.append('k')
+                str_builder.append('k ')
             else:
                 str_builder.append('. ')
             mask_bb = rs(mask_bb, u8(1))
