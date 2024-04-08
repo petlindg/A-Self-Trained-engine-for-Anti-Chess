@@ -31,20 +31,15 @@ def play(fen:str):
     time_start = time.time()
     while game_counter < games_per_iteration:
         print(f"game_counter:{game_counter}")
-        state.__init__(fen)
-        while mcts_main.parent:
-            mcts_main = mcts_main.parent
+        state.__init__()
+        mcts = Node(state=mcts_main.state, main_node=mcts_main)
+        mcts.expand()
+        mcts.add_noise()
         while state.get_game_status() == 3:
             print(state)
-            mcts = Node(
-                state=mcts_main.state,
-                main_node=mcts_main)
-            mcts.expand()
-            mcts.add_noise()
             mcts.run()
-            mcts.print_selectively(2)
             best_move = max(mcts.children, key=lambda c: c.visits).move
-            mcts_main=mcts.update_tree(best_move)
+            mcts = mcts.update_tree(best_move)
         game_counter+=1
         print("Game Complete!")
         print(f"c_hit:{mainNode.c_hit}, c_miss:{mainNode.c_miss}, hitrate:{100*mainNode.c_hit/(mainNode.c_hit+mainNode.c_miss)}%")

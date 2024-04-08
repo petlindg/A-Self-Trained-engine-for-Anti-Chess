@@ -191,7 +191,10 @@ class Node:
         # moves the state
         self.state.move(child.move)
         # returns child as new root
-        return child.main_node
+        child.parent = None
+
+        child.add_noise()
+        return child
 
     def add_noise(self, dir_a=0.03, frac=0.25):
         """Adds dirichlet noise to all the p values for the children of the current node
