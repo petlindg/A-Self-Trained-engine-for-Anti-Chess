@@ -94,7 +94,7 @@ class Chessboard():
 
             # if white rook
             elif b_and(self.bitboards[0][3], mask_bb):
-                str_builder.append('R')
+                str_builder.append('R ')
             # if black rook
             elif b_and(self.bitboards[1][3], mask_bb):
                 str_builder.append('r ')
