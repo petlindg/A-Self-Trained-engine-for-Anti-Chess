@@ -8,7 +8,7 @@ from copy import deepcopy
 from node import Node
 
 import pickle
-from printDataset import print_data_set
+from print_dataset import print_data_set
 
 def gen_dataset_forced_game(fen:Chessboard,
                            movesAlg:str,
