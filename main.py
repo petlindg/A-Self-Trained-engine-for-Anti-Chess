@@ -14,17 +14,22 @@ from multiprocessing import Queue, set_start_method
 
 
 def run_training(fen, workers=1):
+    """
+    Function that runs the training for a given fen notation,
+    workers is an argument for how many game processes that will be run at the same time
+    """
     set_start_method('spawn')
+    # loads the model from the .h5 file
     model = tensorflow.keras.models.load_model('saved_model/model.h5', compile=False)
     model.compile()
-    #chessboard = Chessboard("k7/8/8/8/8/8/8/7R w - 0 1")
-    #chessboard = Chessboard(fen)
+
     nr_workers = workers
     input_queue = Queue()
     output_queues = {}
 
     worker_list = []
     for i in range(nr_workers):
+        # for every worker, create their personal queue and the process
         output_queues[i] = Queue()
         worker = GameProcess(initial_state=fen,
                              input_queue=input_queue,
@@ -32,29 +37,25 @@ def run_training(fen, workers=1):
                              uid=i)
         worker_list.append(worker)
 
-
+    # create the nn_process and give it all of the queues
     nn_process = NeuralNetworkProcess(input_queue=input_queue,
                                       output_queues=output_queues,
                                       model=model
                                       )
 
+    # start the neural network as a daemon
     nn_process.daemon = True
     nn_process.start()
 
+    # start all of the workers as daemons
     for worker in worker_list:
         worker.daemon = True
         worker.start()
-    for worker in worker_list:
-        print('id: ',id(worker))
 
+    # let this main thread sleep (can be changed in the future to do something productive)
+    # once the main thread exits, the workers and nn will exit as well.
     while True:
         time.sleep(20)
-
-#    training = Training(chessboard, model)
-#    training.load_from_file('Game/trainingdata.bz2')
-#    print(len(training.buffer))
-#    training.train()
-
 
 
 def train_file():
@@ -72,9 +73,12 @@ def train_file():
 
 def main():
 
-    threads = 1
+    # number of workers/threads to train with
+    threads = 100
+    # if evaluation is active, we only run a single thread
     if config.evaluation:
         threads = 1
+
     run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", threads)
     #train_file()
 
