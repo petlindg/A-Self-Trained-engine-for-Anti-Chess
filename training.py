@@ -33,40 +33,6 @@ class Training:
         with bz2.BZ2File(filename, 'w') as f:
             pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
-    def train(self):
-        """Method that performs the training in accordance with the config
-
-        :return: None
-        """
-        t_counter = 0
-
-        # Outer loop that performs training_iterations
-        while t_counter < training_iterations:
-            game_counter = 0
-            # inner loop where each training_iteration performs a number of games
-            while game_counter < games_per_iteration:
-                game = TrainingGame(initial_state=self.initial_state, model=self.model)
-                result = game.run()
-                if result != 'draw':
-                    self.buffer.append(game.get_history())
-                    game_counter += 1
-
-            print("Training iteration: " + str(t_counter))
-            list_states = []
-            list_outputs = []
-            for game in self.buffer:
-                for (state, dist, v) in game:
-                    list_states.append(state[0])
-                    list_outputs.append((np.array(dist).flatten(), v))
-            print(len(self.buffer))
-
-            # split the training and testing data up, making sure to shuffle the data
-            X_train, X_test, y_train, y_test = train_test_split(list_states, list_outputs, shuffle=True)
-
-            self.fit_data(X_train, X_test, y_train, y_test)
-            t_counter += 1
-            # self.model.save_weights(checkpoint_path)
-            # self.save_to_file('Game/trainingdata.bz2', list(self.buffer))
 
     def train_from_file(self, filename):
         """Method that performs model fitting based on a compressed pickle file
