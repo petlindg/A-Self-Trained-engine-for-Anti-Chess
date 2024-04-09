@@ -9,7 +9,7 @@ from chess.move import Move, calc_move
 from config import exploration_constant, evaluation_method
 
 from math import sqrt
-from config import tree_iterations, exploration_constant, output_representation
+from config import tree_iterations, exploration_constant, output_representation, evaluation
 from keras.models import Model
 
 from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
@@ -244,7 +244,7 @@ class Node:
         string_buffer = []
         self.print_tree(string_buffer, "", "", depth)
         logger.info(f"\n{''.join(string_buffer)}")
-        if config.evaluation:
+        if evaluation:
             print("".join(string_buffer))
 
     def update_tree(self, move:Move):
