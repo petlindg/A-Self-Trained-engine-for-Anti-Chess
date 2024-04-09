@@ -9,14 +9,17 @@ import numpy as np
 import tensorflow
 from sklearn.model_selection import train_test_split
 
-from config import max_buffer_size, training_iterations, games_per_iteration, checkpoint_path
-from config import epochs, batch_size, verbosity, train_split
+from config import max_buffer_size, games_per_iteration, checkpoint_path
+from config import epochs, batch_size, train_split
 
 
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 from Stats.training_stats_plotter import TrainingPlot
 
 class TrainingData:
+    """
+    Class representing the training data, it contains all of the necessary data to train and test the neural network 
+    """
     def __init__(self):
         train_size = int(train_split*max_buffer_size)
         test_size = int((1-train_split)*max_buffer_size)
@@ -32,6 +35,10 @@ class TrainingData:
         self.y_test += y_test
 
 class NeuralNetworkProcess(multiprocessing.Process):
+    """
+    Class that represents a single neural network process, it handles incoming requests from
+    the game processes and manages the training and execution of the neural network.
+    """
     def __init__(self, input_queue, output_queues, model=None):
         super(NeuralNetworkProcess, self).__init__()
         self.input_queue = input_queue # shared queue for the input
@@ -120,53 +127,14 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 self.evaluations['hits'] = hits
                 self.evaluations['misses'] = misses
 
-                # 30 games in 83 seconds, 2.7s per game
-
-                # 120 games in 185s, 1.5s
-                # 85% hitrate, 108356 state evaluations
-                # 92516 hits, 15840 misses
-
-                # ===========================================================================
-                # self play training 3R1K vs 3r1k completely fresh model
-                # ===========================================================================
-                # loop 1 == 31s per game ==
-                # 60 games took 1850s, 236k states, 73% hitrate
-                # eval1_loss [3.573718547821045, 3.416172504425049, 0.15754616260528564]
-
-                # loop 2 == 41s per game ==
-                # 120 games took 4316s, 657k states, 82% hitrate
-                # eval2_loss [2.009107828140259, 1.909683346748352, 0.09942435473203659]
-
-                # loop 3 == 24s per game ==
-                # 180 games took 5775s, 855k states, 81% hitrate
-                # eval3_loss [1.71271550655365, 1.614129900932312, 0.09858565032482147]
-
-                # loop 4 == 25s per game ==
-                # 240 games took 7266s, 1007k states, 79% hitrate
-                # eval4_loss [1.567151665687561, 1.487604022026062, 0.07954749464988708]
-
-                # loop 5 == 29s per game ==
-                # 300 games took 9000s, 1187k states, 77% hitrate
-                # eval5_loss [1.5922825336456299, 1.5150401592254639, 0.07724227011203766]
-
-                # loop 6 == ==
-                # 360 games took 9000+4500s, 90% hitrate
-                # eval6_loss [1.5357917547225952, 1.4594144821166992, 0.07637675106525421]
-
-                # loop 7 == ==
-                # 420 games took 9000+7800, 90% hitrate
-                # eval7_loss [1.4593110084533691, 1.3918009996414185, 0.06750993430614471]
-
-                # loop 7
-                # 480 games took 9000+11000s, 82% hitrate
-                # eval8_loss [1.4593110084533691, 1.3918009996414185, 0.06750993430614471]
-
-
-
-                # 13 * 150 took 10000s a total of 10 million states explored
             self.statistics.save_history_to_json()
 
     def _load_past_data(self):
+        """
+        Internal function that loads the past training data from the previous training run, if it exists
+        This ensures that the model always has a large set of training data to avoid overfitting when 
+        stopping and restarting the training process.
+        """
         data = TrainingData()
         try:
             with bz2.BZ2File('Game/training_data_class.bz2', 'r') as f:
@@ -198,6 +166,11 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.list_states = []
 
     def _split_data(self):
+        """
+        Internal function that takes the current list of games in the buffer and distributes the game data
+        to the training and the test sets that make up the training data class. This ensures that the test set data
+        is never used as training data.
+        """
         list_states = []
         list_outputs = []
         for game in self.buffer:
@@ -245,6 +218,9 @@ def save_to_file(filename, data):
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
 def h5_to_weights():
+    """
+    Function that creates a model, loads the .h5 file and saves the weights in the checkpoints path
+    """
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
     try:
@@ -255,6 +231,9 @@ def h5_to_weights():
     model.save_weights(checkpoint_path)
 
 def weights_to_h5():
+    """
+    Function that creates a model, loads the weights and saves the model as an .h5 file
+    """
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
     model = model_config.build_nn()
     try:
