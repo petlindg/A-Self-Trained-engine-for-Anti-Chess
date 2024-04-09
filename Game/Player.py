@@ -4,8 +4,10 @@ from copy import deepcopy
 
 from config import verbosity
 from node import Node
-from chess import Chessboard, Color, Move
+from chess.chessboard import Chessboard
+from chess.move import Move
 from multiprocessing import Queue
+
 
 class Player:
     """

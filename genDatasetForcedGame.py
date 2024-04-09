@@ -1,8 +1,8 @@
 import bz2
 from Game.Utils import translate_moves_to_output
-from chess import algebraic_to_move
-from chess import Chessboard
-from chess import Color
+from chess.move import algebraic_to_move
+from chess.chessboard import Chessboard
+from chess.utils import Color
 from config import *
 from copy import deepcopy
 from node import Node

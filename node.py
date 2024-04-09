@@ -4,12 +4,11 @@ from math import sqrt
 import numpy as np
 import time
 
-import config
-from chess import Chessboard, Move, Color
+from chess.chessboard import Chessboard
+from chess.move import Move, calc_move
 from config import exploration_constant, evaluation_method
 
 from math import sqrt
-import chess
 from config import tree_iterations, exploration_constant, output_representation
 from keras.models import Model
 
@@ -29,7 +28,7 @@ def fetch_p_from_move(move: Move, model_output: np.array):
     src_col = int(move.src_index % 8)
     src_row = int(move.src_index // 8)
 
-    move_type = chess.calc_move(move.src_index, move.dst_index, move.promotion_type)
+    move_type = calc_move(move.src_index, move.dst_index, move.promotion_type)
     return model_output[0][0][src_row][src_col][move_type]
 
 class Node:

@@ -3,7 +3,8 @@ from copy import deepcopy
 
 import config
 from Game.Utils import translate_moves_to_output
-from chess import Chessboard, Color
+from chess.chessboard import Chessboard
+from chess.utils import Color
 from Game.Player import Player
 from keras.models import Model
 from logger import Logger

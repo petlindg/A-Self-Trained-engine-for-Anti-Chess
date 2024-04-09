@@ -2,10 +2,14 @@
 Module for testing performance of move generation.
 """
 
-DEPTH = 3
-
-from chess import *
 import timeit as t
+import sys
+sys.path.append('..')
+
+
+from chess.chessboard import Chessboard
+
+DEPTH = 3
 
 def perft(cb:Chessboard, depth:int):
     global counter
@@ -21,7 +25,6 @@ def perft(cb:Chessboard, depth:int):
 def main():
 
     cb = Chessboard()
-    cb.init_board_standard()
     print(t.timeit(stmt=lambda: perft(cb, DEPTH), number=1))
 
 if __name__ == "__main__":
