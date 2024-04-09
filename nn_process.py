@@ -243,3 +243,23 @@ class NeuralNetworkProcess(multiprocessing.Process):
 def save_to_file(filename, data):
     with bz2.BZ2File(filename, 'w') as f:
         pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+def h5_to_weights():
+    model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
+    model = model_config.build_nn()
+    try:
+        tensorflow.keras.models.load_model('saved_model/model.h5')
+    except Exception as e:
+        print('EXCEPTION, couldnt load model ', e)
+    
+    model.save_weights(checkpoint_path)
+
+def weights_to_h5():
+    model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
+    model = model_config.build_nn()
+    try:
+        model.load_weights(checkpoint_path)
+    except Exception as e:
+        print('EXCEPTION, couldnt load model ', e)
+
+    model.save_model('saved_model/model.h5')
