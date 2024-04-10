@@ -46,3 +46,5 @@ processes = 100
 
 'batch size of the multiprocessing neural network, dictates how many states the network will predict at a time'
 nn_batch = 150
+if evaluation:
+    nn_batch = 1

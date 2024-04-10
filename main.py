@@ -74,7 +74,7 @@ def train_file():
 def main():
 
     # number of workers/threads to train with
-    threads = 200
+    threads = config.processes
     # if evaluation is active, we only run a single thread
     if config.evaluation:
         threads = 1
