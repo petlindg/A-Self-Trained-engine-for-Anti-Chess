@@ -1,5 +1,6 @@
 import bz2
 import multiprocessing
+import os
 import pickle
 import random
 import time
@@ -60,21 +61,22 @@ class NeuralNetworkProcess(multiprocessing.Process):
 
         :return: None
         """
-        load_model = True
+
         # if the past game data should be loaded or not
         random.seed()
-        if load_model:
-            pass
-        else:
-            self._load_past_data()
-            start_time = time.time()
-            model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
-            self.model = model_config.build_nn()
-            try:
-                #pass
-                self.model.load_weights(checkpoint_path)
-            except Exception as e:
-                print('EXCEPTION, couldnt load weights ', e)
+        self._load_past_data()
+        start_time = time.time()
+
+        # if there is an .h5 file in saved_model, convert it to weights
+        if os.path.isfile('saved_model/model.h5'):
+            h5_to_weights()
+
+        model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
+        self.model = model_config.build_nn()
+        try:
+            self.model.load_weights(checkpoint_path)
+        except Exception as e:
+            print('EXCEPTION, couldnt load weights ', e)
 
 
 
