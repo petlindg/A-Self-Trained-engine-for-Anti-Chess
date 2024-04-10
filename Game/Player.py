@@ -3,16 +3,17 @@ from keras import Model
 from copy import deepcopy
 from node import Node
 from chess import Chessboard, Color, Move
-
+from multiprocessing import Queue
 
 class Player:
     """
     A class representing a player
     """
 
-    def __init__(self, initial_state: Chessboard, model: Model):
+    def __init__(self, initial_state: Chessboard, outgoing_queue: Queue,
+                 incoming_queue: Queue, uid: int):
         self.current_state = initial_state
-        self.mcts = Node(state=initial_state, p=1, model=model)
+        self.mcts = Node(state=initial_state, p=1, outgoing_queue=outgoing_queue, incoming_queue=incoming_queue, uid=uid)
         self.history = []
 
     def run_mcts(self):
