@@ -199,8 +199,6 @@ class NeuralNetworkProcess(multiprocessing.Process):
         """
 
         dists_train, vs_train = zip(*self.training_data.y_train)
-        print(np.shape(dists_train))
-        print(np.shape(vs_train))
         dists_test, vs_test = zip(*self.training_data.y_test)
 
         history = self.model.fit(np.array(self.training_data.X_train),
