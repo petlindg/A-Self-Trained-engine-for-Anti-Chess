@@ -45,4 +45,4 @@ evaluation = False
 processes = 100
 
 'batch size of the multiprocessing neural network, dictates how many states the network will predict at a time'
-nn_batch = 50
+nn_batch = 100
