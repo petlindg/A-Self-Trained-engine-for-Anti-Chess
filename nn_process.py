@@ -166,7 +166,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
 
         # go through the result list and send each individual result back to the corresponding process
         for input_repr, key, (p, v) in zip(model_input, self.list_uid, result_zip):
-            self.evaluations[input_repr.data.tobytes()] = (p, v)
+            #self.evaluations[input_repr.data.tobytes()] = (p, v)
             out_queue = self.output_queues[key]
             out_queue.put((p, v))
 
