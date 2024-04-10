@@ -54,6 +54,8 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.model = model
         self.evaluations = {'hits': 0, 'misses': 0}
         self.eval_result = []
+        self.eval_time = 0
+        self.start_time = None
 
 
     def run(self):
@@ -65,7 +67,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         # if the past game data should be loaded or not
         random.seed()
         self._load_past_data()
-        start_time = time.time()
+        self.start_time = time.time()
 
         # if there is an .h5 file in saved_model, convert it to weights
         if os.path.isfile('saved_model/model.h5'):
@@ -114,13 +116,15 @@ class NeuralNetworkProcess(multiprocessing.Process):
             # perform the model evaluation on the list
             if len(self.list_states) >= self.batch_size:
                 self._process_requests()
+                end_time = time.time()
+                print(f'{self.eval_time/(end_time-self.start_time)} % spent predicting')
 
             # if the accumulated game results reaches appropriate size, train the model
             if self.games_counter >= games_per_iteration:
                 self.games_counter = 0
                 self._split_data()
                 self._train_network()
-                print(f'{time.time() - start_time} s')
+                print(f'{time.time() - self.start_time} s')
                 hits = self.evaluations['hits']
                 misses = self.evaluations['misses']
                 sum = hits+misses
@@ -152,7 +156,11 @@ class NeuralNetworkProcess(multiprocessing.Process):
         """
         # reshape the array to fit the model
         model_input = np.array(self.list_states).reshape((-1, 8, 8, 17))
+        start = time.time()
         result = self.model.predict(model_input, verbose=0)
+        end = time.time()
+        self.eval_time += (end-start)
+
         list_ps = result[0]
         list_vs = result[1]
         result_zip = zip(list_ps, list_vs)
