@@ -40,3 +40,9 @@ train_split = 0.8
 
 'evaluation is a boolean for if the program will run with a single thread and print out all debugging output'
 evaluation = True
+
+'number of processes for the multiprocessing'
+processes = 100
+
+'batch size of the multiprocessing neural network, dictates how many states the network will predict at a time'
+nn_batch = 100
