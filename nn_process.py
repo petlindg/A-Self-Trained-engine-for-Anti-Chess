@@ -10,11 +10,11 @@ import tensorflow
 from sklearn.model_selection import train_test_split
 
 from config import max_buffer_size, games_per_iteration, checkpoint_path
-from config import epochs, batch_size, train_split
+from config import epochs, batch_size, train_split, nn_batch
 
 
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
-from Stats.training_stats_plotter import TrainingPlot
+
 
 class TrainingData:
     """
@@ -45,7 +45,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.output_queues = output_queues # dict of queues to send back, has UID as key and queue as value
         self.list_uid = []
         self.list_states = []
-        self.batch_size = len(output_queues) # number of states to process in a single batch
+        self.batch_size = nn_batch # number of states to process in a single batch
 
         self.buffer = []
         self.training_data = TrainingData()
@@ -53,7 +53,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.model = model
         self.evaluations = {'hits': 0, 'misses': 0}
         self.eval_result = []
-        self.statistics = TrainingPlot()
+
 
     def run(self):
         """Start the neural network process allowing it to process data
@@ -200,7 +200,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
                        validation_data=(np.array(self.training_data.X_test),[np.array(dists_test), np.array(vs_test)]),
                        )
 
-        self.statistics.save_history_to_instance(history)
+        
 
 
         #eval = self.model.evaluate(np.array(self.training_data.X_test),
