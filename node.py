@@ -6,7 +6,7 @@ import time
 
 import config
 from chess import Chessboard, Move, Color
-from config import exploration_constant, evaluation_method
+from config import exploration_constant
 
 from math import sqrt
 import chess
