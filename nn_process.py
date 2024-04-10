@@ -117,7 +117,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
             if len(self.list_states) >= self.batch_size:
                 self._process_requests()
                 end_time = time.time()
-                #print(f'{self.eval_time/(end_time-self.start_time)} % spent predicting')
+                print(f'{self.eval_time/(end_time-self.start_time)} % spent predicting')
 
             # if the accumulated game results reaches appropriate size, train the model
             if self.games_counter >= games_per_iteration:
