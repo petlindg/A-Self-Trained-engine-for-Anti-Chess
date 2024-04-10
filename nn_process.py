@@ -133,7 +133,6 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 self.evaluations['hits'] = hits
                 self.evaluations['misses'] = misses
 
-            self.statistics.save_history_to_json()
 
     def _load_past_data(self):
         """
