@@ -123,31 +123,31 @@ class Logger:
 
     def info(self, message):
         msg = self.format_message(self.log_format, 'info', message)
-        print(msg)
+        #print(msg)
         self.add_new_record(msg)
 
 
     def exception(self, message):
         msg = self.format_message(self.log_format, 'exception', message)
-        print(msg)
+        #print(msg)
         self.add_new_record(msg)
 
 
     def error(self, message):
         msg = self.format_message(self.log_format, 'error', message)
-        print(msg)
+        #print(msg)
         self.add_new_record(msg)
 
 
     def warning(self, message):
         msg = self.format_message(self.log_format, 'warning', message)
-        print(msg)
+        #print(msg)
         self.add_new_record(msg)
 
 
     def critical(self, message):
         msg = self.format_message(self.log_format, 'critical', message)
-        print(msg)
+        #print(msg)
         self.add_new_record(msg)
 
 
