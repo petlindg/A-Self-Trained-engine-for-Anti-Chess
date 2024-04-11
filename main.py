@@ -79,7 +79,7 @@ def main():
     if config.evaluation:
         processes = 1
 
-    run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", processes)
+    run_training("k7/8/8/8/8/8/8/7R w - 0 1", processes)
     #train_file()
 
 if __name__ == '__main__':
