@@ -1,4 +1,4 @@
-### A Self Trained Engine for Antichess
+# A Self Trained Engine for Antichess
 
 This project is a bachelor thesis project for students at Chalmers University of Technology and the University of Gothenburg. 
 
