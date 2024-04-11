@@ -114,14 +114,19 @@ class NeuralNetwork:
 
         # Add residual layers
         for i in range(self.num_hidden_layers):
-            x = self.residual_se_layer(x, str(i + 1), i, use_se=(i >= 8))
+            x = self.residual_se_layer(x, str(i + 1), i, use_se=(i > 8))
 
           
 
         model = Model(inputs=input_feature, outputs=[self.policy_head(x), self.value_head(x)])
         optimizer = Adam(learning_rate=LEARNING_RATE)
         model.compile(optimizer=optimizer,
-                    loss=['categorical_crossentropy', 'mean_squared_error'])
+                     loss=[
+                'categorical_crossentropy',
+                # measures the disparity between the actual distribution of the labels and the predicted probabilities.
+                'mean_squared_error'
+                # uses the gradients of the loss function to update the model's weights in a way that minimizes the loss
+            ])
 
         return model
 

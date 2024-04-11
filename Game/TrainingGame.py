@@ -1,12 +1,13 @@
 import time
 from copy import deepcopy
 
+import config
 from Game.Utils import translate_moves_to_output
 from chess import Chessboard, Color
 from Game.Player import Player
 from keras.models import Model
 from logger import Logger
-
+from multiprocessing import Queue
 
 
 class TrainingGame:
@@ -14,14 +15,15 @@ class TrainingGame:
     A class representing one game of antichess
     """
 
-    def __init__(self, initial_state: Chessboard, model: Model):
+    def __init__(self, initial_state: Chessboard, outgoing_queue: Queue,
+                 incoming_queue: Queue, uid: int):
         self.logger = Logger("TrainingGame")
         self.current_state = deepcopy(initial_state)
         self.game_over = False
         self.game_history = []
         self.swap = False
 
-        self.player = Player(self.current_state, model)
+        self.player = Player(self.current_state, outgoing_queue, incoming_queue, uid)
 
     def game_ended(self):
         """Checks the status of the current Game
@@ -61,8 +63,9 @@ class TrainingGame:
         while not self.game_ended():
             self.logger.info(str(self.current_state))
             self.logger.info(f'player: {self.current_state.player_to_move}')
-            print(self.current_state)
-            print('player: ', self.current_state.player_to_move)
+            if config.evaluation:
+                print(self.current_state)
+                print('player: ', self.current_state.player_to_move)
             time_predicted = self.make_move()
             predict_time += time_predicted
 
@@ -73,19 +76,19 @@ class TrainingGame:
         self.logger.info('===============================')
         if status == 0:
             self.logger.info("               White wins")
-            print('           white wins')
+            #print('           white wins')
             winner = Color.WHITE
         elif status == 1:
             winner = Color.BLACK
             self.logger.info("Black wins")
-            print('           black wins')
+            #print('           black wins')
         else:
             winner = 'draw'
             self.logger.info("draw")
-            print('             draw')
+            #print('             draw')
         self.logger.info("=========================")
-        print('===============================')
-        print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
+        #print('===============================')
+        #print(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
         self.logger.info(f'Time taken: {total_time} | Time Predicted: {predict_time} | % {predict_time / 1 * 100}')
 
         return winner
