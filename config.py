@@ -20,7 +20,7 @@ max_buffer_size = 100
 training_iterations = 500
 
 'total number of games that are performed per training iteration'
-games_per_iteration = 20
+games_per_iteration = 50
 
 'epochs during the training process'
 epochs = 10
@@ -47,3 +47,21 @@ RESIDUAL_BLOCKS = 19
 'location to save training data'
 TRAINING_DATA_PATH = "trainingData/"
 
+checkpoint_path = "checkpoints/checkpoint.ckpt"
+
+'if the training will generate random states based on piece list'
+random_state_generation = False
+
+'proportion of the training data that will be in the training data set'
+train_split = 0.8
+
+'evaluation is a boolean for if the program will run with a single thread and print out all debugging output'
+evaluation = False
+
+'number of processes for the multiprocessing'
+processes = 200
+
+'batch size of the multiprocessing neural network, dictates how many states the network will predict at a time'
+nn_batch = 150
+if evaluation:
+    nn_batch = 1
