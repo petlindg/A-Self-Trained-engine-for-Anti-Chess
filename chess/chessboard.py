@@ -295,7 +295,12 @@ class Chessboard():
 
         # TODO represent repetitions in some shape or form for the Chessboard class
         repetitions_once = 1
-        repetitions_twice = 1 if self.bitboards in self.repetitions_list else 0
+        if self.bitboards in self.repetitions_list:
+            repetitions_twice = 1
+        else:
+            repetitions_twice = 0
+        
+        # repetitions_twice = 1 if self.bitboards in self.repetitions_list else 0
 
         if self.player_to_move == Color.WHITE:
             color = 0
