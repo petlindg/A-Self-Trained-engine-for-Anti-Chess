@@ -7,7 +7,7 @@ from numpy import bitwise_and as b_and
 from numpy import bitwise_not as b_not
 from numpy import bitwise_xor as b_xor
 from numpy import zeros, ndarray, uint, array
-
+from numpy import any, all
 from typing import List
 import sys
 sys.path.append('..')
@@ -295,11 +295,11 @@ class Chessboard():
 
         # TODO represent repetitions in some shape or form for the Chessboard class
         repetitions_once = 1
-        if self.bitboards in self.repetitions_list:
-            repetitions_twice = 1
+        if len(self.repetitions_list) > 0:
+            if any(all(self.bitboards == self.repetitions_list, axis=1)):
+                repetitions_twice = 1 
         else:
             repetitions_twice = 0
-        
         # repetitions_twice = 1 if self.bitboards in self.repetitions_list else 0
 
         if self.player_to_move == Color.WHITE:
