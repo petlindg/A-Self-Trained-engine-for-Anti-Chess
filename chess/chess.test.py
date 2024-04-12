@@ -243,8 +243,35 @@ class TestTranslations(unittest.TestCase):
         for _ in moves:
             board.unmove()
             self.assertTrue(self.eq_rep(rep_list.pop(), board.translate_board()))
- 
- 
+    
+    def test_translate_board_repetitions(self):
+        moves_alg = "b1a3 b8a6 a3b1 a6b8 b1a3"
+        board = Chessboard()
+        moves = [algebraic_to_move(move_alg) for move_alg in moves_alg.split()]
+
+        board.move(moves.pop(0))
+        self.assertEqual(board.translate_board()[0][0][0][12], 1)
+        self.assertEqual(board.translate_board()[0][0][0][13], 0)
+
+        board.move(moves.pop(0))
+        self.assertEqual(board.translate_board()[0][0][0][12], 1)
+        self.assertEqual(board.translate_board()[0][0][0][13], 0)
+
+        board.move(moves.pop(0))
+        self.assertEqual(board.translate_board()[0][0][0][12], 1)
+        self.assertEqual(board.translate_board()[0][0][0][13], 0)
+
+        board.move(moves.pop(0))
+        self.assertEqual(board.translate_board()[0][0][0][12], 1)
+        self.assertEqual(board.translate_board()[0][0][0][13], 1)
+
+        board.move(moves.pop(0))
+        self.assertEqual(board.translate_board()[0][0][0][12], 1)
+        self.assertEqual(board.translate_board()[0][0][0][13], 1)
+
+
+
+
 def main():
     unittest.main()
 
