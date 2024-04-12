@@ -14,7 +14,7 @@ tree_iterations: int = 800
 output_representation = (1,1,8,8,79)
 
 'maximum number of games saved in the FIFO queue that the model uses as a dataset'
-max_buffer_size = 20000
+max_buffer_size = 30000
 
 'total number of iterations that are performed before the training stops'
 training_iterations = 500
@@ -23,7 +23,7 @@ training_iterations = 500
 games_per_iteration = 50
 
 'epochs during the training process'
-epochs = 20
+epochs = 30
 
 'batch size for the training process'
 batch_size = 64
@@ -42,7 +42,7 @@ evaluation_method = 'dirichlet'
 piece_list = [(Color.BLACK, Piece.KING), (Color.WHITE, Piece.ROOK)]
 
 
-RESIDUAL_BLOCKS = 19
+RESIDUAL_BLOCKS = 13
 
 'location to save training data'
 TRAINING_DATA_PATH = "trainingData/"
