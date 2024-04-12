@@ -248,7 +248,6 @@ class Node:
         logger.info(f"\n{''.join(string_buffer)}")
         #print("".join(string_buffer))
 
-
     def update_tree(self, move:Move):
         """
         Updates the tree based on a certain move (moves down the tree one level),
