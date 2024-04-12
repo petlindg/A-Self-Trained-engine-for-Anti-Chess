@@ -19,9 +19,6 @@ def run_training(fen, workers=1):
     workers is an argument for how many game processes that will be run at the same time
     """
     set_start_method('spawn')
-    # loads the model from the .h5 file
-    model = tensorflow.keras.models.load_model('saved_model/model.h5', compile=False)
-    model.compile()
 
     nr_workers = workers
     input_queue = Queue()
@@ -39,8 +36,7 @@ def run_training(fen, workers=1):
 
     # create the nn_process and give it all of the queues
     nn_process = NeuralNetworkProcess(input_queue=input_queue,
-                                      output_queues=output_queues,
-                                      model=model
+                                      output_queues=output_queues
                                       )
 
     # start the neural network as a daemon
