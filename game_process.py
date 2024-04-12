@@ -26,7 +26,7 @@ class GameProcess(multiprocessing.Process):
         """
         Function that continually plays games by sending requests to the neural network
         """
-        from chess import Chessboard
+        from chess.chessboard import Chessboard
         from Game.TrainingGame import TrainingGame
         # TODO re-enable random states once that is on main
         #from Game.state_generator import generate_random_state

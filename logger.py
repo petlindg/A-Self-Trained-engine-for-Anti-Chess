@@ -7,6 +7,15 @@ import os
 
 init(autoreset=True)
 
+def singleton(class_):
+    instances = {}
+    def getinstance(*args, **kwargs):
+        if class_ not in instances:
+            instances[class_] = class_(*args, **kwargs)
+        return instances[class_]
+    return getinstance
+
+@singleton
 class Logger:
     
     log_colors = {
@@ -75,12 +84,9 @@ class Logger:
         current_dt = datetime.now()
         month = str(current_dt.month).zfill(2)
 
-        if current_dt.weekday() == 0:
-            self.log_filename = f'{self.task_name}_{current_dt.day}{month}{current_dt.year}.log'
-        else:
-            last_monday = current_dt.day - current_dt.weekday()
-            self.log_filename = f'{self.task_name}_{last_monday}{month}{current_dt.year}.log'
-
+       
+        self.log_filename = f'{self.task_name}_{current_dt.day}{month}{current_dt.year}.log'
+        
         if not self.log_file_exists():
             try:
                 self.add_new_log()
@@ -97,10 +103,10 @@ class Logger:
             f'\n\n{"=" * 100}\n'
             f'{"=" * 100}\n'
             f'{"=" * 10}{" " * 80}{"=" * 10}\n'
-            f'{"=" * 10}{" " * 30}Welcome to the log file{" " * 30}{"=" * 10}\n'
+            f'{"=" * 10}{" " * 30}Welcome to the log file{" " * 27}{"=" * 10}\n'
             f'{"=" * 10}{" " * 80}{"=" * 10}\n'
             f'{"=" * 10}{" " * 80}{"=" * 10}\n'
-            f'{"=" * 10}{" " * 20}Initialized on: {current_dt.day}/{month}/{current_dt.year}{" " * 20}{"=" * 10}\n'
+            f'{"=" * 10}{" " * 30}Initialized on: {current_dt.day}/{month}/{current_dt.year}{" " * 24}{"=" * 10}\n'
             f'{"=" * 10}{" " * 80}{"=" * 10}\n'
             f'{"=" * 10}{" " * 80}{"=" * 10}\n'
             f'{"=" * 100}\n'
@@ -117,37 +123,32 @@ class Logger:
         if not self.log_file_exists():
             self.add_new_log()
 
-        with open(f'{self.directory_path}/{self.log_filename}', 'a') as f:
+        with open(f'{self.directory_path}/{self.log_filename}', 'a', encoding='utf-8') as f:
             f.write(f'{new_reg}\n')
 
 
     def info(self, message):
         msg = self.format_message(self.log_format, 'info', message)
-        print(msg)
         self.add_new_record(msg)
 
 
     def exception(self, message):
         msg = self.format_message(self.log_format, 'exception', message)
-        print(msg)
         self.add_new_record(msg)
 
 
     def error(self, message):
         msg = self.format_message(self.log_format, 'error', message)
-        print(msg)
         self.add_new_record(msg)
 
 
     def warning(self, message):
         msg = self.format_message(self.log_format, 'warning', message)
-        print(msg)
         self.add_new_record(msg)
 
 
     def critical(self, message):
         msg = self.format_message(self.log_format, 'critical', message)
-        print(msg)
         self.add_new_record(msg)
 
 

@@ -2,7 +2,8 @@ import time
 from copy import deepcopy
 
 from Game.Utils import translate_moves_to_output
-from chess import Chessboard, Color
+from chess.chessboard import Chessboard
+from chess.utils import Color
 from Game.Player import Player
 from keras.models import Model
 from logger import Logger
@@ -71,7 +72,7 @@ class TrainingGame:
         total_time = end_time - start_time
         status = self.current_state.get_game_status()
 
-        print('===============================')
+        self.logger.info('===============================')
         if status == 0:
             self.logger.info("               White wins")
             #print('           white wins')

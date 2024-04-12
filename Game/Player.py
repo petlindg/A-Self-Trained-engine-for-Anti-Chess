@@ -1,8 +1,11 @@
 from keras import Model
 
 from copy import deepcopy
+
+from config import verbosity
 from node import Node
-from chess import Chessboard, Color, Move
+from chess.chessboard import Chessboard
+from chess.move import Move
 from multiprocessing import Queue
 
 class Player:
@@ -28,7 +31,8 @@ class Player:
     def get_next_move(self):
 
         self.run_mcts()
-        self.mcts.print_selectively(2)
+        if verbosity != 0:
+            self.mcts.print_selectively(2)
 
         potential_nodes = self.mcts.children
 
