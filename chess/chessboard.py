@@ -294,8 +294,8 @@ class Chessboard():
                             representation[0][i][l].append(0)
 
         # TODO represent repetitions in some shape or form for the Chessboard class
-        repetitions_w = 0
-        repetitions_b = 0
+        repetitions_once = 1
+        repetitions_twice = 1 if self.bitboards in self.repetitions_list else 0
 
         if self.player_to_move == Color.WHITE:
             color = 0
@@ -306,8 +306,8 @@ class Chessboard():
         en_passant = self.enpassante
         for i in range(0, 8):
             for l in range(0, 8):
-                representation[0][i][l].append(repetitions_w)
-                representation[0][i][l].append(repetitions_b)
+                representation[0][i][l].append(repetitions_once)
+                representation[0][i][l].append(repetitions_twice)
                 representation[0][i][l].append(color)
                 representation[0][i][l].append(no_progress)
                 position = b_and(lookup.rank_nr_list[i], lookup.rank_l_list[l])
