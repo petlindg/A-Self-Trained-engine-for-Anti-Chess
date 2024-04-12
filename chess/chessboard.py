@@ -293,14 +293,12 @@ class Chessboard():
                         else:
                             representation[0][i][l].append(0)
 
-        # TODO represent repetitions in some shape or form for the Chessboard class
+        # repetitions
         repetitions_once = 1
-        if len(self.repetitions_list) > 0:
-            if any(all(self.bitboards == self.repetitions_list, axis=1)):
-                repetitions_twice = 1 
+        if any([all([all([self.bitboards[c][p]==r[c][p] for p in Piece]) for c in Color]) for r in self.repetitions_list]):
+            repetitions_twice = 1
         else:
             repetitions_twice = 0
-        # repetitions_twice = 1 if self.bitboards in self.repetitions_list else 0
 
         if self.player_to_move == Color.WHITE:
             color = 0
