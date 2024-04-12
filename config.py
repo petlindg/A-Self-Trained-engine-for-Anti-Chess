@@ -23,10 +23,10 @@ training_iterations = 500
 games_per_iteration = 50
 
 'epochs during the training process'
-epochs = 10
+epochs = 20
 
 'batch size for the training process'
-batch_size = 16
+batch_size = 64
 
 'Learning rate for the network'
 learning_rate = 0.2
