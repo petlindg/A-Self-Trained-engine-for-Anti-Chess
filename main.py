@@ -79,7 +79,7 @@ def main():
     if config.evaluation:
         threads = 1
 
-    run_training("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1", threads)
+    run_training("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - 0 1", threads)
     #train_file()
 
 if __name__ == '__main__':

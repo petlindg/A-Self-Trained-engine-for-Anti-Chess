@@ -24,6 +24,7 @@ class TrainingData:
     def __init__(self):
         train_size = int(train_split*max_buffer_size)
         test_size = int((1-train_split)*max_buffer_size)
+        print(train_size, test_size)
         self.X_train = deque(maxlen= train_size)
         self.X_test = deque(maxlen= test_size)
         self.y_train = deque(maxlen= train_size)
@@ -56,7 +57,9 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.eval_result = []
         self.eval_time = 0
         self.start_time = None
-
+        self.total_iterations = 0
+        self._get_old_iter()
+        
 
     def run(self):
         """Start the neural network process allowing it to process data
@@ -86,7 +89,6 @@ class NeuralNetworkProcess(multiprocessing.Process):
             # get the latest request from the queue
             # based on the request type, perform some action
             request_type, uid, data = self.input_queue.get()
-
             # if the request is an evaluation then store the data for later evaluation
             # also check if the data already exists in the dictionary, if it does,
             # return the value to the process which asked for it
@@ -122,21 +124,31 @@ class NeuralNetworkProcess(multiprocessing.Process):
             # if the accumulated game results reaches appropriate size, train the model
             if self.games_counter >= games_per_iteration:
                 
-                evals = self.evaluations['misses']+self.evaluations['hits']
+                hits = self.evaluations['hits']
+                misses = self.evaluations['misses']
+                evals = misses + hits
                 tdelta = time.time()-self.start_time
                 print(f'{self.games_counter} played, {evals} evaluations in {tdelta}, {evals/tdelta} /s')
                 self.games_counter = 0
                 self._split_data()
                 self._train_network()
                 print(f'{time.time() - self.start_time} s')
-                hits = self.evaluations['hits']
-                misses = self.evaluations['misses']
-                sum = hits+misses
-                print(f'hits: {hits} | {misses} | hitrate: {hits/sum} | total: {sum}')
+                
+                print(f'hits: {hits} | {misses} | hitrate: {hits/evals}')
                 self.evaluations.clear()
                 self.evaluations['hits'] = hits
                 self.evaluations['misses'] = misses
 
+    def _get_old_iter(self):
+        try:
+            with bz2.BZ2File('Game/iterations_counter.bz2', 'r') as f:
+                data = pickle.load(f)
+                self.total_iterations = data
+        except:
+            print('couldnt load past data')
+        
+    def _save_iterations(self):
+        save_to_file('Game/iterations_counter.bz2', self.total_iterations)
 
     def _load_past_data(self):
         """
@@ -151,7 +163,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         except:
             print('couldnt load past data')
         self.training_data = data
-
+        
     def _process_requests(self):
         """Method to process the requested evaluations and return the results to all the linked processes.
 
@@ -193,7 +205,9 @@ class NeuralNetworkProcess(multiprocessing.Process):
         X_train, X_test, y_train, y_test = train_test_split(list_states, list_outputs,
                                                             shuffle=True,
                                                             train_size=train_split)
+        print(len(X_train), len(X_test))
         self.training_data.add(X_train, X_test, y_train, y_test)
+        print(len(self.training_data.X_train))
         self.buffer.clear()
 
     def _train_network(self):
@@ -201,7 +215,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
 
         :return: None
         """
-
+        
         dists_train, vs_train = zip(*self.training_data.y_train)
         dists_test, vs_test = zip(*self.training_data.y_test)
 
@@ -212,15 +226,14 @@ class NeuralNetworkProcess(multiprocessing.Process):
                        batch_size=batch_size,
                        validation_data=(np.array(self.training_data.X_test),[np.array(dists_test), np.array(vs_test)]),
                        )
+        self.total_iterations += 1
+        print(time.time()-self.start_time, ' seconds since start')
+        print(self.total_iterations, ' training iterations')
+        self._save_iterations()
 
-        
+        if self.total_iterations % 20 == 0: # every 2000 games (if 50 games per training), save a model file of this state
+            self.model.save(f'model_checkpoint/model_{self.total_iterations}_it.h5')
 
-
-        #eval = self.model.evaluate(np.array(self.training_data.X_test),
-        #                    [np.array(dists_test), np.array(vs_test)]
-        #                    )
-        #print(eval)
-        #self.eval_result.append(eval)
 
         self.model.save_weights(checkpoint_path)
         save_to_file('Game/training_data_class.bz2', self.training_data)

@@ -14,7 +14,7 @@ tree_iterations: int = 800
 output_representation = (1,1,8,8,79)
 
 'maximum number of games saved in the FIFO queue that the model uses as a dataset'
-max_buffer_size = 100
+max_buffer_size = 20000
 
 'total number of iterations that are performed before the training stops'
 training_iterations = 500
@@ -23,10 +23,10 @@ training_iterations = 500
 games_per_iteration = 50
 
 'epochs during the training process'
-epochs = 10
+epochs = 20
 
 'batch size for the training process'
-batch_size = 16
+batch_size = 64
 
 'Learning rate for the network'
 learning_rate = 0.2
