@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from Game.TrainingGame import TrainingGame
-from chess import Color
+from chess.utils import Color
 
 
 class Testing:
