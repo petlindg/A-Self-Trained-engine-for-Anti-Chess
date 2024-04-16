@@ -5,16 +5,18 @@ from eval_game import EvalGame
 
 class GameProcessEval(multiprocessing.Process):
     """
-    Class representing a single process that plays games using the neural network. 
-    This class communicates with and sends requests to the neural network process and recieves evaluations from the 
-    neural network.
+    A class process to contain and play an EvalGame and communicate results with two different NeuralNetworkProcessEval instances
     """
     def __init__(self, input_queue_1, output_queue_1, input_queue_2, output_queue_2, initial_state, uid):
         """
-        The game process class has two queues, the incoming and the outcoming queue
-        the incoming queue is the data that the game process recieves from the neural network
-        and the outgoing queue is the queue that the game process puts data on, for the network process to handle
-        the uid is the unique identifier for the process, it is used for identification purposes. 
+        A class process to contain and play an EvalGame and communicate results with two different NeuralNetworkProcessEval instances
+
+        :param outgoing_queue_1: The outgoing queue to contain prediction request to a NeuralNetworkProcessEval instance
+        :param incoming_queue_1: The incoming queue to contain results from predictions from a NeuralNetworkProcessEval instance
+        :param outgoing_queue_2: The outgoing queue to contain prediction request to a NeuralNetworkProcessEval instance
+        :param incoming_queue_2: The incoming queue to contain results from predictions from a NeuralNetworkProcessEval instance
+        :param initial_state: The Chessboard to play from
+        :param uid: identifier of the process
         """
         super(GameProcessEval, self).__init__()
         self.outgoing_queue_1 = input_queue_1
@@ -26,7 +28,7 @@ class GameProcessEval(multiprocessing.Process):
 
     def run(self):
         """
-        Function that continually plays games by sending requests to the neural network
+        Runs a game
         """
         from chess.chessboard import Chessboard
         from Game.TrainingGame import TrainingGame
