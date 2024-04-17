@@ -80,7 +80,7 @@ def main():
     model_1 = tensorflow.keras.models.load_model('../saved_model/model_40_it.h5', compile=False)
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_60_it.h5', compile=False)
-    model_1.compile()
+    model_2.compile()
     eval_models(model_1, model_2, 2)
 
 if __name__=="__main__":
