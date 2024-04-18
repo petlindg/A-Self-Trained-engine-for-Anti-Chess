@@ -20,7 +20,7 @@ max_buffer_size = 30000
 training_iterations = 50
 
 'total number of games that are performed per training iteration'
-games_per_iteration = 20
+games_per_iteration = 50
 
 'epochs during the training process'
 epochs = 30
@@ -62,9 +62,9 @@ train_split = 0.8
 evaluation = False
 
 'number of processes for the multiprocessing'
-processes = 2
+processes = 200
 
 'batch size of the multiprocessing neural network, dictates how many states the network will predict at a time'
-nn_batch = 2
+nn_batch = 150
 if evaluation:
     nn_batch = 1
