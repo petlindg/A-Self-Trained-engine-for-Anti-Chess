@@ -7,7 +7,7 @@ import config
 from training import Training
 from chess.chessboard import Chessboard
 from config import checkpoint_path
-from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
+from nn_revised import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 from nn_process import NeuralNetworkProcess
 from game_process import GameProcess
 from multiprocessing import Queue, set_start_method

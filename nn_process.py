@@ -14,7 +14,7 @@ from config import max_buffer_size, games_per_iteration, checkpoint_path
 from config import epochs, batch_size, train_split, nn_batch
 
 
-from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
+from nn_revised import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 
 
 class TrainingData:
