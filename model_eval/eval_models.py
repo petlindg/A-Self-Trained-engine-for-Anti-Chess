@@ -82,19 +82,14 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
         results.append(r)
         
     # process data
-    win_count_white = [winner for (uid, winner, move_count) in results].count("white")
-    win_rate_white = win_count_white/games
-    win_count_black = [winner for (uid, winner, move_count) in results].count("black")
-    win_rate_black = win_count_black/games
+    win_count_model_1 = [winner for (uid, winner, move_count) in results].count("model_1")
+    win_rate_model_1 = win_count_model_1/games
+    win_count_model_2 = [winner for (uid, winner, move_count) in results].count("model_2")
+    win_rate_model_2 = win_count_model_2/games
     draw_count = [winner for (uid, winner, move_count) in results].count("draw")
     draw_rate = draw_count/games
     move_avg = sum([move_count for (uid, winner, move_count) in results])/games
-
-    # print data
-    print(f"result distribution [white|black|draw]: [{win_count_white}|{win_count_black}|{draw_count}]")
-    print(f"%result distribution [white|black|draw]: [{win_rate_white}|{win_rate_black}|{draw_rate}]")
-    print(f"Average amount of moves: [{move_avg}]")
-
+    return (win_count_model_1, win_count_model_2, draw_count, move_avg)
 
 def main():
     # needs to run from model_eval folder
@@ -102,7 +97,10 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_80_it.h5', compile=False)
     model_2.compile()
-    eval_models(model_1, model_2, 20)
+
+    win_count_model_1, win_count_model_2, draw_count, move_avg = eval_models(model_1, model_2, 2)
+    print(f"result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
+    print(f"Average amount of moves: [{move_avg}]")
 
 if __name__=="__main__":
     main()

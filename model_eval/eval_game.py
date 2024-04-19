@@ -32,9 +32,13 @@ class EvalGame:
         :param outgoing_queue_2: The outgoing queue to contain prediction request to a NeuralNetworkProcessEval instance
         :param incoming_queue_2: The incoming queue to contain results from predictions from a NeuralNetworkProcessEval instance
         """
-        self.player = []
-        self.player.append(Player(deepcopy(initial_state), outgoing_queue_1, incoming_queue_1, uid))
-        self.player.append(Player(deepcopy(initial_state), outgoing_queue_2, incoming_queue_2, uid))
+        self.model_1 = Color(uid%2)
+        self.model_2 = Color((uid+1)%2)
+        
+        self.uid = uid
+        self.player = [None, None]
+        self.player[self.model_1] = Player(deepcopy(initial_state), outgoing_queue_1, incoming_queue_1, uid)
+        self.player[self.model_2] = Player(deepcopy(initial_state), outgoing_queue_2, incoming_queue_2, uid)
         self.player[1].get_next_move()
 
 
@@ -55,10 +59,10 @@ class EvalGame:
            move_counter += 1
 
         result = self.player[0].current_state.get_game_status()
-        if result == 0:
-            return ("white", move_counter)
-        elif result == 1:
-            return ("black", move_counter)
+        if result == self.model_1:
+            return ("model_1", move_counter)
+        elif result == self.model_2:
+            return ("model_2", move_counter)
         else:
             return ("draw", move_counter)
         
