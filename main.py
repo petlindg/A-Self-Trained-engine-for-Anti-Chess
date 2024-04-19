@@ -70,7 +70,8 @@ def run_training(fen, workers=1):
         if et:
             current_time = datetime.datetime.now()
             time_remaining = end_timer_time - current_time
-            if time_remaining.seconds <= 30:
+            print(time_remaining)
+            if time_remaining.total_seconds() <= 0:
                 for worker in worker_list:
                     worker.terminate()
                 nn_process.terminate()
