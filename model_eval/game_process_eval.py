@@ -7,7 +7,7 @@ class GameProcessEval(multiprocessing.Process):
     """
     A class process to contain and play an EvalGame and communicate results with two different NeuralNetworkProcessEval instances
     """
-    def __init__(self, input_queue_1, output_queue_1, input_queue_2, output_queue_2, initial_state, uid):
+    def __init__(self, input_queue_1, output_queue_1, input_queue_2, output_queue_2, results_queue, initial_state, uid):
         """
         A class process to contain and play an EvalGame and communicate results with two different NeuralNetworkProcessEval instances
 
@@ -23,6 +23,7 @@ class GameProcessEval(multiprocessing.Process):
         self.incoming_queue_1 = output_queue_1
         self.outgoing_queue_2 = input_queue_2
         self.incoming_queue_2 = output_queue_2
+        self.results_queue = results_queue
         self.initial_state = initial_state
         self.uid = uid
 
@@ -44,7 +45,9 @@ class GameProcessEval(multiprocessing.Process):
                         incoming_queue_2=self.incoming_queue_2,
                         uid=self.uid)
         
-        result = game.run()
+        result, move_counter = game.run()
+
+        self.results_queue.put((self.uid, result, move_counter))
 
         self.outgoing_queue_1.put(('finished', self.uid, result))
         self.outgoing_queue_2.put(('finished', self.uid, result))

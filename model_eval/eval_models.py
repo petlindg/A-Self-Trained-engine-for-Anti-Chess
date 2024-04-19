@@ -1,3 +1,4 @@
+from itertools import count
 import sys
 sys.path.append('..')
 
@@ -22,7 +23,10 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
     :param initial_state: The state of which the games should be played
     """
     nn_batch = games//2
+
     set_start_method('spawn')
+
+    results_queue = Queue()
 
     nr_workers = games
 
@@ -44,6 +48,7 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
                                 output_queue_1=output_queues_1[i],
                                 input_queue_2=input_queue_2,
                                 output_queue_2=output_queues_2[i],
+                                results_queue=results_queue,
                                 uid=i)
         worker_list.append(worker)
 
@@ -70,18 +75,34 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
         worker.daemon = True
         worker.start()
 
-    # sleep while the child processes work
-    while True:
-        time.sleep(20)
+    # add results to list
+    results = []
+    while len(results)<games:
+        r = results_queue.get()
+        results.append(r)
+        
+    # process data
+    win_count_white = [winner for (uid, winner, move_count) in results].count("white")
+    win_rate_white = win_count_white/games
+    win_count_black = [winner for (uid, winner, move_count) in results].count("black")
+    win_rate_black = win_count_black/games
+    draw_count = [winner for (uid, winner, move_count) in results].count("draw")
+    draw_rate = draw_count/games
+    move_avg = sum([move_count for (uid, winner, move_count) in results])/games
+
+    # print data
+    print(f"result distribution [white|black|draw]: [{win_count_white}|{win_count_black}|{draw_count}]")
+    print(f"%result distribution [white|black|draw]: [{win_rate_white}|{win_rate_black}|{draw_rate}]")
+    print(f"Average amount of moves: [{move_avg}]")
 
 
 def main():
     # needs to run from model_eval folder
-    model_1 = tensorflow.keras.models.load_model('../saved_model/model_40_it.h5', compile=False)
+    model_1 = tensorflow.keras.models.load_model('../saved_model/model_20_it.h5', compile=False)
     model_1.compile()
-    model_2 = tensorflow.keras.models.load_model('../saved_model/model_60_it.h5', compile=False)
+    model_2 = tensorflow.keras.models.load_model('../saved_model/model_80_it.h5', compile=False)
     model_2.compile()
-    eval_models(model_1, model_2, 2)
+    eval_models(model_1, model_2, 20)
 
 if __name__=="__main__":
     main()

@@ -39,17 +39,16 @@ class NeuralNetworkProcessEval(multiprocessing.Process):
             request_type, uid, data = self.input_queue.get()
             if request_type == "finished":
                 self.finished_counter += 1
-                print(data)
+                if self.finished_counter%2==0:
+                    self.batch_size -= 1
             else:
                 self.list_uid.append(uid)
                 self.list_states.append(data)
 
             # if the list of pending evaluation states is large enough
             # perform the model evaluation on the list
-            if len(self.list_states) >= self.batch_size or self.finished_counter + len(self.list_states) == self.total_games:
+            if len(self.list_states) >= self.batch_size:
                 self._process_requests()
-        
-        print("All games complete")
         
     def _process_requests(self):
         """
