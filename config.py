@@ -5,6 +5,7 @@ Global configuration values for the program
 '''
 from chess.utils import Color, Piece
 from math import sqrt
+from datetime import datetime
 'constant defining exploration vs exploitation of the tree'
 exploration_constant: float = sqrt(2)
 'constant defining how many iterations per tree will be performed'
@@ -23,7 +24,7 @@ training_iterations = 500
 games_per_iteration = 50
 
 'epochs during the training process'
-epochs = 30
+epochs = 20
 
 'batch size for the training process'
 batch_size = 64
@@ -56,7 +57,7 @@ random_state_generation = False
 train_split = 0.8
 
 'evaluation is a boolean for if the program will run with a single thread and print out all debugging output'
-evaluation = False
+evaluation = True
 
 'number of processes for the multiprocessing'
 processes = 200
@@ -65,3 +66,31 @@ processes = 200
 nn_batch = 150
 if evaluation:
     nn_batch = 1
+
+'===================================================='
+'Timer settings'
+'===================================================='
+'end timer is the time at which the program will quit'
+'the end_timer_active boolean is whether to use the end timer'
+end_timer_active = True
+end_timer_time = datetime(
+        year=2024,
+        month=4,
+        day=19,
+        hour=15,
+        minute=58,
+        second=0
+)
+
+'start timer is the time that the program starts up'
+'the program will try to sleep until after the given time'
+'and only then start training'
+start_timer_active = False
+start_timer_time = datetime(
+        year=2024,
+        month=4,
+        day=17,
+        hour=5,
+        minute=45,
+        second=0
+)

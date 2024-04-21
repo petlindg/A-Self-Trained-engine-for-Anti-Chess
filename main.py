@@ -1,8 +1,8 @@
 import os
 import time
-
+from sys import exit
 import tensorflow
-
+import datetime
 import config
 from training import Training
 from chess.chessboard import Chessboard
@@ -11,7 +11,8 @@ from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 from nn_process import NeuralNetworkProcess
 from game_process import GameProcess
 from multiprocessing import Queue, set_start_method
-
+from config import end_timer_time, end_timer_active
+from config import start_timer_time, start_timer_active
 
 def run_training(fen, workers=1):
     """
@@ -19,6 +20,15 @@ def run_training(fen, workers=1):
     workers is an argument for how many game processes that will be run at the same time
     """
     set_start_method('spawn')
+
+    # startup waiting timer, if it is active
+    st = start_timer_active
+    while st:
+        current_time = datetime.datetime.now()
+        time_remaining = start_timer_time - current_time
+        if time_remaining.seconds <= 20:
+            st = False
+        time.sleep(1)
 
     nr_workers = workers
     input_queue = Queue()
@@ -48,10 +58,27 @@ def run_training(fen, workers=1):
         worker.daemon = True
         worker.start()
 
-    # let this main thread sleep (can be changed in the future to do something productive)
-    # once the main thread exits, the workers and nn will exit as well.
+    # once the main thread exits, the workers and nn will exit as well.    
+    # values to set for a specific exit time for the training program
+    # it is also possible to use time instead of datetime
+
     while True:
-        time.sleep(20)
+        time.sleep(1)
+        # if the end timer is active then the program will exit
+        # once the time limit is reached
+        et = end_timer_active
+        if et:
+            current_time = datetime.datetime.now()
+            time_remaining = end_timer_time - current_time
+            print(time_remaining)
+            if time_remaining.total_seconds() <= 0:
+                for worker in worker_list:
+                    worker.terminate()
+                nn_process.terminate()
+                print(f'terminated the process at {current_time}')
+                exit()
+
+
 
 
 def train_file():
