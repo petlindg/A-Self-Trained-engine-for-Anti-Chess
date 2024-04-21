@@ -57,7 +57,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.eval_result = []
         self.eval_time = 0
         self.start_time = None
-        self.total_iterations = 0
+        self.total_iterations = 140
         self._get_old_iter()
         
 
