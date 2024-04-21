@@ -57,7 +57,7 @@ random_state_generation = False
 train_split = 0.8
 
 'evaluation is a boolean for if the program will run with a single thread and print out all debugging output'
-evaluation = True
+evaluation = False
 
 'number of processes for the multiprocessing'
 processes = 200
@@ -76,9 +76,9 @@ end_timer_active = True
 end_timer_time = datetime(
         year=2024,
         month=4,
-        day=19,
-        hour=15,
-        minute=58,
+        day=22,
+        hour=5,
+        minute=45,
         second=0
 )
 
