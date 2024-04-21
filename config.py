@@ -78,7 +78,7 @@ end_timer_time = datetime(
         month=4,
         day=22,
         hour=5,
-        minute=45,
+        minute=55,
         second=0
 )
 
