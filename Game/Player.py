@@ -18,7 +18,7 @@ class Player:
         self.current_state = initial_state
         self.mcts = Node(state=initial_state, p=1, outgoing_queue=outgoing_queue, incoming_queue=incoming_queue, uid=uid)
         self.mcts.expand()
-        self.mcts.add_noise()
+        self.mcts.add_noise(frac=1)
         self.history = []
 
     def run_mcts(self):
