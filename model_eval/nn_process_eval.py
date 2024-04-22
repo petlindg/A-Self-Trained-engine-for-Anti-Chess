@@ -1,7 +1,6 @@
 import multiprocessing
 import numpy as np
 import tensorflow
-import keras
 
 from keras import Model
 from config import batch_size
@@ -53,9 +52,7 @@ class NeuralNetworkProcessEval(multiprocessing.Process):
                 self.model = tensorflow.keras.models.load_model(self.model_path, compile=False)
                 self.model.compile()
                 self._process_requests()
-                keras.backend.clear_session()
-                self.model = None
-                
+                del(self.model)
         
     def _process_requests(self):
         """
