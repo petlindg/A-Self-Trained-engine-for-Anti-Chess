@@ -13,7 +13,7 @@ from model_eval.nn_process_eval import NeuralNetworkProcessEval
 
 EVAL_GAMES = 100
 
-def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chessboard=Chessboard()):
+def eval_models(model_1_path:str, model_2_path:str, games:int=100, initial_state:Chessboard=Chessboard()):
     """
     Evaluates the win-rate, draw-rate and move counters of a set number of games between two models.
 
@@ -56,7 +56,7 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
     nn_process_1 = NeuralNetworkProcessEval(input_queue=input_queue_1,
                                             output_queues=output_queues_1,
                                             nn_batch=nn_batch,
-                                            model = model_1
+                                            model_path = model_1_path
                                             )
     nn_process_1.daemon = True
     nn_process_1.start()
@@ -65,7 +65,7 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
     nn_process_2 = NeuralNetworkProcessEval(input_queue=input_queue_2,
                                             output_queues=output_queues_2,
                                             nn_batch=nn_batch,
-                                            model = model_2
+                                            model_path = model_2_path
                                             )
     nn_process_2.daemon = True
     nn_process_2.start()
@@ -93,10 +93,8 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
 
 def main():
     # needs to run from model_eval folder
-    model_1 = tensorflow.keras.models.load_model('../saved_model/model_20_it.h5', compile=False)
-    model_1.compile()
-    model_2 = tensorflow.keras.models.load_model('../saved_model/model_80_it.h5', compile=False)
-    model_2.compile()
+    model_1 = '../saved_model/model_20_it.h5'
+    model_2 = '../saved_model/model_80_it.h5'
 
     win_count_model_1, win_count_model_2, draw_count, move_avg = eval_models(model_1, model_2, 2)
     print(f"result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
