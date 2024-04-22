@@ -267,4 +267,4 @@ def weights_to_h5():
     except Exception as e:
         print('EXCEPTION, couldnt load model ', e)
 
-    model.save(f'saved_model/model_{self.total_iterations}_it.h5')
+    model.save('saved_model/model.h5')
