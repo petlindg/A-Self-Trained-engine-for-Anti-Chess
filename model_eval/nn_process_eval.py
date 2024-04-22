@@ -1,6 +1,5 @@
 import multiprocessing
 import numpy as np
-import tensorflow
 
 from config import batch_size
 
@@ -9,7 +8,7 @@ class NeuralNetworkProcessEval(multiprocessing.Process):
     Class that represents a single neural network process, it handles incoming requests from
     the game processes and manages the execution of the neural network.
     """
-    def __init__(self, input_queue, output_queues, nn_batch:int, model_path):
+    def __init__(self, input_queue, output_queues, nn_batch:int, model):
         """
         Class that represents a single neural network process, it handles incoming requests from
         the game processes and manages the training and execution of the neural network.
@@ -28,8 +27,7 @@ class NeuralNetworkProcessEval(multiprocessing.Process):
         self.finished_counter = 0
         self.total_games = nn_batch*2
 
-        self.model = tensorflow.keras.models.load_model(model_path, compile=False)
-        self.model.compile()
+        self.model = model
 
     def run(self):
         """
