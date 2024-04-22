@@ -57,7 +57,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.eval_result = []
         self.eval_time = 0
         self.start_time = None
-        self.total_iterations = 140
+        self.total_iterations = 0
         self._get_old_iter()
         
 
@@ -267,4 +267,4 @@ def weights_to_h5():
     except Exception as e:
         print('EXCEPTION, couldnt load model ', e)
 
-    model.save('saved_model/model.h5')
+    model.save(f'saved_model/model_{self.total_iterations}_it.h5')
