@@ -2,6 +2,7 @@ import multiprocessing
 import numpy as np
 import tensorflow
 
+from keras import Model
 from config import batch_size
 
 class NeuralNetworkProcessEval(multiprocessing.Process):
@@ -27,9 +28,7 @@ class NeuralNetworkProcessEval(multiprocessing.Process):
         self.batch_size = nn_batch
         self.finished_counter = 0
         self.total_games = nn_batch*2
-
-        self.model = tensorflow.keras.models.load_model(model_path, compile=False)
-        self.model.compile()
+        self.model_path = model_path
 
     def run(self):
         """
@@ -50,7 +49,10 @@ class NeuralNetworkProcessEval(multiprocessing.Process):
             # if the list of pending evaluation states is large enough
             # perform the model evaluation on the list
             if len(self.list_states) >= self.batch_size:
+                self.model = tensorflow.keras.models.load_model(self.model_path, compile=False)
+                self.model.compile()
                 self._process_requests()
+                del(self.model)
         
     def _process_requests(self):
         """
