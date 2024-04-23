@@ -7,7 +7,7 @@ from node import Node
 from chess.chessboard import Chessboard
 from chess.move import Move
 from multiprocessing import Queue
-
+import time
 class Player:
     """
     A class representing a player
@@ -33,7 +33,8 @@ class Player:
         self.run_mcts()
         if verbosity != 0:
             self.mcts.print_selectively(2)
-
+        self.mcts.graph_tree(2)
+        time.sleep(20)
         potential_nodes = self.mcts.children
 
         max_visits = 0

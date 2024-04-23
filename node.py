@@ -17,7 +17,7 @@ from keras.models import Model
 from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
 from logger import Logger
 from multiprocessing import Queue
-
+import graphviz
 logger = Logger("TrainingGame")
 
 def fetch_p_from_move(move: Move, model_output: np.array):
@@ -248,6 +248,43 @@ class Node:
         logger.info(f"\n{''.join(string_buffer)}")
         #print("".join(string_buffer))
 
+    def graph_tree(self, depth):
+        g = graphviz.Digraph()
+        self.state.move(self.move)
+        g.node(name=f'root',
+               fontname='Consolas',
+               label='\n'.join([f'{(self.state)}', f'n: {self.visits}', f'v: {round(self.value,2)}']))
+        self.state.unmove(self.move)
+        for n, child in enumerate(self.children):
+            
+            if n > 5:
+                g.node(name='root..',
+                            fontname='Consolas',
+                            label='...'
+                            )
+                g.edge(f'root', 'root..')
+                break
+            else:
+                print(child.state)
+                child.graph_helper('root'+str(n), depth-1, g, 'root')
+        g.view()
+
+    def graph_helper(self, name, depth, graph, p_name):
+        graph.node(name=name,
+                   fontname='Consolas',
+               label='\n'.join([f'{(self.state)}', f'n: {self.visits}', f'v: {round(self.value,2)}']))
+        graph.edge(p_name, name)
+        if depth > 0:
+            for n, child in enumerate(self.children):
+                if n > 5:
+                    graph.node(name=f'{name}..',
+                               fontname='Consolas',
+                               label='...'
+                               )
+                    graph.edge(name, name+'..')
+                    break
+                else:
+                    child.graph_helper(name+str(n), depth-1, graph, name)
     def update_tree(self, move:Move):
         """
         Updates the tree based on a certain move (moves down the tree one level),
