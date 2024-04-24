@@ -16,6 +16,7 @@ class EnginePlayer:
 
     def get_move(self):
         self.mcts.run()
+        self.mcts.print_selectively(2)
         return max(self.mcts.children, key=lambda node: node.visits).move
 
     def update(self, move):
