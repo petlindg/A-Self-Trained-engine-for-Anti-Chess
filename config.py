@@ -17,10 +17,10 @@ output_representation = (1,1,8,8,79)
 max_buffer_size = 30000
 
 'total number of iterations that are performed before the training stops'
-training_iterations = 50
+training_iterations = 500
 
 'total number of games that are performed per training iteration'
-games_per_iteration = 50
+games_per_iteration = 20
 
 'epochs during the training process'
 epochs = 30
