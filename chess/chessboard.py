@@ -12,7 +12,7 @@ from typing import List
 import sys
 sys.path.append('..')
 
-from chess.utils import Color, Piece, alg_sq_to_index
+from chess.utils import Color, Piece, alg_sq_to_index, print_bb
 from chess.move import Move
 import chess.lookup as lookup
 
@@ -60,7 +60,8 @@ class Chessboard():
         self._init_fen(fen)
         self.pawns = self._get_pawns()
         self.piece_count = self._get_piece_count()
-        self.enpassant_list = [self.enpassante]
+        self.enpassant_list = []
+        self.enpassant_list.append(self.enpassante)
         self.moves = []
         
     def __str__(self):
@@ -143,12 +144,12 @@ class Chessboard():
             self.piece_count = self._get_piece_count()
             self.pawns = self._get_pawns()
 
+            self._update_enpassant()
             self._update_repetitions()
             self._update_bitboards(move)
             self._update_no_progress()
             self._update_player()
             self._update_move_counter()
-            self._update_enpassant()
 
             self.moves = []
 
@@ -481,11 +482,20 @@ class Chessboard():
             self._move_promote(dst_bb, promotion_type)
         elif b_and(dst_bb, enpassante):
             self._move_enpassante(dst_bb)
+        elif b_and(src_bb, rs(dst_bb, u64(16))) or b_and(src_bb, ls(dst_bb, u64(16))):
+            self._move_pawn_double(dst_bb)
         else:
             self.bitboards[self.player_to_move, Piece.PAWN] = b_or(self.bitboards[self.player_to_move, Piece.PAWN], dst_bb)
 
     def _move_promote(self, dst_bb:u64, promotion_type:Piece):
         self.bitboards[self.player_to_move, promotion_type] = b_or(self.bitboards[self.player_to_move, promotion_type], dst_bb)
+
+    def _move_pawn_double(self, dst_bb):
+        self.bitboards[self.player_to_move, Piece.PAWN] = b_or(self.bitboards[self.player_to_move, Piece.PAWN], dst_bb)
+        if self.player_to_move == Color.WHITE:
+            self.enpassante = rs(dst_bb, u64(8))
+        else:
+            self.enpassante = ls(dst_bb, u64(8))
 
     def _move_enpassante(self, dst_bb:u64):
         self.bitboards[self.player_to_move, Piece.PAWN] = b_or(self.bitboards[self.player_to_move, Piece.PAWN], dst_bb)
