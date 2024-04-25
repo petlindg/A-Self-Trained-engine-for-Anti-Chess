@@ -20,7 +20,7 @@ max_buffer_size = 30000
 training_iterations = 500
 
 'total number of games that are performed per training iteration'
-games_per_iteration = 20
+games_per_iteration = 50
 
 'epochs during the training process'
 epochs = 30
