@@ -60,6 +60,7 @@ class Chessboard():
         self._init_fen(fen)
         self.pawns = self._get_pawns()
         self.piece_count = self._get_piece_count()
+        self.enpassant_list = [self.enpassante]
         self.moves = []
         
     def __str__(self):
@@ -147,6 +148,7 @@ class Chessboard():
             self._update_no_progress()
             self._update_player()
             self._update_move_counter()
+            self._update_enpassant()
 
             self.moves = []
 
@@ -170,6 +172,7 @@ class Chessboard():
         self._reverse_move_counter()
         self.bitboards = self.repetitions_list.pop()
         self.no_progress_counter.pop()
+        self.enpassante = self.enpassant_list.pop()
 
     def get(self):
         """
@@ -468,6 +471,9 @@ class Chessboard():
                     self._move_pawn(src_bb, dst_bb, enpassante, promotion_type)
                 else:
                     self._move_piece(src_bb, dst_bb, piece_type)
+
+    def _update_enpassant(self):
+        self.enpassant_list.append(self.enpassante)
 
     def _move_pawn(self, src_bb:u64, dst_bb:u64, enpassante:u64, promotion_type:Piece):
         self.bitboards[self.player_to_move, Piece.PAWN] = b_xor(self.bitboards[self.player_to_move, Piece.PAWN], src_bb)
