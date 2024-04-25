@@ -563,12 +563,12 @@ class Chessboard():
             self.piece_count = self._get_piece_count()
             self.pawns = self._get_pawns()
 
+            self.enpassant_list.append(self.enpassante)
             self._update_repetitions()
             self._update_bitboards(move)
             self._update_no_progress()
             self._update_player()
             self._update_move_counter()
-            self.enpassant_list.append(self.enpassante)
 
             self.moves = []
 
