@@ -415,6 +415,7 @@ class Chessboard():
         self.no_progress_counter = []
         self._init_fen(fen)
         self.pawns = self._get_pawns()
+        self.enpassant_list = [self.enpassante]
         self.piece_count = self._get_piece_count()
         self.moves = []
         
@@ -567,6 +568,7 @@ class Chessboard():
             self._update_no_progress()
             self._update_player()
             self._update_move_counter()
+            self.enpassant_list.append(self.enpassante)
 
             self.moves = []
 
@@ -790,11 +792,20 @@ class Chessboard():
             self._move_promote(dst_bb, promotion_type)
         elif b_and(dst_bb, enpassante):
             self._move_enpassante(dst_bb)
+        elif b_and(src_bb, rs(dst_bb, u64(16))) or b_and(src_bb, ls(dst_bb, u64(16))):
+            self._move_pawn_double(dst_bb)
         else:
             self.bitboards[self.player_to_move, Piece.PAWN] = b_or(self.bitboards[self.player_to_move, Piece.PAWN], dst_bb)
 
     def _move_promote(self, dst_bb:u64, promotion_type:Piece):
         self.bitboards[self.player_to_move, promotion_type] = b_or(self.bitboards[self.player_to_move, promotion_type], dst_bb)
+
+    def _move_pawn_double(self, dst_bb):
+        self.bitboards[self.player_to_move, Piece.PAWN] = b_or(self.bitboards[self.player_to_move, Piece.PAWN], dst_bb)
+        if self.player_to_move == Color.WHITE:
+            self.enpassante = rs(dst_bb, u64(8))
+        else:
+            self.enpassante = ls(dst_bb, u64(8))
 
     def _move_enpassante(self, dst_bb:u64):
         self.bitboards[self.player_to_move, Piece.PAWN] = b_or(self.bitboards[self.player_to_move, Piece.PAWN], dst_bb)
@@ -838,6 +849,7 @@ class Chessboard():
         self._reverse_move_counter()
         self.bitboards = self.repetitions_list.pop()
         self.no_progress_counter.pop()
+        self.enpassante = self.enpassant_list.pop()
 
     def _update_player(self):
         tmp = self.player_to_move

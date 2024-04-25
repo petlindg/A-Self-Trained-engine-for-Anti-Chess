@@ -128,6 +128,17 @@ class TestMoveGen(unittest.TestCase):
         m = cb.Move(cb.u64(11), cb.u64(34))
         self.assertFalse(board.move(m))
 
+    def test_enpassant_unmove(self):
+        fen = "8/8/8/8/1p6/8/P7/8 w - 0 1"
+        moves_alg = "a2a4 b4a3 b4a3"
+        board = cb.Chessboard(fen)
+        moves = [cb.algebraic_to_move(move_alg) for move_alg in moves_alg.split()]
+
+        self.assertTrue(board.move(moves.pop(0)))
+        self.assertTrue(board.move(moves.pop(0)))
+        board.unmove()
+        self.assertTrue(board.move(moves.pop(0)))
+
 class TestGameState(unittest.TestCase):
     # tests that the get_game_status() function works correctly
     def test_stalemate_white(self):
