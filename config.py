@@ -76,8 +76,8 @@ end_timer_active = True
 end_timer_time = datetime(
         year=2024,
         month=4,
-        day=23,
-        hour=5,
+        day=26,
+        hour=12,
         minute=55,
         second=0
 )
