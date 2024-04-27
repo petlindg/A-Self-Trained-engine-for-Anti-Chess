@@ -2,12 +2,29 @@ import random
 from Game.state_generator import generate_random_state
 from chess.utils import Piece, Color
 from chess.chessboard import Chessboard
+from chess.move import algebraic_to_move, Move, calc_move
 import pandas as pd
 from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 from config import checkpoint_path
 import numpy as np
-from node import fetch_p_from_move
+import tensorflow
+import matplotlib.pyplot as plt
 
+def fetch_p_from_move_2(move: Move, model_output: np.array):
+    """Fetches the P value from the output array of the model
+
+    :param move: Move, move to fetch the P value for
+    :param model_output: np.array, array of the model's policy output
+    :return: Float, the P value for the move
+    """
+    src_col = int(move.src_index % 8)
+    src_row = int(move.src_index // 8)
+
+    move_type = calc_move(move.src_index, move.dst_index, move.promotion_type)
+    #print(model_output)
+    model_output = np.array(model_output).reshape(8,8, 79)
+
+    return model_output[src_row][src_col][move_type]
 
 def randomize_state():
     # first randomize the piece for white and the piece for black
@@ -46,7 +63,7 @@ def calculate_input(fen_not):
     return np.asarray(Chessboard(fen_not).translate_board()).astype('float32')[0]
 
 
-def run_testing():
+def run_testing(model_path):
     # main function to calculate the average loss of the model
     # on the testing dataset in test_states.csv
     df = pd.read_csv('test_states.csv')
@@ -57,11 +74,8 @@ def run_testing():
 
     # create the model
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
-    model = model_config.build_nn()
-    try:
-        model.load_weights(checkpoint_path)
-    except Exception as e:
-        print('EXCEPTION, couldnt load weights ', e)
+    model = tensorflow.keras.models.load_model(model_path)
+    
     
     # convert the pandas series to numpy array
     states = np.asarray(list(df['input_repr']))
@@ -82,13 +96,32 @@ def run_testing():
     # calculating the value loss squared
     df['v_loss'] = (df['status'] - df['value']).apply(lambda x: x*x)
     
-    #df['p_value'] = df.apply(lambda x: fetch_p_from_move(x.move, x.p), axis=1)
+    df['p_value'] = df.apply(lambda x: fetch_p_from_move_2(algebraic_to_move(x.move), x.p), axis=1)
+    df['p_loss'] = df['p_value'].apply(lambda x: 1-x)
     print(df.head())
     print(df['v_loss'].mean())
-    
+    print(df['p_loss'].mean())
+    return df['v_loss'].mean(), df['p_loss'].mean()
+
+def graph_loss(starting_iteration, ending_iteration):
+    p_loss = []
+    v_loss = []
+    for i in range(starting_iteration, ending_iteration+20, 20):
+        path = f'saved_model/model_{i}_it.h5'
+        v, p = (run_testing(path))
+        p_loss.append(p)
+        v_loss.append(v)
+    plt.plot(range(starting_iteration, ending_iteration+20, 20), p_loss, label='p loss')
+    plt.plot(range(starting_iteration, ending_iteration+20, 20), v_loss, label='v loss')
+    plt.xlabel('training iterations')
+    plt.ylabel('value loss on test set')
+    plt.legend()
+    plt.title('Value Loss as a function of training games')
+    plt.savefig('loss.pdf')
+
 def main():
-    #get_randomized_states(1000)
-    run_testing()
+    #get_randomized_states(10000)
+    graph_loss(20, 300)
 
 if __name__ == '__main__':
     main()
