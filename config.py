@@ -75,9 +75,9 @@ if evaluation:
 end_timer_active = True
 end_timer_time = datetime(
         year=2024,
-        month=4,
-        day=26,
-        hour=12,
+        month=5,
+        day=1,
+        hour=5,
         minute=55,
         second=0
 )
@@ -89,8 +89,8 @@ start_timer_active = False
 start_timer_time = datetime(
         year=2024,
         month=4,
-        day=17,
-        hour=5,
-        minute=45,
+        day=26,
+        hour=23,
+        minute=5,
         second=0
 )
