@@ -196,6 +196,9 @@ class Node:
             # normalize the P values in the return list
             return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
 
+        # save percentage of legal mvoes in node
+        self.p_legal = p_sum/sum(p_array)
+
         return return_list, v
 
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
