@@ -56,6 +56,7 @@ class Node:
         self.original_v = 0
         self.true_v = 0
         self.p: float = p
+        self.p_legal = 0
         self.visits: int = 0
         self.value: float = 0
         # network queue for communicating with the model process
@@ -196,6 +197,12 @@ class Node:
             # normalize the P values in the return list
             return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
 
+        # save percentage of legal mvoes in node
+        self.p_legal = p_sum/sum(p_array)
+
+        # save percentage of legal mvoes in node
+        self.p_legal = p_sum/np.sum(p_array)
+
         return return_list, v
 
     def print_tree(self, string_buffer, prefix, child_prefix, depth=None):
@@ -218,9 +225,9 @@ class Node:
             if self.parent:
                 if visits != 0:
                     wr = round(val/visits, 3)
-                    info_text = f'(p:{p}|V:{v_original}|tv:{tval}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
+                    info_text = f'(p:{p}|V:{v_original}|tv:{tval}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|lp:{self.p_legal}|move:{self.move})'
                 else:
-                    info_text = f'(p:{p}|V:{v_original}|tv:{tval}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
+                    info_text = f'(p:{p}|V:{v_original}|tv:{tval}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|lp:{self.p_legal}|move:{self.move})'
                 string_buffer.append(info_text)
                 string_buffer.append('\n')
 
