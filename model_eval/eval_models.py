@@ -6,7 +6,7 @@ from multiprocessing import Queue, set_start_method
 import time
 from keras import Model
 import tensorflow
-
+from node import Node
 from chess.chessboard import Chessboard
 from model_eval.game_process_eval import GameProcessEval
 from model_eval.nn_process_eval import NeuralNetworkProcessEval
@@ -82,24 +82,28 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
         results.append(r)
         
     # process data
-    win_count_model_1 = [winner for (uid, winner, move_count) in results].count("model_1")
+    win_count_model_1 = [winner for (uid, winner, move_count, model_1_p, model_2_p) in results].count("model_1")
     win_rate_model_1 = win_count_model_1/games
-    win_count_model_2 = [winner for (uid, winner, move_count) in results].count("model_2")
+    win_count_model_2 = [winner for (uid, winner, move_count, model_1_p, model_2_p) in results].count("model_2")
     win_rate_model_2 = win_count_model_2/games
-    draw_count = [winner for (uid, winner, move_count) in results].count("draw")
+    draw_count = [winner for (uid, winner, move_count, model_1_p, model_2_p) in results].count("draw")
     draw_rate = draw_count/games
-    move_avg = sum([move_count for (uid, winner, move_count) in results])/games
-    return (win_count_model_1, win_count_model_2, draw_count, move_avg)
+    avg_p_legal_model_1 = sum([model_1_p for (uid, winner, move_count, model_1_p, model_2_p) in results])/games
+    avg_p_legal_model_2 = sum([model_2_p for (uid, winner, move_count, model_1_p, model_2_p) in results])/games
+    move_avg = sum([move_count for (uid, winner, move_count, model_1_p, model_2_p) in results])/games
+
+    return (win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg)
 
 def main():
     # needs to run from model_eval folder
     model_1 = tensorflow.keras.models.load_model('../saved_model/model_20_it.h5', compile=False)
     model_1.compile()
-    model_2 = tensorflow.keras.models.load_model('../saved_model/model_80_it.h5', compile=False)
+    model_2 = tensorflow.keras.models.load_model('../saved_model/model_420_it.h5', compile=False)
     model_2.compile()
 
-    win_count_model_1, win_count_model_2, draw_count, move_avg = eval_models(model_1, model_2, 2)
-    print(f"result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 10)
+    print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
+    print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
 
 if __name__=="__main__":

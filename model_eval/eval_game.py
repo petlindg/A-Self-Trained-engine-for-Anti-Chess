@@ -7,6 +7,13 @@ from chess.utils import Color
 from Game.Player import Player
 from multiprocessing import Queue
 from typing import List
+from node import Node
+
+def sum_legal_p(node:Node):
+    sum = node.p_legal
+    for c in node.children:
+        sum += sum_legal_p(c)
+    return sum
 
 
 class EvalGame:
@@ -50,20 +57,26 @@ class EvalGame:
         move_counter = 0
         current_player = move_counter%2
 
+        avg_legal_p = [[], []]
+
         while self.player[current_player].current_state.get_game_status()==3:
            move = self.player[current_player].get_next_move()
+           avg_legal_p[current_player].append(sum_legal_p(self.player[current_player].mcts)/self.player[current_player].mcts.visits)
            self.player[0].update_tree(move)
            self.player[1].update_tree(move)
 
            current_player = (current_player+1)%2
            move_counter += 1
 
+        model_1_p = sum(avg_legal_p[self.model_1])/len(avg_legal_p[self.model_1])
+        model_2_p = sum(avg_legal_p[self.model_2])/len(avg_legal_p[self.model_2])
+
         result = self.player[0].current_state.get_game_status()
         if result == self.model_1:
-            return ("model_1", move_counter)
+            return ("model_1", move_counter, model_1_p, model_2_p)
         elif result == self.model_2:
-            return ("model_2", move_counter)
+            return ("model_2", move_counter, model_1_p, model_2_p)
         else:
-            return ("draw", move_counter)
+            return ("draw", move_counter, model_1_p, model_2_p)
         
 

@@ -45,9 +45,9 @@ class GameProcessEval(multiprocessing.Process):
                         incoming_queue_2=self.incoming_queue_2,
                         uid=self.uid)
         
-        result, move_counter = game.run()
+        result, move_counter, model_1_p, model_2_p = game.run()
 
-        self.results_queue.put((self.uid, result, move_counter))
+        self.results_queue.put((self.uid, result, move_counter, model_1_p, model_2_p))
 
         self.outgoing_queue_1.put(('finished', self.uid, result))
         self.outgoing_queue_2.put(('finished', self.uid, result))
