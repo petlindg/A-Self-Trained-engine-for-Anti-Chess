@@ -198,9 +198,6 @@ class Node:
             return_list = [(move, p_val/p_sum) for (move, p_val) in return_list]
 
         # save percentage of legal mvoes in node
-        self.p_legal = p_sum/sum(p_array)
-
-        # save percentage of legal mvoes in node
         self.p_legal = p_sum/np.sum(p_array)
 
         return return_list, v
