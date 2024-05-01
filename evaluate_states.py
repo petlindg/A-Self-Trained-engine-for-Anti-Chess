@@ -9,6 +9,8 @@ from config import checkpoint_path
 import numpy as np
 import tensorflow
 import matplotlib.pyplot as plt
+import pickle
+from itertools import chain
 
 def fetch_p_from_move_2(move: Move, model_output: np.array):
     """Fetches the P value from the output array of the model
@@ -74,8 +76,10 @@ def run_testing(model_path):
 
     # create the model
     model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
-    model = tensorflow.keras.models.load_model(model_path)
-    
+    try:
+        model = tensorflow.keras.models.load_model(model_path)
+    except:
+        model = model_config.build_nn()
     
     # convert the pandas series to numpy array
     states = np.asarray(list(df['input_repr']))
@@ -97,20 +101,33 @@ def run_testing(model_path):
     df['v_loss'] = (df['status'] - df['value']).apply(lambda x: x*x)
     
     df['p_value'] = df.apply(lambda x: fetch_p_from_move_2(algebraic_to_move(x.move), x.p), axis=1)
+    print(df['p_value'].head())
+    df['p_value'].to_csv('p_values.csv')
     df['p_loss'] = df['p_value'].apply(lambda x: 1-x)
-    print(df.head())
+    
     print(df['v_loss'].mean())
     print(df['p_loss'].mean())
-    return df['v_loss'].mean(), df['p_loss'].mean()
+    return df['v_loss'].mean(), df['p_loss'].mean(), list(df['v_loss']), list(df['p_loss'])
 
 def graph_loss(starting_iteration, ending_iteration):
     p_loss = []
     v_loss = []
+    list_losses_v = []
+    list_losses_p = []
     for i in range(starting_iteration, ending_iteration+20, 20):
         path = f'saved_model/model_{i}_it.h5'
-        v, p = (run_testing(path))
+        v, p, list_v_loss, list_p_loss = (run_testing(path))
         p_loss.append(p)
         v_loss.append(v)
+        list_losses_v.append(list_v_loss)
+        list_losses_p.append(list_p_loss)
+    
+    with open('v_losses.pkl', 'wb') as file:
+        pickle.dump(list_losses_v, file)
+
+    with open('p_losses.pkl', 'wb') as file:
+        pickle.dump(list_losses_p, file)
+
     plt.plot(range(starting_iteration, ending_iteration+20, 20), p_loss, label='p loss')
     plt.plot(range(starting_iteration, ending_iteration+20, 20), v_loss, label='v loss')
     plt.xlabel('training iterations')
@@ -118,10 +135,65 @@ def graph_loss(starting_iteration, ending_iteration):
     plt.legend()
     plt.title('Value Loss as a function of training games')
     plt.savefig('loss.pdf')
+    plt.show()
+    plt.clf()
+
+    bins = np.linspace(0, 1, 100)
+    plt.hist(list_losses_v[0], bins, alpha=0.5, label='iteration 20')
+    plt.hist(list_losses_v[6], bins, alpha=0.5, label='iteration 140')
+    plt.legend()
+    plt.savefig('hist_loss.pdf')
+
+def plot_hist(start_it, step_size):
+    with open('v_losses.pkl', 'rb') as file: 
+        list_v_losses = pickle.load(file) 
+
+    list_heights = []
+    
+    for i, l in enumerate(list_v_losses):
+        list_heights.append([start_it+i*step_size]*len(l))
+    height_length = len(list_heights)
+    list_v_losses = list(chain.from_iterable(list_v_losses))
+    list_heights = list(chain.from_iterable(list_heights))
+
+
+    #for x, y in zip(list_losses, list_heights):
+    fig, ax = plt.subplots()
+    h = ax.hist2d(list_v_losses, list_heights, bins=[20,height_length], norm='log')
+    #plt.hist2d(list_losses, list_heights, bins=[50,height_length], norm='log')
+    fig.colorbar(h[3], ax=ax)
+
+    plt.ylabel('Iteration (each iteration is 50 games played)')
+    plt.xlabel('Distribution of squared loss values (log color scale)')
+    plt.title('Loss Distribution per iteration for v')
+    fig.savefig('hist2d_loss_v.pdf')
+
+    with open('p_losses.pkl', 'rb') as file: 
+        list_p_losses = pickle.load(file) 
+        list_heights = []
+    
+    for i, l in enumerate(list_p_losses):
+        list_heights.append([start_it+i*step_size]*len(l))
+    height_length = len(list_heights)
+    list_p_losses = list(chain.from_iterable(list_p_losses))
+    list_heights = list(chain.from_iterable(list_heights))
+
+    
+
+    #for x, y in zip(list_losses, list_heights):
+    fig, ax = plt.subplots()
+    h = ax.hist2d(list_p_losses, list_heights, bins=[20,height_length], norm='log')
+    #plt.hist2d(list_losses, list_heights, bins=[50,height_length], norm='log')
+    fig.colorbar(h[3], ax=ax)
+
+    plt.ylabel('Iteration (each iteration is 50 games played)')
+    plt.xlabel('Distribution of loss values (log color scale)')
+    plt.title('Loss Distribution per iteration for p')
+    fig.savefig('hist2d_loss_p.pdf')
 
 def main():
     #get_randomized_states(10000)
-    graph_loss(20, 300)
-
+    graph_loss(0, 300)
+    #plot_hist(0, 20)
 if __name__ == '__main__':
     main()
