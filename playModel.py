@@ -14,10 +14,11 @@ from node import Node
 
 
 def playModel():
-    model = tensorflow.keras.models.load_model('saved_model/model_300_it.h5', compile=False)
+    model = tensorflow.keras.models.load_model('saved_model/model_420_it.h5', compile=False)
     model.compile()
-    chessboard = Chessboard("8/8/8/3k4/8/8/8/7R w - 0 1")
-    player = CliPlayer(chessboard=chessboard)
+    chessboard = Chessboard()
+    player = EnginePlayer(chessboard, model)
+    #player = CliPlayer(chessboard=chessboard)
     engine = EnginePlayer(chessboard, model)
     game = Game(chessboard, player, engine)
     game.run()

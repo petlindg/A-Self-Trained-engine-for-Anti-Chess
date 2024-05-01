@@ -8,7 +8,7 @@ from math import sqrt
 'constant defining exploration vs exploitation of the tree'
 exploration_constant: float = sqrt(2)
 'constant defining how many iterations per tree will be performed'
-tree_iterations: int = 800
+tree_iterations: int = 2
 
 'output dimensions for the neural network'
 output_representation = (1,1,8,8,79)
