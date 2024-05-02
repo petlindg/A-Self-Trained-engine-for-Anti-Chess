@@ -92,10 +92,18 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
     return (win_count_model_1, win_count_model_2, draw_count, move_avg)
 
 def main():
+    # memory config
+    physical_devices = tensorflow.config.list_physical_devices('GPU')
+    try:
+        tensorflow.config.experimental.set_memory_growth(physical_devices[0], True)
+    except:
+        # Invalid device or cannot modify virtual devices once initialized.
+        raise RuntimeError("Device not found")
+
     # needs to run from model_eval folder
-    model_1 = tensorflow.keras.models.load_model('../saved_model/model_20_it.h5', compile=False)
+    model_1 = tensorflow.keras.models.load_model('../saved_model/model_140_it.h5', compile=False)
     model_1.compile()
-    model_2 = tensorflow.keras.models.load_model('../saved_model/model_80_it.h5', compile=False)
+    model_2 = tensorflow.keras.models.load_model('../saved_model/model_200_it.h5', compile=False)
     model_2.compile()
 
     win_count_model_1, win_count_model_2, draw_count, move_avg = eval_models(model_1, model_2, 2)
