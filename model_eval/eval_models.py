@@ -96,12 +96,12 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
 
 def main():
     # needs to run from model_eval folder
-    model_1 = tensorflow.keras.models.load_model('../saved_model/model_20_it.h5', compile=False)
+    model_1 = tensorflow.keras.models.load_model('../saved_model/model_new.h5', compile=False)
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_420_it.h5', compile=False)
     model_2.compile()
 
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 10)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 8)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
