@@ -104,15 +104,9 @@ def main():
         raise RuntimeError("Device not found")
 
     # needs to run from model_eval folder
-<<<<<<< HEAD
-    model_1 = tensorflow.keras.models.load_model('../saved_model/model_new.h5', compile=False)
-    model_1.compile()
-    model_2 = tensorflow.keras.models.load_model('../saved_model/model_420_it.h5', compile=False)
-=======
     model_1 = tensorflow.keras.models.load_model('../saved_model/model_140_it.h5', compile=False)
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_200_it.h5', compile=False)
->>>>>>> 48744875b5e1d292841a9b2f08e5a08c7b8479d5
     model_2.compile()
 
     win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 8)
