@@ -12,22 +12,21 @@ class InterfacePlayer:
     def __init__(self, chessboard:Chessboard):
         set_start_method('spawn')
         self.chessboard = chessboard
-        self.move_queue = Queue()
-        print("starting process")
-        interface_process = InterfaceProcess(self.move_queue, self.chessboard)
-        print("process started")
+        self.outgoing_queue = Queue()
+        self.incoming_queue = Queue()
+        interface_process = InterfaceProcess(incoming_queue=self.incoming_queue,
+                                             outgoing_queue=self.outgoing_queue,
+                                             chessboard=self.chessboard)
         interface_process.daemon = True
         interface_process.start()
         
         
 
     def get_move(self):
-        print("waiting for move")
-        move = None
-        while not move:
-            move = self.move_queue.get()
-        print("got move")
+        move = self.outgoing_queue.get()
+        self.outgoing_queue.empty()
         return move
 
     def update(self, move):
-        self.move_queue.put(move)
+        self.chessboard.move(move)
+        self.incoming_queue.put(move)
