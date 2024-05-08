@@ -1,7 +1,6 @@
 from multiprocessing import Process, Queue
 from interface import ChessboardGUI
-from chess.chessboard import Chessboard
-from chess.move import Move
+from chess import Chessboard, Move
 
 class InterfaceProcess(Process):
     chessboard:Chessboard
@@ -19,5 +18,4 @@ class InterfaceProcess(Process):
     def __init__(self, move_queue:Queue, chessboard:Chessboard):
         self.move_queue = move_queue
         self.chessboard = chessboard
-
-        self.interface = ChessboardGUI(send_move=self.move, get_bitboards=self.get_move)
+        self.interface = ChessboardGUI(size=8, send_move=self.move, get_bitboards=self.get_move)
