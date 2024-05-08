@@ -14,7 +14,7 @@ from tkinter import *
 from typing import List
 import numpy as np
 from chess import Chessboard as cb
-from chess import Piece as p
+from chess import Move
 
 # macro definitions
 WINDOW_SIZE    = 560     
@@ -182,7 +182,7 @@ class ChessboardGUI(Tk):
         src_index = 7-src_sq.pos_y+8*(7-src_sq.pos_x)
         dst_index = 7-dst_sq.pos_y+8*(7-dst_sq.pos_x)
 
-        if self.send_move(src_index, dst_index):
+        if self.send_move(Move(np.uint64(src_index), np.uint64(dst_index))):
             self.init_board(self.get_bitboards())
     def try_promo(self, src_sq:SquareGUI, dst_sq:SquareGUI, promotion_type:str):
         src_index = 7-src_sq.pos_y+8*(7-src_sq.pos_x)
@@ -200,7 +200,7 @@ class ChessboardGUI(Tk):
         elif promotion_type == "king":
             p = 5
         
-        if self.send_move(src_index, dst_index, p):
+        if self.send_move(Move(src_index, dst_index, p)):
             self.init_board(self.get_bitboards())
 
     def move(self, posx1:int, posy1:int, posx2:int, posy2:int, promoteTo=None):
@@ -256,8 +256,8 @@ class ChessboardGUI(Tk):
 
 class Game():
     def __init__(self):
-        self.state = cb("8/8/8/pPpPP3/8/8/8/8 w C6 0 1")
-        self.GUI   = ChessboardGUI(WINDOW_SIZE, self.state.try_move, self.state.get)
+        self.state = cb()
+        self.GUI   = ChessboardGUI(WINDOW_SIZE, self.state.move, self.state.get)
 
 def main():
     game = Game()

@@ -7,8 +7,10 @@ class InterfaceProcess(Process):
     move_queue:Queue
 
     def move(self, move:Move):
+        print("1")
         self.move_queue.put(move)
         self.chessboard.move(move)
+        print("2")
         
     def get_move(self):
         move = None
@@ -20,7 +22,10 @@ class InterfaceProcess(Process):
     def __init__(self, move_queue:Queue, chessboard:Chessboard):
         self.move_queue = move_queue
         self.chessboard = chessboard
+        print("init")
+
+    def run(self):
         self.interface = ChessboardGUI(size=WINDOW_SIZE, send_move=self.move, get_bitboards=self.get_move)
         self.interface.init_board(self.chessboard.get())
-        print("premainloop")
+        print("premain")
         self.interface.mainloop()
