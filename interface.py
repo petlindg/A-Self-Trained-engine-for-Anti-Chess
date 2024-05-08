@@ -183,7 +183,6 @@ class ChessboardGUI(Tk):
         dst_index = 7-dst_sq.pos_y+8*(7-dst_sq.pos_x)
 
         if self.send_move(Move(np.uint64(src_index), np.uint64(dst_index))):
-            print("updating bitboards")
             self.init_board(self.get_bitboards())
             self.update()
             self.init_board(self.get_bitboards())
