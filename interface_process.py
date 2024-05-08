@@ -1,25 +1,32 @@
 from multiprocessing import Process, Queue
-from interface import ChessboardGUI
+from interface import ChessboardGUI, WINDOW_SIZE
 from chess.chessboard import Chessboard
 from chess.move import Move
 
 class InterfaceProcess(Process):
     chessboard:Chessboard
-    move_queue:Queue
+    incoming_queue:Queue
+    outgoing_queue:Queue
 
     def move(self, move:Move):
-        self.move_queue.put(move)
-        self.chessboard.move(move)
+        if(self.chessboard.is_valid_move(move)):
+            self.outgoing_queue.put(move)
+            return True
+        else:
+            return False
         
     def get_move(self):
-        move = self.move_queue.get()
+        move = self.incoming_queue.get()
         self.chessboard.move(move)
         return self.chessboard.get()
 
-    def __init__(self, move_queue:Queue, chessboard:Chessboard):
-        self.move_queue = move_queue
+    def __init__(self, incoming_queue:Queue, outgoing_queue:Queue, chessboard:Chessboard):
+        super(InterfaceProcess, self).__init__()
+        self.incoming_queue = incoming_queue
+        self.outgoing_queue = outgoing_queue
         self.chessboard = chessboard
-        self.interface = ChessboardGUI(send_move=self.move, get_bitboards=self.get_move)
 
     def run(self):
+        self.interface = ChessboardGUI(size=WINDOW_SIZE, send_move=self.move, get_bitboards=self.get_move)
+        self.interface.init_board(self.chessboard.get())
         self.interface.mainloop()
