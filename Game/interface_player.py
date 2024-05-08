@@ -10,9 +10,9 @@ class InterfacePlayer:
     A class representing an interface player
     """
     def __init__(self, chessboard:Chessboard):
+        set_start_method('spawn')
         self.chessboard = chessboard
         self.move_queue = Queue()
-        #set_start_method('spawn')
         print("starting process")
         interface_process = InterfaceProcess(self.move_queue, self.chessboard)
         print("process started")
