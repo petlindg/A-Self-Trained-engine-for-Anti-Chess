@@ -17,7 +17,7 @@ from node import Node
 def playModel():
     model = tensorflow.keras.models.load_model('saved_model/model_200_it.h5', compile=False)
     model.compile()
-    chessboard = Chessboard("8/8/8/3K4/8/8/8/7r w - 0 1")
+    chessboard = Chessboard()#Chessboard("8/8/8/3K4/8/8/8/7r w - 0 1")
     player = InterfacePlayer(chessboard=chessboard)
     engine = EnginePlayer(chessboard, model)
     game = Game(chessboard, player, engine)
