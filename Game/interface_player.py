@@ -2,7 +2,7 @@ from multiprocessing import Queue, set_start_method
 import sys
 sys.path.append('..')
 
-from chess import Chessboard
+from chess.chessboard import Chessboard
 from interface_process import InterfaceProcess
 
 class InterfacePlayer:
