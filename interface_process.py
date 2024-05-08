@@ -19,5 +19,7 @@ class InterfaceProcess(Process):
     def __init__(self, move_queue:Queue, chessboard:Chessboard):
         self.move_queue = move_queue
         self.chessboard = chessboard
-
         self.interface = ChessboardGUI(send_move=self.move, get_bitboards=self.get_move)
+
+    def run(self):
+        self.interface.mainloop()
