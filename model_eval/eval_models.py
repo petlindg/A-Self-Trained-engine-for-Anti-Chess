@@ -82,6 +82,7 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
     [worker.terminate() for worker in worker_list]
     nn_process_1.terminate()
     nn_process_2.terminate()
+    time.sleep(2)
     [worker.close() for worker in worker_list]
     nn_process_1.close()
     nn_process_2.close()
