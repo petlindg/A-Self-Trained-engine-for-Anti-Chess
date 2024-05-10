@@ -79,6 +79,10 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
         r = results_queue.get()
         results.append(r)
         
+    [worker.cloes() for worker in worker_list]
+    nn_process_1.close()
+    nn_process_2.close()
+
     # process data
     win_count_model_1 = [winner for (uid, winner, move_count, model_1_p, model_2_p) in results].count("model_1")
     win_rate_model_1 = win_count_model_1/games
