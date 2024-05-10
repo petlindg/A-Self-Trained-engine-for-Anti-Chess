@@ -1,10 +1,9 @@
 
 from chess.chessboard import Chessboard
-from chess.move import Move
 from chess.move import algebraic_to_move
 from config import *
-from nn_architecture import INPUT_SHAPE, OUTPUT_SHAPE, NeuralNetwork
-from node import fetch_p_from_move
+from Model.nn_architecture import INPUT_SHAPE, OUTPUT_SHAPE, NeuralNetwork
+from MCTS.node import fetch_p_from_move
 
 def possible_moves(state:Chessboard, model):
     # copied from node.py, should be moved somewhere else to be called outside of a MCTS tree

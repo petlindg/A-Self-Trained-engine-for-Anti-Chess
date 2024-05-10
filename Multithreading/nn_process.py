@@ -5,16 +5,18 @@ import pickle
 import random
 import time
 from collections import deque
+from multiprocessing import Queue
 
 import numpy as np
 import tensorflow
 from sklearn.model_selection import train_test_split
 
+from Multithreading.connection import Connection
 from config import max_buffer_size, games_per_iteration, checkpoint_path
 from config import epochs, batch_size, train_split, nn_batch
 
 
-from nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
+from Model.nn_architecture import NeuralNetwork, INPUT_SHAPE, OUTPUT_SHAPE
 
 
 class TrainingData:
@@ -41,10 +43,10 @@ class NeuralNetworkProcess(multiprocessing.Process):
     Class that represents a single neural network process, it handles incoming requests from
     the game processes and manages the training and execution of the neural network.
     """
-    def __init__(self, input_queue, output_queues, model=None):
+    def __init__(self, model=None):
         super(NeuralNetworkProcess, self).__init__()
-        self.input_queue = input_queue # shared queue for the input
-        self.output_queues = output_queues # dict of queues to send back, has UID as key and queue as value
+        self.input_queue = Queue() # shared queue for the input
+        self.output_queues = {}
         self.list_uid = []
         self.list_states = []
         self.batch_size = nn_batch # number of states to process in a single batch
@@ -88,7 +90,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         while True:
             # get the latest request from the queue
             # based on the request type, perform some action
-            request_type, uid, data = self.input_queue.get()
+            (uid, (request_type, data)) = self.input_queue.get()
             # if the request is an evaluation then store the data for later evaluation
             # also check if the data already exists in the dictionary, if it does,
             # return the value to the process which asked for it
@@ -138,6 +140,12 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 self.evaluations.clear()
                 self.evaluations['hits'] = hits
                 self.evaluations['misses'] = misses
+
+    def create_connection(self, id):
+        output_queue = Queue()
+        self.output_queues[id] = output_queue
+
+        return Connection(id, self.input_queue, output_queue)
 
     def _get_old_iter(self):
         try:

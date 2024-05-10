@@ -1,13 +1,14 @@
-from copy import deepcopy
-
-from Game.TrainingGame import TrainingGame
+from Game.game import Game
+from Model.model import Model
+from Player.engine_player import EnginePlayer
+from chess.chessboard import Chessboard
 from chess.utils import Color
 
 
 class Testing:
     """Helper class to play two models against each other"""
 
-    def __init__(self, initial_state, model_1, model_2):
+    def __init__(self, initial_state: str, model_1: Model, model_2: Model):
         self.initial_state = initial_state
         self.model_1 = model_1
         self.model_2 = model_2
@@ -17,13 +18,13 @@ class Testing:
 
         :return: None
         """
-
         results_as_white = []
         for i in range(games - (games // 2)):
-            game = TrainingGame(initial_state=self.initial_state, white_model=self.model_1, black_model=self.model_2)
+            player_1 = EnginePlayer(Chessboard(self.initial_state), self.model_1)
+            player_2 = EnginePlayer(Chessboard(self.initial_state), self.model_2)
+            game = Game(initial_state=Chessboard(self.initial_state), player_1=player_1, player_2=player_2)
 
             result = game.run()
-
             if result == Color.WHITE:
                 results_as_white.append(1)
             elif result == Color.BLACK:
@@ -33,9 +34,11 @@ class Testing:
 
         results_as_black = []
         for i in range(games // 2):
-            game = TrainingGame(initial_state=self.initial_state, white_model=self.model_2, black_model=self.model_1)
-            result = game.run()
+            player_1 = EnginePlayer(Chessboard(self.initial_state), self.model_2)
+            player_2 = EnginePlayer(Chessboard(self.initial_state), self.model_1)
+            game = Game(initial_state=Chessboard(self.initial_state), player_1=player_1, player_2=player_2)
 
+            result = game.run()
             if result == Color.WHITE:
                 results_as_black.append(0)
             elif result == Color.BLACK:

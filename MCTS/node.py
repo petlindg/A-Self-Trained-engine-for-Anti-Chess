@@ -1,22 +1,16 @@
-import random
-from math import sqrt
+from copy import deepcopy
 
 import numpy as np
 import time
 
-import config
-from config import exploration_constant
+from Model.model import Model
 from chess.chessboard import Chessboard
 from chess.move import Move, calc_move
-from config import exploration_constant, evaluation_method
 
 from math import sqrt
 from config import tree_iterations, exploration_constant, output_representation
-from keras.models import Model
 
-from nn_architecture import NeuralNetwork, OUTPUT_SHAPE, INPUT_SHAPE
 from logger import Logger
-from multiprocessing import Queue
 
 logger = Logger("TrainingGame")
 
@@ -39,9 +33,7 @@ class Node:
     """
     def __init__(self,
                  state: Chessboard,
-                 outgoing_queue: Queue,
-                 incoming_queue: Queue,
-                 uid: int,
+                 model: Model,
                  p: float = 1,
                  parent = None,
                  move: Move = False
@@ -58,11 +50,7 @@ class Node:
         self.p: float = p
         self.visits: int = 0
         self.value: float = 0
-        # network queue for communicating with the model process
-        self.outgoing_queue = outgoing_queue
-        self.incoming_queue = incoming_queue
-        # process uid for use with the model queue
-        self.uid = uid
+        self.model = model
         self.time_predicted = 0
 
     def ucb(self):
@@ -90,7 +78,7 @@ class Node:
         :param iterations: Number of iterations to run the tree, given by tree_iterations in config.py by default
         :return: None
         """
-        for _ in range(iterations-self.visits):
+        for i in range(iterations - self.visits):
             self.mcts()
 
 
@@ -135,9 +123,7 @@ class Node:
                         move=move,
                         p=p,
                         parent=self,
-                        outgoing_queue=self.outgoing_queue,
-                        incoming_queue=self.incoming_queue,
-                        uid=self.uid
+                        model=self.model
                     )
                 )
             if self.parent is None:
@@ -178,8 +164,7 @@ class Node:
 
         predict_start = time.time()
         # send an evaluation request and wait for the response from the NN process
-        self.outgoing_queue.put(('eval', self.uid, input_repr))
-        p, v = self.incoming_queue.get()
+        p, v = self.model.eval(input_repr)
 
         predict_end = time.time()
         self.time_predicted += (predict_end-predict_start)
@@ -209,15 +194,15 @@ class Node:
         """
         if depth is None or depth > 0:
             string_buffer.append(prefix)
-            p = round(self.p, 5)
-            val = round(self.value, 5)
-            tval = round(self.true_v, 5)
-            v_original = round(self.original_v, 3)
+            p = np.round(self.p, 5)
+            val = np.round(self.value, 5)
+            tval = np.round(self.true_v, 5)
+            v_original = np.round(self.original_v, 3)
             visits = self.visits
             # v = round(self.v, 10)
             if self.parent:
                 if visits != 0:
-                    wr = round(val/visits, 3)
+                    wr = np.round(val/visits, 3)
                     info_text = f'(p:{p}|V:{v_original}|tv:{tval}|v:{val}|n:{visits}|wr:{wr}|u:{self.ucb()}|move:{self.move})'
                 else:
                     info_text = f'(p:{p}|V:{v_original}|tv:{tval}|v:{val}|n:{visits}|wr:-|u:{self.ucb()}|move:{self.move})'
@@ -289,4 +274,5 @@ class Node:
         for child in self.children:
             if child.move == move:
                 return child
+
         raise RuntimeError("Child as Move: %s not found." % str(move))

@@ -2,6 +2,9 @@ import multiprocessing
 import random
 
 import config
+from Game.game import Game
+from Player.engine_player import EnginePlayer
+
 
 class GameProcess(multiprocessing.Process):
     """
@@ -9,7 +12,7 @@ class GameProcess(multiprocessing.Process):
     This class communicates with and sends requests to the neural network process and recieves evaluations from the 
     neural network.
     """
-    def __init__(self, input_queue, output_queue, initial_state, uid):
+    def __init__(self, initial_state, player_1: EnginePlayer, player_2: EnginePlayer = None):
         """
         The game process class has two queues, the incoming and the outcoming queue
         the incoming queue is the data that the game process recieves from the neural network
@@ -17,10 +20,9 @@ class GameProcess(multiprocessing.Process):
         the uid is the unique identifier for the process, it is used for identification purposes. 
         """
         super(GameProcess, self).__init__()
-        self.outgoing_queue = input_queue
-        self.incoming_queue = output_queue
+        self.player_1 = player_1
+        self.player_2 = player_2
         self.initial_state = initial_state
-        self.uid = uid
 
     def run(self):
         """
@@ -38,11 +40,9 @@ class GameProcess(multiprocessing.Process):
 
             random_state = None #generate_random_state(config.piece_list)
             if config.random_state_generation:
-                game = TrainingGame(initial_state=Chessboard(random_state), outgoing_queue=self.outgoing_queue,
-                                    incoming_queue=self.incoming_queue, uid=self.uid)
+                game = Game(initial_state=Chessboard(random_state), player_1=self.player_1, player_2=self.player_2)
             else:
-                game = TrainingGame(initial_state=self.chessboard, outgoing_queue=self.outgoing_queue,
-                                    incoming_queue=self.incoming_queue, uid=self.uid)
-            result = game.run()
+                game = Game(initial_state=self.chessboard, player_1=self.player_1, player_2=self.player_2)
 
+            result = game.run()
             self.outgoing_queue.put(('finished', self.uid, (game.get_history(), result)))

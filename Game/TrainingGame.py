@@ -4,8 +4,7 @@ from copy import deepcopy
 from Game.Utils import translate_moves_to_output
 from chess.chessboard import Chessboard
 from chess.utils import Color
-from Game.Player import Player
-from keras.models import Model
+from Player.engine_player import EnginePlayer
 from logger import Logger
 from multiprocessing import Queue
 
@@ -23,7 +22,7 @@ class TrainingGame:
         self.game_history = []
         self.swap = False
 
-        self.player = Player(self.current_state, outgoing_queue, incoming_queue, uid)
+        self.player = EnginePlayer(self.current_state, outgoing_queue, incoming_queue, uid)
 
     def game_ended(self):
         """Checks the status of the current Game

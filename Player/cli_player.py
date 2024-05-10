@@ -1,0 +1,29 @@
+from Player.player import Player
+from chess.chessboard import Chessboard
+from chess.move import (algebraic_to_move, move_to_algebraic)
+
+
+class CliPlayer(Player):
+    """
+    A class representing a player
+    """
+
+    def __init__(self, chessboard: Chessboard):
+        self.chessboard = chessboard
+
+    def get_next_move(self):
+        # Print the state to CLI
+        print(self.chessboard)
+
+        # Get next move from player
+        while True:
+            next_move = algebraic_to_move(input("Input next move: "))
+            print("\n")
+
+            if self.chessboard.is_valid_move(next_move):
+                return next_move
+            else:
+                print(move_to_algebraic(next_move) + " is not a valid move")
+
+    def update_tree(self, move):
+        self.chessboard.move(move)

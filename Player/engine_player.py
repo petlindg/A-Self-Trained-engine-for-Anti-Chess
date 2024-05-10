@@ -1,22 +1,19 @@
-from keras import Model
-
 from copy import deepcopy
 
-from config import verbosity
-from node import Node
+from Model.model import Model
+from Player.player import Player
+from MCTS.node import Node
 from chess.chessboard import Chessboard
 from chess.move import Move
-from multiprocessing import Queue
 
-class Player:
+class EnginePlayer(Player):
     """
     A class representing a player
     """
 
-    def __init__(self, initial_state: Chessboard, outgoing_queue: Queue,
-                 incoming_queue: Queue, uid: int):
+    def __init__(self, initial_state: Chessboard, model: Model):
         self.current_state = initial_state
-        self.mcts = Node(state=initial_state, p=1, outgoing_queue=outgoing_queue, incoming_queue=incoming_queue, uid=uid)
+        self.mcts = Node(state=initial_state, p=1, model=model)
         self.mcts.expand()
         self.mcts.add_noise()
         self.history = []
@@ -30,11 +27,16 @@ class Player:
     def get_time_predicted(self):
         return self.mcts.time_predicted
 
+    def print_tree(self):
+        self.mcts.print_selectively(100)
+
     def get_next_move(self):
 
+        print("Running MCTS")
         self.run_mcts()
-        if verbosity != 0:
-            self.mcts.print_selectively(2)
+        print("MCTS completed")
+        # if verbosity != 0:
+        #    self.mcts.print_selectively(2)
 
         potential_nodes = self.mcts.children
 
