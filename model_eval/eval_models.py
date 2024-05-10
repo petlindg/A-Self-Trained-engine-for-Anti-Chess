@@ -79,7 +79,7 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
         r = results_queue.get()
         results.append(r)
         
-    [worker.cloes() for worker in worker_list]
+    [worker.close() for worker in worker_list]
     nn_process_1.close()
     nn_process_2.close()
 
