@@ -24,8 +24,6 @@ def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chess
     """
     nn_batch = games//2
 
-    set_start_method('spawn')
-
     results_queue = Queue()
 
     nr_workers = games
@@ -103,6 +101,8 @@ def main():
         # Invalid device or cannot modify virtual devices once initialized.
         raise RuntimeError("Device not found")
     # needs to run from model_eval folder
+
+    set_start_method('spawn')
 
     # comp 1
     print("0vs20")
