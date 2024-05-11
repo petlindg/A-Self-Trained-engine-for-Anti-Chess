@@ -11,9 +11,9 @@ from chess.chessboard import Chessboard
 from model_eval.game_process_eval import GameProcessEval
 from model_eval.nn_process_eval import NeuralNetworkProcessEval
 
-EVAL_GAMES = 100
+EVAL_GAMES = 50
 
-def eval_models(model_1:Model, model_2:Model, games:int=100, initial_state:Chessboard=Chessboard()):
+def eval_models(model_1:Model, model_2:Model, games:int=50, initial_state:Chessboard=Chessboard()):
     """
     Evaluates the win-rate, draw-rate and move counters of a set number of games between two models.
 
@@ -112,24 +112,13 @@ def main():
 
     set_start_method('spawn')
 
-    # comp 1
-    print("0vs20")
-    model_1 = tensorflow.keras.models.load_model('../saved_model/model_0_it.h5', compile=False)
-    model_1.compile()
-    model_2 = tensorflow.keras.models.load_model('../saved_model/model_20_it.h5', compile=False)
-    model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
-    print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
-    print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
-    print(f"Average amount of moves: [{move_avg}]")
-
     # comp 2
     print("20vs40")
     model_1 = tensorflow.keras.models.load_model('../saved_model/model_20_it.h5', compile=False)
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_40_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -140,7 +129,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_60_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -151,7 +140,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_80_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -162,7 +151,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_100_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -173,7 +162,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_120_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -184,7 +173,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_140_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -195,7 +184,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_40_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -206,7 +195,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_60_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -217,7 +206,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_80_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -228,7 +217,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_100_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -239,7 +228,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_120_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
@@ -250,7 +239,7 @@ def main():
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_140_it.h5', compile=False)
     model_2.compile()
-    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, 100)
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, games)
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
