@@ -113,12 +113,34 @@ def main():
     set_start_method('spawn')
 
     # comp 1
-    print("120vs140")
-    model_1 = tensorflow.keras.models.load_model('../saved_model/model_120_it.h5', compile=False)
+    print("0vs140")
+    model_1 = tensorflow.keras.models.load_model('../saved_model/model_0_it.h5', compile=False)
     model_1.compile()
     model_2 = tensorflow.keras.models.load_model('../saved_model/model_140_it.h5', compile=False)
     model_2.compile()
     win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, EVAL_GAMES)
+    print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
+    print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
+    print(f"Average amount of moves: [{move_avg}]")
+
+    # comp 2
+    print("0vs3k1r")
+    model_1 = tensorflow.keras.models.load_model('../saved_model/model_0_it.h5', compile=False)
+    model_1.compile()
+    model_2 = tensorflow.keras.models.load_model('../saved_model/model_3k1r_playable.h5', compile=False)
+    model_2.compile()
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, EVAL_GAMES, initial_state=Chessboard("8/3r4/2kkk3/8/8/2KKK3/3R4/8 w - 0 1"))
+    print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
+    print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
+    print(f"Average amount of moves: [{move_avg}]")
+
+    # comp 3
+    print("0vs rvK")
+    model_1 = tensorflow.keras.models.load_model('../saved_model/model_0_it.h5', compile=False)
+    model_1.compile()
+    model_2 = tensorflow.keras.models.load_model('../saved_model/model_3k1r_playable.h5', compile=False)
+    model_2.compile()
+    win_count_model_1, win_count_model_2, draw_count, avg_p_legal_model_1, avg_p_legal_model_2, move_avg = eval_models(model_1, model_2, EVAL_GAMES, initial_state=Chessboard("r7/8/8/8/4K3/8/8/8 w - 0 1"))
     print(f"Result distribution [model 1|model 2|draw]: [{win_count_model_1}|{win_count_model_2}|{draw_count}]")
     print(f"Average legal P values generated [model 1|model 2]: [{avg_p_legal_model_1}|{avg_p_legal_model_2}]")
     print(f"Average amount of moves: [{move_avg}]")
