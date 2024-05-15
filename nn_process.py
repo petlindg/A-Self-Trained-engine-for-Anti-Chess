@@ -76,7 +76,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         if os.path.isfile('saved_model/model_140_it.h5'):
             h5_to_weights()
         else:
-            raise RuntimeError("Checkpoints not found")
+            raise RuntimeError(".h5 file not found")
 
         model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
         self.model = model_config.build_nn()
