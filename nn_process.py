@@ -249,10 +249,9 @@ def h5_to_weights():
     """
     Function that creates a model, loads the .h5 file and saves the weights in the checkpoints path
     """
-    model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
-    model = model_config.build_nn()
     try:
-        tensorflow.keras.models.load_model('saved_model/model.h5')
+        model = tensorflow.keras.models.load_model('saved_model/model_140_it.h5', compile=False)
+        model.compile()
     except Exception as e:
         print('EXCEPTION, couldnt load model ', e)
     
