@@ -57,7 +57,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.eval_result = []
         self.eval_time = 0
         self.start_time = None
-        self.total_iterations = 0
+        self.total_iterations = 140
         self._get_old_iter()
         
 
@@ -73,8 +73,10 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.start_time = time.time()
 
         # if there is an .h5 file in saved_model, convert it to weights
-        if os.path.isfile('saved_model/model.h5'):
+        if os.path.isfile('saved_model/model_140_it.h5'):
             h5_to_weights()
+        else:
+            raise RuntimeError("Checkpoints not found")
 
         model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
         self.model = model_config.build_nn()
