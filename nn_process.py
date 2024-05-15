@@ -83,7 +83,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         try:
             self.model.load_weights(checkpoint_path)
         except Exception as e:
-            print('EXCEPTION, couldnt load weights ', e)
+            raise RuntimeError('EXCEPTION, couldnt load weights ', e)
 
 
 
