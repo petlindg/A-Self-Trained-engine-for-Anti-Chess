@@ -57,7 +57,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.eval_result = []
         self.eval_time = 0
         self.start_time = None
-        self.total_iterations = 140
+        self.total_iterations = 0
         self._get_old_iter()
         
 
@@ -73,10 +73,10 @@ class NeuralNetworkProcess(multiprocessing.Process):
         self.start_time = time.time()
 
         # if there is an .h5 file in saved_model, convert it to weights
-        if os.path.isfile('saved_model/model_140_it.h5'):
-            h5_to_weights()
-        else:
-            raise RuntimeError(".h5 file not found")
+        #if os.path.isfile('saved_model/model_140_it.h5'):
+        #    h5_to_weights()
+        #else:
+        #    raise RuntimeError(".h5 file not found")
 
         model_config = NeuralNetwork(input_shape=INPUT_SHAPE, output_shape=OUTPUT_SHAPE)
         self.model = model_config.build_nn()
@@ -147,7 +147,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
                 data = pickle.load(f)
                 self.total_iterations = data
         except:
-            print('couldnt load past data')
+            raise RuntimeError('couldnt load past data')
         
     def _save_iterations(self):
         save_to_file('Game/iterations_counter.bz2', self.total_iterations)
@@ -163,7 +163,7 @@ class NeuralNetworkProcess(multiprocessing.Process):
             with bz2.BZ2File('Game/training_data_class.bz2', 'r') as f:
                 data = pickle.load(f)
         except:
-            print('couldnt load past data')
+            raise RuntimeError('couldnt load past data')
         self.training_data = data
         
     def _process_requests(self):
