@@ -402,13 +402,14 @@ class Chessboard():
     
 
     # init empty board
-    def __init__(self, fen:str="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - 0 1"):
+    def __init__(self, fen:str="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1"):
         """
         Initializes the chessboard. By default with standard chess configuration
         alternatively by a string given in FEN format, excluding the field for castling.
 
         :param fen: String stating boardstate in FEN format, excluding the castling rights field
         """
+        self.variant = 'antichess'
         self.bitboards = zeros((2, 6), dtype=u64)
         self.combined  = zeros(3, dtype=u64)
         self.repetitions_list = []
@@ -621,7 +622,10 @@ class Chessboard():
             self.enpassante = ls(bit, u8(self._alg_sq_to_index(enpassante)))
 
         no_progress = arr[3]
-        self.no_progress_counter.append(u8(no_progress))
+        if no_progress =='-':
+            self.no_progress_counter.append(u8(0))  # Assign default value if no progress count is not available
+        else:
+            self.no_progress_counter.append(u8(no_progress))
 
         move_counter = arr[4]
         self.move_counter = u8(move_counter)
